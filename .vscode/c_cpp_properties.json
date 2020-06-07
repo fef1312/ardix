@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "name": "atmega328p",
+            "defines": [
+                "DEBUG",
+                "ARCH=atmega328p"
+            ],
+            "compilerPath": "/usr/bin/avr-gcc",
+            "cStandard": "gnu11",
+            "intelliSenseMode": "gcc-x86",
+            "includePath": [
+                "include"
+            ],
+            "compilerArgs": [
+                "-mmcu=atmega328p",
+                "-nostartfiles",
+                "-nostdlib",
+                "-nodefaultlibs",
+                "-fno-builtin",
+                "-fpack-struct",
+                "-Wall",
+                "-Wstrict-prototypes",
+                "-Wredundant-decls",
+                "-Wnested-externs",
+                "-Wbad-function-cast",
+                "-Wshadow",
+                "-Wsign-compare",
+                "-Wfloat-equal",
+                "-Wunreachable-code",
+                "-Wwrite-strings",
+                "-Wconversion",
+                "-Waggregate-return",
+                "-Winline",
+                "-Wcast-align"
+            ]
+        }
+    ],
+    "version": 4
+}
