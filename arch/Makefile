@@ -23,60 +23,8 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-AVR_CC ?= $(shell which avr-gcc)
-CC = $(AVR_CC)
-AVR_LD ?= $(shell which avr-gcc)
-LD = $(AVR_LD)
-AVR_OBJCOPY ?= $(shell which avr-objcopy)
-OBJCOPY = $(AVR_OBJCOPY)
-
-EXTRA_CFLAGS ?=
-CFLAGS = $(EXTRA_CFLAGS)
-
-CFLAGS += -g -nodefaultlibs -fno-builtin
-CFLAGS += -I$(PWD)/include
-CFLAGS += -DARCH=$(ARCH)
-CFLAGS += -mmcu=$(ARCH) -fpack-struct -std=gnu11
-
-CFLAGS += -Wall \
-	-Wstrict-prototypes \
-	-Wredundant-decls \
-	-Wnested-externs -Wbad-function-cast \
-	-Wshadow \
-	-Wsign-compare -Wfloat-equal \
-	-Wunreachable-code \
-	-Wwrite-strings -Wconversion \
-	-Waggregate-return -Winline -Wcast-align
-
-ifdef DEBUG
-    CFLAGS += -DDEBUG
+ifeq ($(ARCH), at91sam3x8e)
+    include arch/at91sam3x8e/Makefile
+else
+    $(error ARCH is not set to a supported value)
 endif
-
-EXTRA_LDFLAGS ?=
-LDFLAGS = $(EXTRA_LDFLAGS)
-
-LDFLAGS += \
-	-mmcu=$(ARCH) \
-	-nodefaultlibs
-
-ARDIX_ASM_SOURCES =
-include arch/Makefile
-
-ARDIX_SOURCES =
-include init/Makefile
-ARDIX_OBJS = $(ARDIX_SOURCES:.c=.o)
-ARDIX_ASM_OBJS = $(ARDIX_ASM_SOURCES:.S=.o)
-
-%.o: %.S | %.c
-	$(CC) -c -Os -o $@ $(CFLAGS) $<
-
-ardix.elf: $(ARDIX_OBJS) $(ARDIX_ASM_OBJS)
-	$(LD) $(LDFLAGS) -o $@ $^
-
-ardix.hex: ardix.elf
-	$(OBJCOPY) -O ihex -R .eeprom $^ $@
-
-clean:
-	rm -f ardix.elf ardix.hex $(ARDIX_OBJS) $(ARDIX_ASM_OBJS)
-
-all: ardix.hex
