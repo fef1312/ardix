@@ -30,7 +30,7 @@ Right now, you have to manually define environment variables:
 - `AVR_OBJCOPY`: Full path to `avr-objcopy`.  If unset, we will search for it in your PATH.
 - `ARCH`: Codename for the target architecture.  This is mandatory.
   The following architectures are currently supported:
-    * `atmega328p` (Arduino UNO)
+    * `at91sam3x8e` (Arduino Due)
 - `EXTRA_CFLAGS`: Any additional arguments that should be passed to the compiler.
 - `EXTRA_LDFLAGS`: Any additional arguments that should be passed to the linker.
 
