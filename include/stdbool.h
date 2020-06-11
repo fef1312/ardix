@@ -25,33 +25,14 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma once
+
 #include <stdint.h>
-#include <stddef.h>
 
-/**
- * Core init routine.
- *
- * This is invoked from the startup code (usually) located in
- * arch/<architecture>/startup.c.
- */
-void do_bootstrap(void)
-{
-	/* We'll just let the LED blink for now */
-	uint32_t *piob_enable_reg = (uint32_t *)0x400E1000;
-	uint32_t *piob_output_enable_reg = (uint32_t *)0x400E1010;
-	uint32_t *piob_output_data_reg = (uint32_t *)0x400E1030;
+#ifndef true
+#define true ((bool)1)
+#endif /* true */
 
-	*piob_enable_reg = 0xffffffff;
-	*piob_output_enable_reg = 0xffffffff;
-	uint32_t state = 0;
-
-	int count = 0;
-	while (true)
-	{
-		if (count++ != 100000)
-			continue;
-		state = ~state;
-		*piob_output_data_reg = state;
-		count = 0;
-	}
-}
+#ifndef false
+#define false ((bool)0)
+#endif /* false */

@@ -25,33 +25,32 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#pragma once
 
+#include <ardix/types.h>
+
+#ifndef offsetof
 /**
- * Core init routine.
+ * Calculate the byte offset of a struct member relative to the struct itself.
  *
- * This is invoked from the startup code (usually) located in
- * arch/<architecture>/startup.c.
+ * @param type: The structure type.
+ * @param member: The member inside the struct to the offset of.
+ * @returns The offset of `member` reelative to `type`, casted to a `size_t`.
  */
-void do_bootstrap(void)
-{
-	/* We'll just let the LED blink for now */
-	uint32_t *piob_enable_reg = (uint32_t *)0x400E1000;
-	uint32_t *piob_output_enable_reg = (uint32_t *)0x400E1010;
-	uint32_t *piob_output_data_reg = (uint32_t *)0x400E1030;
+#define offsetof(type, member) ((size_t)&((type *)0)->member)
+#endif /* offsetof */
 
-	*piob_enable_reg = 0xffffffff;
-	*piob_output_enable_reg = 0xffffffff;
-	uint32_t state = 0;
+#ifndef NULL
+/** The `NULL` pointer. */
+#define NULL ((void *)0)
+#endif /* NULL */
 
-	int count = 0;
-	while (true)
-	{
-		if (count++ != 100000)
-			continue;
-		state = ~state;
-		*piob_output_data_reg = state;
-		count = 0;
-	}
-}
+#include <stdbool.h>
+
+#ifndef __always_inline
+/**
+ * Force a method to always be inlined by the compiler.
+ * Do not use this for functions exceeding one or two lines.
+ */
+#define __always_inline inline __attribute__((always_inline))
+#endif /* __always_inline */

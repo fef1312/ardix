@@ -25,33 +25,75 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <stddef.h>
+#pragma once
 
-/**
- * Core init routine.
- *
- * This is invoked from the startup code (usually) located in
- * arch/<architecture>/startup.c.
+/*
+ * signed integer types
  */
-void do_bootstrap(void)
-{
-	/* We'll just let the LED blink for now */
-	uint32_t *piob_enable_reg = (uint32_t *)0x400E1000;
-	uint32_t *piob_output_enable_reg = (uint32_t *)0x400E1010;
-	uint32_t *piob_output_data_reg = (uint32_t *)0x400E1030;
 
-	*piob_enable_reg = 0xffffffff;
-	*piob_output_enable_reg = 0xffffffff;
-	uint32_t state = 0;
+#ifdef __INT8_TYPE__
+typedef __INT8_TYPE__		int8_t;
+#else
+/** Signed 8-bit integer. */
+typedef signed char		int8_t;
+#endif /* __INT8_TYPE__ */
 
-	int count = 0;
-	while (true)
-	{
-		if (count++ != 100000)
-			continue;
-		state = ~state;
-		*piob_output_data_reg = state;
-		count = 0;
-	}
-}
+#ifdef __INT16_TYPE__
+typedef __INT16_TYPE__		int16_t;
+#else
+/** Signed 16-bit integer. */
+typedef signed int		int16_t;
+#endif /* __INT16_TYPE__ */
+
+#ifdef __INT32_TYPE__
+typedef __INT32_TYPE__		int32_t;
+#else
+/** Signed 32-bit integer. */
+typedef signed long int		int32_t;
+#endif /* __INT32_TYPE__ */
+
+/*
+ * unsigned integer types
+ */
+
+#ifdef __UINT8_TYPE__
+typedef __UINT8_TYPE__		uint8_t;
+#else
+/** Unsigned 8-bit integer. */
+typedef unsigned char		uint8_t;
+#endif /* __UINT8_TYPE__ */
+
+#ifdef __UINT16_TYPE__
+typedef __UINT16_TYPE__		uint16_t;
+#else
+/** Unsigned 16-bit integer. */
+typedef unsigned int		uint16_t;
+#endif /* __UINT16_TYPE__ */
+
+#ifdef __UINT32_TYPE__
+typedef __UINT32_TYPE__		uint32_t;
+#else
+/** Unsigned 32-bit integer. */
+typedef unsigned long int	uint32_t;
+#endif /* __UINT32_TYPE__ */
+
+typedef uint8_t			bool;
+
+/*
+ * integer limits
+ */
+
+#define CHAR_MAX		((char)0x7f)
+#define CHAR_MIN		(CHAR_MAX + 1)
+#define UCHAR_MAX		((unsigned char)0xff)
+#define UCHAR_MIN		((unsigned char)0x00)
+
+#define INT_MAX			((int)0x7fff)
+#define INT_MIN			(INT_MAX + 1)
+#define UINT_MAX		((unsigned int)0xffff)
+#define UINT_MIN		((unsigned int)0x0000)
+
+#define LONG_MAX		((long)0x7fffffff)
+#define LONG_MIN		(LONG_MAX + 1)
+#define ULONG_MAX		((unsigned long)0xffffffff)
+#define ULONG_MIN		((unsigned long)0x00000000)

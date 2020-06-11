@@ -70,9 +70,10 @@ ifdef DEBUG
 endif
 
 ARDIX_ASM_SOURCES =
+ARDIX_SOURCES =
+
 include arch/Makefile
 
-ARDIX_SOURCES =
 include init/Makefile
 include lib/Makefile
 

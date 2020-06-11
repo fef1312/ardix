@@ -25,5 +25,11 @@
 
 ARDIX_ARCH_PWD = $(PWD)/arch/at91sam3x8e
 
+ARDIX_SOURCES += \
+	$(ARDIX_ARCH_PWD)/startup.c
+
 CFLAGS += \
 	-DARCH_AT91SAM3X8E
+
+LDFLAGS += \
+	-T$(ARDIX_ARCH_PWD)/flash.ld
