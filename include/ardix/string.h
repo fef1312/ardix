@@ -102,5 +102,3 @@ char *strncpy(char *dest, const char *src, size_t n);
  * @returns The length of `s` without the `NUL` terminator.
  */
 size_t strlen(const char *s);
-
-#include <arch/string.h>
