@@ -24,19 +24,36 @@
 #
 
 AVR_CC ?= $(shell which avr-gcc)
-CC = $(AVR_CC)
-AVR_LD ?= $(shell which avr-gcc)
-LD = $(AVR_LD)
 AVR_OBJCOPY ?= $(shell which avr-objcopy)
-OBJCOPY = $(AVR_OBJCOPY)
+AVR_LD ?= $(shell which avr-ld)
+
+ARM_CC ?= $(shell which arm-none-eabi-gcc)
+ARM_LD ?= $(shell which arm-none-eabi-ld)
+ARM_OBJCOPY ?= $(shell which arm-none-eabi-objcopy)
 
 EXTRA_CFLAGS ?=
 CFLAGS = $(EXTRA_CFLAGS)
 
-CFLAGS += -g -nodefaultlibs -fno-builtin
+CFLAGS += -g -nodefaultlibs -nostartfiles
 CFLAGS += -I$(PWD)/include
 CFLAGS += -DARCH=$(ARCH)
-CFLAGS += -mmcu=$(ARCH) -fpack-struct -std=gnu11
+CFLAGS += -fpack-struct -std=gnu11
+
+EXTRA_LDFLAGS ?=
+LDFLAGS = $(EXTRA_LDFLAGS)
+
+ifeq ($(ARCH), at91sam3x8e)
+    CFLAGS += -mcpu=cortex-m3 -mthumb -mabi=aapcs -march=armv7-m
+    CC = $(ARM_CC)
+    LD = $(ARM_LD)
+    OBJCOPY = $(ARM_OBJCOPY)
+else
+    CFLAGS += -mmcu=$(ARCH)
+    LDFLAGS += -mmcu=$(ARCH)
+    CC = $(AVR_CC)
+    LD = $(AVR_LD)
+    OBJCOPY = $(AVR_OBJCOPY)
+endif
 
 CFLAGS += -Wall \
 	-Wstrict-prototypes \
@@ -52,31 +69,32 @@ ifdef DEBUG
     CFLAGS += -DDEBUG
 endif
 
-EXTRA_LDFLAGS ?=
-LDFLAGS = $(EXTRA_LDFLAGS)
-
-LDFLAGS += \
-	-mmcu=$(ARCH) \
-	-nodefaultlibs
-
 ARDIX_ASM_SOURCES =
 include arch/Makefile
 
 ARDIX_SOURCES =
 include init/Makefile
+include lib/Makefile
+
 ARDIX_OBJS = $(ARDIX_SOURCES:.c=.o)
 ARDIX_ASM_OBJS = $(ARDIX_ASM_SOURCES:.S=.o)
 
 %.o: %.S | %.c
-	$(CC) -c -Os -o $@ $(CFLAGS) $<
+	$(CC) -c -Os $(CFLAGS) $<
 
-ardix.elf: $(ARDIX_OBJS) $(ARDIX_ASM_OBJS)
+ardix.elf: $(ARDIX_ASM_OBJS) $(ARDIX_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $^
 
 ardix.hex: ardix.elf
 	$(OBJCOPY) -O ihex -R .eeprom $^ $@
 
-clean:
-	rm -f ardix.elf ardix.hex $(ARDIX_OBJS) $(ARDIX_ASM_OBJS)
+ardix.bin: ardix.elf
+	$(OBJCOPY) -O binary -R .eeprom $^ $@
 
-all: ardix.hex
+clean:
+	rm -f ardix.elf ardix.hex ardix.bin $(ARDIX_OBJS) $(ARDIX_ASM_OBJS)
+
+config:
+	./configure
+
+all: ardix.hex ardix.bin
