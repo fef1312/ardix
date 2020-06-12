@@ -25,47 +25,24 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <arch/at91sam3x8e/hardware.h>
+#include <arch/at91sam3x8e/interrupt.h>
+#include <ardix/sched.h>
+#include <toolchain.h>
 
-#ifndef __GNUC__
-#error "Only GCC is supported"
-#endif /* __GNUC__ */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
-#ifndef __always_inline
-/**
- * Force a method to always be inlined by the compiler.
- * Do not use this for functions exceeding one or two lines.
- */
-#define __always_inline inline __attribute__((always_inline))
-#endif /* __always_inline */
+void isr_sys_tick(void)
+{
+	/*
+	 * fire a PendSV interrupt and do the actual context switching there
+	 * because it is faster that way (according to the docs, at least)
+	 */
+	SCB_ICSR |= SCB_PENDSVSET_MASK;
+}
 
-#ifndef __naked
-/** Function attribute for disabling register saving. */
-#define __naked __attribute__((naked))
-#endif
-
-#ifndef __weak
-/**
- * Add the `weak` attribute to a symbol.
- * This allows that identifier to be re-declared without any warnings.
- */
-#define __weak __attribute__((__weak__))
-#endif /* __weak */
-
-#ifndef __alias
-/**
- * Declare an identifier as an alias for some other identifier.
- *
- * @param name: The identifier (w/out quotes) this should be an alias for.
- */
-#define __alias(name) __attribute__((alias(#name)))
-#endif /* __alias */
-
-#ifndef __section
-/**
- * Define the program section this symbol should live in.
- *
- * @param name: The section name w/out quotes.
- */
-#define __section(name) __attribute((section(#name)))
-#endif /* __section */
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */

@@ -44,7 +44,7 @@ void isr_svc(void);
 /** Debug handler (reserved) */
 void isr_debug_mon(void);
 /** Pending SV interrupt handler */
-void isr_pend_sv(void);
+extern void isr_pend_sv(void);
 /** SysTick interrupt handler */
 void isr_sys_tick(void);
 

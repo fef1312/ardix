@@ -25,47 +25,53 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <ardix/clock.h>
+#include <ardix/sched.h>
+#include <ardix/types.h>
+#include <stddef.h>
 
-#ifndef __GNUC__
-#error "Only GCC is supported"
-#endif /* __GNUC__ */
+extern uint32_t _sstack;
+extern uint32_t _estack;
 
-#ifndef __always_inline
-/**
- * Force a method to always be inlined by the compiler.
- * Do not use this for functions exceeding one or two lines.
- */
-#define __always_inline inline __attribute__((always_inline))
-#endif /* __always_inline */
+struct process *_current_process;
 
-#ifndef __naked
-/** Function attribute for disabling register saving. */
-#define __naked __attribute__((naked))
-#endif
+static struct process procs[SCHED_MAXPROC + 1];
 
-#ifndef __weak
-/**
- * Add the `weak` attribute to a symbol.
- * This allows that identifier to be re-declared without any warnings.
- */
-#define __weak __attribute__((__weak__))
-#endif /* __weak */
+int sched_init(void)
+{
+	int i;
 
-#ifndef __alias
-/**
- * Declare an identifier as an alias for some other identifier.
- *
- * @param name: The identifier (w/out quotes) this should be an alias for.
- */
-#define __alias(name) __attribute__((alias(#name)))
-#endif /* __alias */
+	_current_process = &procs[0];
+	_current_process->next = _current_process;
+	_current_process->sp = &_sstack;
+	_current_process->stack_bottom = &_estack;
+	_current_process->pid = 0;
+	_current_process->state = PROC_READY;
 
-#ifndef __section
-/**
- * Define the program section this symbol should live in.
- *
- * @param name: The section name w/out quotes.
- */
-#define __section(name) __attribute((section(#name)))
-#endif /* __section */
+	for (i = 1; i < SCHED_MAXPROC + 1; i++) {
+		procs[i].state = PROC_DEAD;
+		procs[i].pid = -1;
+	}
+
+	/* TODO: initialize SysTick */
+
+	return 0;
+}
+
+void *sched_process_switch(void *curr_sp)
+{
+	struct process *nextproc = _current_process;
+	_current_process->sp = curr_sp;
+
+	while (true) {
+		nextproc = nextproc->next;
+		if (nextproc->state == PROC_QUEUE) {
+			_current_process->state = PROC_QUEUE;
+			nextproc->state = PROC_READY;
+			_current_process = nextproc;
+			break;
+		}
+	}
+
+	return _current_process->sp;
+}

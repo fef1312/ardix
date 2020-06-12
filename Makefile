@@ -76,6 +76,7 @@ include arch/Makefile
 
 include init/Makefile
 include lib/Makefile
+include kernel/Makefile
 
 ARDIX_OBJS = $(ARDIX_SOURCES:.c=.o)
 ARDIX_ASM_OBJS = $(ARDIX_ASM_SOURCES:.S=.o)
