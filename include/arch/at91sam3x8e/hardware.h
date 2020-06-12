@@ -35,17 +35,11 @@
 /** Pointer size in bytes */
 #define PTRSIZE 4
 
-/* The following three structs are basically just for reference */
-
 /**
  * A software snapshot of all registers that have not been saved by automated
  * hardware routines on ISR entry.  Required for scheduling / context switching.
  */
 struct reg_sw_snapshot {
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
 	uint32_t r8;
 	uint32_t r9;
 	uint32_t r10;
@@ -54,7 +48,11 @@ struct reg_sw_snapshot {
 	 * lr is saved by hardware, but we need to store it twice
 	 * because the ISR entry overwrites it
 	 */
-	uint32_t lr;	/* alias r14 */
+	void *lr;	/* alias r14 */
+	uint32_t r4;
+	uint32_t r5;
+	uint32_t r6;
+	uint32_t r7;
 };
 
 /**
@@ -67,8 +65,8 @@ struct reg_hw_snapshot {
 	uint32_t r2;
 	uint32_t r3;
 	uint32_t r12;
-	uint32_t lr;	/* alias r14 */
-	uint32_t pc;	/* alias r15 */
+	void *lr;	/* alias r14 */
+	void *pc;	/* alias r15 */
 	uint32_t psr;
 };
 

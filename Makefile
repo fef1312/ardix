@@ -37,13 +37,13 @@ CFLAGS = $(EXTRA_CFLAGS)
 CFLAGS += -g -nodefaultlibs -nostartfiles
 CFLAGS += -I$(PWD)/include
 CFLAGS += -DARCH=$(ARCH)
-CFLAGS += -fpack-struct -std=gnu11
+CFLAGS += -fpack-struct -fno-builtin -std=gnu11
 
 EXTRA_LDFLAGS ?=
 LDFLAGS = $(EXTRA_LDFLAGS)
 
 ifeq ($(ARCH), at91sam3x8e)
-    CFLAGS += -mcpu=cortex-m3 -mthumb -mabi=aapcs -march=armv7-m
+    CFLAGS += -mcpu=cortex-m3 -mthumb -mabi=aapcs -march=armv7-m -masm-syntax-unified
     CC = $(ARM_CC)
     LD = $(ARM_LD)
     OBJCOPY = $(ARM_OBJCOPY)
