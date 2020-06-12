@@ -27,8 +27,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <ardix/string.h>
 #include <arch/at91sam3x8e/interrupt.h>
+#include <toolchain.h>
 
 /* from flash.ld */
 extern uint32_t _sfixed;	/* fixed area start */
@@ -44,16 +44,21 @@ extern uint32_t _estack;	/* stack end */
 /* implementation in init/main.c */
 void do_bootstrap(void);
 
-void __isr_reset(void)
+void isr_reset(void)
 {
+	uint32_t *src;
+	uint32_t *dest;
+
 	/* copy .data to sram */
-	memmove(
-		&_etext,
-		&_srelocate,
-		(size_t)&_erelocate - (size_t)&_srelocate
-	);
-	/* clear .bss */
-	memset(&_szero, 0, (size_t)&_ezero - (size_t)&_szero);
+	dest = &_etext;
+	src = &_srelocate;
+	while (src < &_erelocate)
+		*dest++ = *src++;
+
+	/** clear .bss */
+	dest = &_szero;
+	while (dest <= &_ezero)
+		*dest++ = 0;
 
 	/* start the Kernel */
 	do_bootstrap();
@@ -66,128 +71,127 @@ void __isr_reset(void)
  * Default ISR for unimplemented interrupts.
  * This will halt the system.
  */
-void __isr_stub(void)
+void isr_stub(void)
 {
 	while (1);
 }
 
-__attribute__((weak, alias("__isr_stub"))) void __isr_nmi(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_hard_fault(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_mem_fault(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_bus_fault(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_usage_fault(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_svc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_debug_mon(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_pend_sv(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_sys_tick(void);
+__weak __alias(isr_stub) void isr_nmi(void);
+__weak __alias(isr_stub) void isr_hard_fault(void);
+__weak __alias(isr_stub) void isr_mem_fault(void);
+__weak __alias(isr_stub) void isr_bus_fault(void);
+__weak __alias(isr_stub) void isr_usage_fault(void);
+__weak __alias(isr_stub) void isr_svc(void);
+__weak __alias(isr_stub) void isr_debug_mon(void);
+__weak __alias(isr_stub) void isr_pend_sv(void);
+__weak __alias(isr_stub) void isr_sys_tick(void);
 
-__attribute__((weak, alias("__isr_stub"))) void __isr_supc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_rstc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_rtc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_rtt(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_wdt(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_pmc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_efc0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_efc1(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_uart(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_smc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_pioa(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_piob(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_pioc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_piod(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_usart0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_usart1(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_usart2(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_usart3(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_hsmci(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_twi0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_twi1(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_spi0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_ssc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc1(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc2(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc3(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc4(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc5(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc6(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc7(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_tc8(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_pwm(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_adc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_dacc(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_dmac(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_uotghs(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_trng(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_emac(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_can0(void);
-__attribute__((weak, alias("__isr_stub"))) void __isr_can1(void);
+__weak __alias(isr_stub) void isr_supc(void);
+__weak __alias(isr_stub) void isr_rstc(void);
+__weak __alias(isr_stub) void isr_rtc(void);
+__weak __alias(isr_stub) void isr_rtt(void);
+__weak __alias(isr_stub) void isr_wdt(void);
+__weak __alias(isr_stub) void isr_pmc(void);
+__weak __alias(isr_stub) void isr_efc0(void);
+__weak __alias(isr_stub) void isr_efc1(void);
+__weak __alias(isr_stub) void isr_uart(void);
+__weak __alias(isr_stub) void isr_smc(void);
+__weak __alias(isr_stub) void isr_pioa(void);
+__weak __alias(isr_stub) void isr_piob(void);
+__weak __alias(isr_stub) void isr_pioc(void);
+__weak __alias(isr_stub) void isr_piod(void);
+__weak __alias(isr_stub) void isr_usart0(void);
+__weak __alias(isr_stub) void isr_usart1(void);
+__weak __alias(isr_stub) void isr_usart2(void);
+__weak __alias(isr_stub) void isr_usart3(void);
+__weak __alias(isr_stub) void isr_hsmci(void);
+__weak __alias(isr_stub) void isr_twi0(void);
+__weak __alias(isr_stub) void isr_twi1(void);
+__weak __alias(isr_stub) void isr_spi0(void);
+__weak __alias(isr_stub) void isr_ssc(void);
+__weak __alias(isr_stub) void isr_tc0(void);
+__weak __alias(isr_stub) void isr_tc1(void);
+__weak __alias(isr_stub) void isr_tc2(void);
+__weak __alias(isr_stub) void isr_tc3(void);
+__weak __alias(isr_stub) void isr_tc4(void);
+__weak __alias(isr_stub) void isr_tc5(void);
+__weak __alias(isr_stub) void isr_tc6(void);
+__weak __alias(isr_stub) void isr_tc7(void);
+__weak __alias(isr_stub) void isr_tc8(void);
+__weak __alias(isr_stub) void isr_pwm(void);
+__weak __alias(isr_stub) void isr_adc(void);
+__weak __alias(isr_stub) void isr_dacc(void);
+__weak __alias(isr_stub) void isr_dmac(void);
+__weak __alias(isr_stub) void isr_uotghs(void);
+__weak __alias(isr_stub) void isr_trng(void);
+__weak __alias(isr_stub) void isr_emac(void);
+__weak __alias(isr_stub) void isr_can0(void);
+__weak __alias(isr_stub) void isr_can1(void);
 
-__attribute__((section(".vectors")))
-const void *exception_table[] = {
+__section(.vectors) const void *exception_table[] = {
 	&_estack,		/* initial SP value (stack grows down) */
-	&__isr_reset,		/* reset vector */
+	&isr_reset,		/* reset vector */
 	NULL,			/* reserved */
-	&__isr_hard_fault,	/* hard fault */
-	&__isr_mem_fault,	/* hemory management fault */
-	&__isr_bus_fault,	/* bus fault */
-	&__isr_usage_fault,	/* usage fault */
-	NULL,			/* reserved */
-	NULL,			/* reserved */
+	&isr_hard_fault,	/* hard fault */
+	&isr_mem_fault,		/* hemory management fault */
+	&isr_bus_fault,		/* bus fault */
+	&isr_usage_fault,	/* usage fault */
 	NULL,			/* reserved */
 	NULL,			/* reserved */
-	&__isr_svc,		/* SVC call (used for syscalls) */
-	&__isr_debug_mon,	/* reserved for debug */
 	NULL,			/* reserved */
-	&__isr_pend_sv,		/* PendSV */
-	&__isr_sys_tick,	/* SysTick (used by the scheduler) */
+	NULL,			/* reserved */
+	&isr_svc,		/* SVC call (used for syscalls) */
+	&isr_debug_mon,		/* reserved for debug */
+	NULL,			/* reserved */
+	&isr_pend_sv,		/* PendSV */
+	&isr_sys_tick,		/* SysTick (used by the scheduler) */
 
 	/*
 	 * Ok I am REALLY tired of writing out mnemonics.
 	 * Just have a look at include/arch/at91sam3x8e.h for details.
 	 */
-	&__isr_rstc,
-	&__isr_rtc,
-	&__isr_rtt,
-	&__isr_wdt,
-	&__isr_pmc,
-	&__isr_efc0,
-	&__isr_efc1,
-	&__isr_uart,
-	&__isr_smc,
+	&isr_rstc,
+	&isr_rtc,
+	&isr_rtt,
+	&isr_wdt,
+	&isr_pmc,
+	&isr_efc0,
+	&isr_efc1,
+	&isr_uart,
+	&isr_smc,
 	NULL,			/* reserved */
-	&__isr_pioa,
-	&__isr_piob,
-	&__isr_pioc,
-	&__isr_piod,
+	&isr_pioa,
+	&isr_piob,
+	&isr_pioc,
+	&isr_piod,
 	NULL,			/* reserved */
 	NULL,			/* reserved */
-	&__isr_usart0,
-	&__isr_usart1,
-	&__isr_usart2,
-	&__isr_usart3,
-	&__isr_hsmci,
-	&__isr_twi0,
-	&__isr_twi1,
-	&__isr_spi0,
+	&isr_usart0,
+	&isr_usart1,
+	&isr_usart2,
+	&isr_usart3,
+	&isr_hsmci,
+	&isr_twi0,
+	&isr_twi1,
+	&isr_spi0,
 	NULL,			/* reserved */
-	&__isr_ssc,
-	&__isr_tc0,
-	&__isr_tc1,
-	&__isr_tc2,
-	&__isr_tc3,
-	&__isr_tc4,
-	&__isr_tc5,
-	&__isr_tc6,
-	&__isr_tc7,
-	&__isr_tc8,
-	&__isr_pwm,
-	&__isr_adc,
-	&__isr_dacc,
-	&__isr_dmac,
-	&__isr_uotghs,
-	&__isr_trng,
-	&__isr_emac,
-	&__isr_can0,
-	&__isr_can1,
+	&isr_ssc,
+	&isr_tc0,
+	&isr_tc1,
+	&isr_tc2,
+	&isr_tc3,
+	&isr_tc4,
+	&isr_tc5,
+	&isr_tc6,
+	&isr_tc7,
+	&isr_tc8,
+	&isr_pwm,
+	&isr_adc,
+	&isr_dacc,
+	&isr_dmac,
+	&isr_uotghs,
+	&isr_trng,
+	&isr_emac,
+	&isr_can0,
+	&isr_can1,
 };

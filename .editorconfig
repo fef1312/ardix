@@ -12,6 +12,7 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = false
 
+# for VS Code
 [*.json]
 indent_style = space
 indent_size = 4

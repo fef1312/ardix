@@ -27,22 +27,40 @@
 
 #pragma once
 
-#include <ardix/types.h>
+#ifndef __GNUC__
+#error "Only GCC is supported"
+#endif /* __GNUC__ */
 
-#ifndef offsetof
+#ifndef __always_inline
 /**
- * Calculate the byte offset of a struct member relative to the struct itself.
- *
- * @param type: The structure type.
- * @param member: The member inside the struct to the offset of.
- * @returns The offset of `member` reelative to `type`, casted to a `size_t`.
+ * Force a method to always be inlined by the compiler.
+ * Do not use this for functions exceeding one or two lines.
  */
-#define offsetof(type, member) ((size_t)&((type *)0)->member)
-#endif /* offsetof */
+#define __always_inline inline __attribute__((always_inline))
+#endif /* __always_inline */
 
-#ifndef NULL
-/** The `NULL` pointer. */
-#define NULL ((void *)0)
-#endif /* NULL */
+#ifndef __weak
+/**
+ * Add the `weak` attribute to a symbol.
+ * This allows that identifier to be re-declared without any warnings.
+ */
+#define __weak __attribute__((__weak__))
+#endif /* __weak */
 
-#include <stdbool.h>
+#ifndef __alias
+/**
+ * Declare an identifier as an alias for some other identifier.
+ *
+ * @param name: The identifier (w/out quotes) this should be an alias for.
+ */
+#define __alias(name) __attribute__((alias(#name)))
+#endif /* __alias */
+
+#ifndef __section
+/**
+ * Define the program section this symbol should live in.
+ *
+ * @param name: The section name w/out quotes.
+ */
+#define __section(name) __attribute((section(#name)))
+#endif /* __section */

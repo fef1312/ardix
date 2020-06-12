@@ -50,7 +50,7 @@
                 "ARCH_AT91SAM3X8E"
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
-            "cStandard": "c11",
+            "cStandard": "gnu11",
             "cppStandard": "gnu++14",
             "intelliSenseMode": "gcc-arm",
             "includePath": [
@@ -58,9 +58,9 @@
             ],
             "compilerArgs": [
                 "-mcpu=at91sam3x8e",
-                "-marm",
-                "-nostdlib",
+                "-mthumb",
                 "-nodefaultlibs",
+                "-nostartfiles",
                 "-fno-builtin",
                 "-fpack-struct",
                 "-Wall",
