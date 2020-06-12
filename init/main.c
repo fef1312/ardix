@@ -28,6 +28,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
+#define REG_PIOB_PDR			(*(uint32_t *)0x400E1004U)
+#define REG_PIOB_OER			(*(uint32_t *)0x400E1010U)
+#define REG_PIOB_ODR			(*(uint32_t *)0x400E1014U)
+#define REG_PIOB_SODR			(*(uint32_t *)0x400E1030U)
+#define REG_PIOB_CODR			(*(uint32_t *)0x400E1034U)
+
 /**
  * Core init routine.
  *
@@ -36,22 +43,25 @@
  */
 void do_bootstrap(void)
 {
-	/* We'll just let the LED blink for now */
-	uint32_t *piob_enable_reg = (uint32_t *)0x400E1000;
-	uint32_t *piob_output_enable_reg = (uint32_t *)0x400E1010;
-	uint32_t *piob_output_data_reg = (uint32_t *)0x400E1030;
+	bool on = true;
+	uint32_t state = (1 << 27);
+	uint32_t count = 0;
 
-	*piob_enable_reg = 0xffffffff;
-	*piob_output_enable_reg = 0xffffffff;
-	uint32_t state = 0;
+	REG_PIOB_OER |= state;
+	REG_PIOB_PER |= state;
 
-	int count = 0;
 	while (true)
 	{
 		if (count++ != 100000)
 			continue;
-		state = ~state;
-		*piob_output_data_reg = state;
+
+		if (on) {
+			REG_PIOB_SODR |= (1 << 27);
+			on = false;
+		} else {
+			REG_PIOB_CODR |= (1 << 27);
+			on = true;
+		}
 		count = 0;
 	}
 }
