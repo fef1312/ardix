@@ -194,3 +194,232 @@ struct reg_snapshot {
 #define SCB_RETTOBASE_MASK	((uint32_t)1 << 11)
 /** ICSR active exception number bitmask (for `SCB_ICSR`) */
 #define SCB_VECTACTIVE_MASK	((uint32_t)0b111111111u)
+
+/*
+ * Power Management Controller (PMC)
+ */
+
+/** PMC System Clock Enable Register */
+#define REG_PMC_SCER			(*(uint32_t *)0x400E0600U)
+/** PMC Programmable Clock 2 Output Enable bitmask (for `REG_PMC_SCER`) */
+#define REG_PMC_SCER_PCK2_MASK		((uint32_t)1 << 10)
+/** PMC Programmable Clock 1 Output Enable bitmask (for `REG_PMC_SCER`) */
+#define REG_PMC_SCER_PCK1_MASK		((uint32_t)1 << 9)
+/** PMC Programmable Clock 0 Output Enable bitmask (for `REG_PMC_SCER`) */
+#define REG_PMC_SCER_PCK0_MASK		((uint32_t)1 << 8)
+/** PMC Enable USB OTG Clock bitmask for UTMI (for `REG_PMC_SCER`) */
+#define REG_PMC_SCER_UOTGCLK_MASK	((uint32_t)1 << 5)
+
+/** PMC System Clock Disable Register */
+#define REG_PMC_SCDR			(*(uint32_t *)0x400E0604U)
+/** PMC Programmable Clock 2 Output Disable bitmask (for `REG_PMC_SCDR`) */
+#define REG_PMC_SCDR_PCK2_MASK		((uint32_t)1 << 10)
+/** PMC Programmable Clock 1 Output Disable bitmask (for `REG_PMC_SCDR`) */
+#define REG_PMC_SCDR_PCK1_MASK		((uint32_t)1 << 9)
+/** PMC Programmable Clock 0 Output Disable bitmask (for `REG_PMC_SCDR`) */
+#define REG_PMC_SCDR_PCK0_MASK		((uint32_t)1 << 8)
+/** PMC Disable USB OTG Clock bitmask for UTMI (for `REG_PMC_SCDR`) */
+#define REG_PMC_SCDR_UOTGCLK_MASK	((uint32_t)1 << 5)
+
+/** PMC System Clock Status Register */
+#define REG_PMC_SCSR			(*(uint32_t *)0x400E0608U)
+/** PMC Programmable Clock 2 Output Status bitmask */
+#define REG_PMC_SCSR_PCK2_MASK		((uint32_t)1 << 10)
+/** PMC Programmable Clock 1 Output Status bitmask */
+#define REG_PMC_SCSR_PCK1_MASK		((uint32_t)1 << 9)
+/** PMC Programmable Clock 0 Output Status bitmask */
+#define REG_PMC_SCSR_PCK0_MASK		((uint32_t)1 << 8)
+/** PMC USB OTG Clock Status bitmask */
+#define REG_PMC_SCSR_UOTGCLK_MASK	((uint32_t)1 << 5)
+
+/** PMC Peripheral Clock Enable Register 0 */
+#define REG_PMC_PCER0			(*(uint32_t *)0x400E0610U)
+/** PMC Peripheral Clock x Enable bitmask (2-31) */
+#define REG_PMC_PCER0_PID(x)		((uint32_t)1 << x)
+
+/** PMC Peripheral Clock Disable Register 0 */
+#define REG_PMC_PCDR0			(*(uint32_t *)0x400E0614U)
+/** PMC Peripheral Clock x Disable bitmask (2-31) */
+#define REG_PMC_PCDR0_PID(x)		((uint32_t)1 << x)
+
+/** PMC Peripheral Clock Status Register 0 */
+#define REG_PMC_PCSR0			(*(const uint32_t *)0x400E0618U)
+/** PMC Peripheral Clock x Status bitmask (2-31) */
+#define REG_PMC_PCSR0_PID(x)		((uint32_t)1 << x)
+
+/** PMC UTMI Clock Configuration Register */
+#define REG_PMC_CKGR_UCKR			(*(uint32_t *)0x400E061CU)
+/** PMC UTMI PLL Start-Up Time bitmask (shifted 20 to the left) */
+#define REG_PMC_CKGR_UCKR_UPLLCOUNT_MASK	((uint32_t)0b1111 << 20)
+/** PMC UTMI PLL Enable bitmask */
+#define REG_PMC_CKGR_UCKR_UPLLEN_MASK		((uint32_t)1 << 16)
+
+/** PMC Clock Generator Main Oscillator Register */
+#define REG_CKGR_MOR			(*(uint32_t *)0x400E0620U)
+/** PMC Clock Failure Detector Enable bitmask */
+#define REG_CKGR_MOR_CFDEN_MASK		((uint32_t)1 << 25)
+/** PMC Main Oscillator Selection bitmask */
+#define REG_CKGR_MOR_MOSCSEL_MASK	((uint32_t)1 << 24)
+/** PMC Main Oscillator Password bitmask (shifted 16 to the left, should be `0x37`) */
+#define REG_CKGR_MOR_KEY_MASK		((uint32_t)0xFF << 16)
+/** PMC Main Crystal Oscillator Start-up Time bitmask (<< 8, 8 bits, unit: clock cycles * 8) */
+#define REG_CKGR_MOR_MOSCXTST_MASK	((uint32_t)0xFF << 8)
+/** PMC Main On-Chip RC Oscillator Frequency Selection bitmask (<< 4, 2 bits) */
+#define REG_CKGR_MOR_MOSCRCF_MASK	((uint32_t)0b111 << 4)
+/** PMC Main On-Chip RC Oscillator Enable bitmask */
+#define REG_CKGR_MOR_MOSCRCEN_MASK	((uint32_t)1 << 3)
+/** PMC Main Crystal Oscillator Bypass bitmask */
+#define REG_CKGR_MOR_MOSCXTBY_MASK	((uint32_t)1 << 1)
+/** PMC Main Crystal Oscillator Enable bitmask */
+#define REG_CKGR_MOR_MOSCXTEN_MASK	((uint32_t)1)
+
+/** PMC Clock Generator Main Clock Frequency Register */
+#define REG_CKGR_MCFR			(*(const uint32_t *)0x400E0624U)
+/** PMC Main Clock Ready bitmask */
+#define REG_CKGR_MCFR_MAINFRDY_MASK	((uint32_t)1 << 16)
+/** PMC Main Clock Frequency bitmask (16-bit, equals amount of main clocks per 16 slow clocks) */
+#define REG_CKGR_MCFR_MAINF_MASK	((uint32_t)0xFFFF)
+
+/** PMC Clock Generator PLLA Register */
+#define REG_CKGR_PLLAR			(*(uint32_t *)0x400E0628U)
+/** PMC Clock Generator: Must be set to one when writing to CKGR_PLLAR bitmask */
+#define REG_CKGR_PLLAR_ONE_MASK		((uint32_t)1 << 29)
+/** PMC PLLA Multiplier bitmask (<< 16, 11 bits) */
+#define REG_CKGR_PLLAR_MULA_MASK	((uint32_t)0x7FF << 16)
+/** PMC PLLA Counter bitmask (<< 8, 6 bits) */
+#define REG_CKGR_PLLAR_PLLACOUNT_MASK	((uint32_t)0x3F << 8)
+/** PMC PLLA Divider bitmask (8 bits) */
+#define REG_CKGR_PLLAR_DIVA_MASK	((uint32_t)0xFF)
+
+/** PMC Master Clock Register */
+#define REG_PMC_MCKR			(*(uint32_t *)0x400E0630U)
+/** PMC Master Clock UPLL Divisor by 2 bitmask */
+#define REG_PMC_MCKR_UPLLDIV2_MASK	((uint32_t)1 << 13)
+/** PMC Master Clock PLLA Divisor by 2 bitmask */
+#define REG_PMC_MCKR_PLLADIV2_MASK	((uint32_t)1 << 12)
+/** PMC Master Clock Processor Clock Prescaler bitmask (<< 4, 3 bits) */
+#define REG_PMC_MCKR_PRES_MASK		((uint32_t)0x7 << 4)
+/** PMC Master Clock Source Selection bitmask (2 bits) */
+#define REG_PMC_MCKR_CSS_MASK		((uint32_t)0x3)
+
+/** PMC USB Clock Register */
+#define REG_PMC_USB			(*(uint32_t *)0x400E0638U)
+/** PMC USB Divider for USB Clock bitmask (<< 8, 8 bits) */
+#define REG_PMC_USB_USBDIV_MASK		((uint32_t)0xF << 8)
+/** PMC USB Input Clock Selection bitmask */
+#define REG_PMC_USB_USBS_MASK		((uint32_t)1)
+
+/** PMC Programmable Clock Register */
+#define REG_PMC_PCKx			(*(uint32_t *)0x400E0640U)
+/** PMC Programmable Clock Prescaler bitmask (<< 4, 3 bits) */
+#define REG_PMC_PCKx_PRES_MASK		((uint32_t)0x7 << 4)
+/** PMC Master Clock Source Selection bitmask (3 bits) */
+#define REG_PMC_PCKx_CSS_MASK		((uint32_t)0x7)
+
+/** PMC Interrupt Enable Register */
+#define REG_PMC_IER			(*(uint32_t *)0x400E0660U)
+/** PMC Clock Failure Detector Event Interrupt Enable bitmask */
+#define REG_PMC_IER_CFDEV_MASK		((uint32_t)1 << 18)
+/** PMC Main On-Chip RC Status Interrupt Enable bitmask */
+#define REG_PMC_IER_MOSCRCS_MASK	((uint32_t)1 << 17)
+/** PMC Main Oscillator Selection Status Interrupt Enable bitmask */
+#define REG_PMC_IER_MOSCSELS_MASK	((uint32_t)1 << 16)
+/** PMC Programmable Clock Ready 2 Interrupt Enable bitmask */
+#define REG_PMC_IER_PCKRDY2_MASK	((uint32_t)1 << 10)
+/** PMC Programmable Clock Ready 1 Interrupt Enable bitmask */
+#define REG_PMC_IER_PCKRDY1_MASK	((uint32_t)1 << 9)
+/** PMC Programmable Clock Ready 0 Interrupt Enable bitmask */
+#define REG_PMC_IER_PCKRDY0_MASK	((uint32_t)1 << 8)
+/** PMC UTMI PLL Lock Interrupt Enable bitmask */
+#define REG_PMC_IER_LOCKU_MASK		((uint32_t)1 << 6)
+/** PMC Master Clock Ready Interrupt Enable bitmask */
+#define REG_PMC_IER_MCKRDY_MASK		((uint32_t)1 << 3)
+/** PMC PLLA Lock Interrupt Enable bitmask */
+#define REG_PMC_IER_LOCKA_MASK		((uint32_t)1 << 1)
+/** PMC Main Crystal Oscillator Status Interrupt Enable bitmask */
+#define REG_PMC_IER_MOSCXTS_MASK	((uint32_t)1)
+
+/** PMC Interrupt Disable Register */
+#define REG_PMC_IDR			(*(uint32_t *)0x400E0664U)
+/** PMC Clock Failure Detector Event Interrupt Disable bitmask */
+#define REG_PMC_IDR_CFDEV_MASK		((uint32_t)1 << 18)
+/** PMC Main On-Chip RC Status Interrupt Disable bitmask */
+#define REG_PMC_IDR_MOSCRCS_MASK	((uint32_t)1 << 17)
+/** PMC Main Oscillator Selection Status Interrupt Disable bitmask */
+#define REG_PMC_IDR_MOSCSELS_MASK	((uint32_t)1 << 16)
+/** PMC Programmable Clock Ready 2 Interrupt Disable bitmask */
+#define REG_PMC_IDR_PCKRDY2_MASK	((uint32_t)1 << 10)
+/** PMC Programmable Clock Ready 1 Interrupt Disable bitmask */
+#define REG_PMC_IDR_PCKRDY1_MASK	((uint32_t)1 << 9)
+/** PMC Programmable Clock Ready 0 Interrupt Disable bitmask */
+#define REG_PMC_IDR_PCKRDY0_MASK	((uint32_t)1 << 8)
+/** PMC UTMI PLL Lock Interrupt Disable bitmask */
+#define REG_PMC_IDR_LOCKU_MASK		((uint32_t)1 << 6)
+/** PMC Master Clock Ready Interrupt Disable bitmask */
+#define REG_PMC_IDR_MCKRDY_MASK		((uint32_t)1 << 3)
+/** PMC PLLA Lock Interrupt Disable bitmask */
+#define REG_PMC_IDR_LOCKA_MASK		((uint32_t)1 << 1)
+/** PMC Main Crystal Oscillator Status Interrupt Disable bitmask */
+#define REG_PMC_IDR_MOSCXTS_MASK	((uint32_t)1)
+
+/** PMC Interrupt Status Register */
+#define REG_PMC_SR			(*(const uint32_t *)0x400E0668U)
+/** PMC Clock Failure Detector Event Interrupt Status bitmask */
+#define REG_PMC_SR_CFDEV_MASK		((uint32_t)1 << 18)
+/** PMC Main On-Chip RC Status Interrupt Status bitmask */
+#define REG_PMC_SR_MOSCRCS_MASK		((uint32_t)1 << 17)
+/** PMC Main Oscillator Selection Status Interrupt Status bitmask */
+#define REG_PMC_SR_MOSCSELS_MASK	((uint32_t)1 << 16)
+/** PMC Programmable Clock Ready 2 Interrupt Status bitmask */
+#define REG_PMC_SR_PCKRDY2_MASK		((uint32_t)1 << 10)
+/** PMC Programmable Clock Ready 1 Interrupt Status bitmask */
+#define REG_PMC_SR_PCKRDY1_MASK		((uint32_t)1 << 9)
+/** PMC Programmable Clock Ready 0 Interrupt Status bitmask */
+#define REG_PMC_SR_PCKRDY0_MASK		((uint32_t)1 << 8)
+/** PMC UTMI PLL Lock Interrupt Status bitmask */
+#define REG_PMC_SR_LOCKU_MASK		((uint32_t)1 << 6)
+/** PMC Master Clock Ready Interrupt Status bitmask */
+#define REG_PMC_SR_MCKRDY_MASK		((uint32_t)1 << 3)
+/** PMC PLLA Lock Interrupt Status bitmask */
+#define REG_PMC_SR_LOCKA_MASK		((uint32_t)1 << 1)
+/** PMC Main Crystal Oscillator Status Interrupt Status bitmask */
+#define REG_PMC_SR_MOSCXTS_MASK		((uint32_t)1)
+
+/** PMC Interrupt Mask Register */
+#define REG_PMC_IMR			(*(const uint32_t *)0x400E066CU)
+/** PMC Clock Failure Detector Event Interrupt Mask bitmask */
+#define REG_PMC_IMR_CFDEV_MASK		((uint32_t)1 << 18)
+/** PMC Main On-Chip RC Status Interrupt Mask bitmask */
+#define REG_PMC_IMR_MOSCRCS_MASK	((uint32_t)1 << 17)
+/** PMC Main Oscillator Selection Status Interrupt Mask bitmask */
+#define REG_PMC_IMR_MOSCSELS_MASK	((uint32_t)1 << 16)
+/** PMC Programmable Clock Ready 2 Interrupt Mask bitmask */
+#define REG_PMC_IMR_PCKRDY2_MASK	((uint32_t)1 << 10)
+/** PMC Programmable Clock Ready 1 Interrupt Mask bitmask */
+#define REG_PMC_IMR_PCKRDY1_MASK	((uint32_t)1 << 9)
+/** PMC Programmable Clock Ready 0 Interrupt Mask bitmask */
+#define REG_PMC_IMR_PCKRDY0_MASK	((uint32_t)1 << 8)
+/** PMC UTMI PLL Lock Interrupt Mask bitmask */
+#define REG_PMC_IMR_LOCKU_MASK		((uint32_t)1 << 6)
+/** PMC Master Clock Ready Interrupt Mask bitmask */
+#define REG_PMC_IMR_MCKRDY_MASK		((uint32_t)1 << 3)
+/** PMC PLLA Lock Interrupt Mask bitmask */
+#define REG_PMC_IMR_LOCKA_MASK		((uint32_t)1 << 1)
+/** PMC Main Crystal Oscillator Status Interrupt Mask bitmask */
+#define REG_PMC_IMR_MOSCXTS_MASK	((uint32_t)1)
+
+/* TODO */
+
+/** PMC Write Protect Mode Register */
+#define REG_PMC_WPMR			(*(uint32_t *)0x400E06E4U)
+/** PMC Write Protect Key bitmask (<< 8, 24 bits, needs to be `0x504D43` ("PMC")) */
+#define REG_PMC_WPMR_WPKEY_MASK		((uint32_t)0xFFFFFF << 8)
+/** PMC Write Protect Enable bitmask */
+#define REG_PMC_WPMR_WPEN_MASK		((uint32_t)1)
+
+/** PMC Write Protect Status Register */
+#define REG_PMC_WPSR			(*(uint32_t *)0x400E06E8U)
+/** PMC Write Protect Violation Status bitmask */
+#define REG_PMC_WPSR_WPVSRC_MASK	((uint32_t)0xFFFF << 8)
+/** PMC Write Protect Violation Status bitmask (<< 8, 16 bits) */
+#define REG_PMC_WPSR_WPVS_MASK		((uint32_t)1)
