@@ -143,8 +143,8 @@ __section(.vectors) const void *exception_table[] = {
 	&isr_svc,		/* SVC call (used for syscalls) */
 	&isr_debug_mon,		/* reserved for debug */
 	NULL,			/* reserved */
-	&isr_pend_sv,		/* PendSV */
-	&isr_sys_tick,		/* SysTick (used by the scheduler) */
+	&isr_pend_sv,		/* PendSV (used by the scheduler) */
+	&isr_sys_tick,		/* SysTick */
 
 	/*
 	 * Ok I am REALLY tired of writing out mnemonics.

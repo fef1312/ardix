@@ -26,53 +26,29 @@
  */
 
 #include <arch/sched.h>
-#include <ardix/clock.h>
-#include <ardix/sched.h>
-#include <ardix/types.h>
-#include <stddef.h>
+#include <arch/at91sam3x8e/hardware.h>
 
-extern uint32_t _sstack;
-extern uint32_t _estack;
-
-struct process *_current_process;
-
-static struct process procs[SCHED_MAXPROC + 1];
-
-int sched_init(void)
+int sched_hwtimer_init(unsigned int freq)
 {
-	int i;
+	uint32_t ticks = F_CPU / freq;
+	if (ticks > REG_SYSTICK_LOAD_RELOAD_MASK)
+		return 1;
 
-	_current_process = &procs[0];
-	_current_process->next = _current_process;
-	_current_process->sp = &_sstack;
-	_current_process->stack_bottom = &_estack;
-	_current_process->pid = 0;
-	_current_process->state = PROC_READY;
+	REG_SYSTICK_LOAD = (ticks & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
+	REG_SYSTICK_VAL = 0U;
+	REG_SYSTICK_CTRL = REG_SYSTICK_CTRL_CLKSOURCE_MASK
+			 | REG_SYSTICK_CTRL_TICKINT_MASK
+			 | REG_SYSTICK_CTRL_ENABLE_MASK;
 
-	for (i = 1; i < SCHED_MAXPROC + 1; i++) {
-		procs[i].state = PROC_DEAD;
-		procs[i].pid = -1;
-	}
-
-	i = sched_hwtimer_init(10000);
-
-	return i;
+	return 0;
 }
 
-void *sched_process_switch(void *curr_sp)
+void sched_hwtimer_pause(void)
 {
-	struct process *nextproc = _current_process;
-	_current_process->sp = curr_sp;
+	REG_SYSTICK_CTRL &= ~REG_SYSTICK_CTRL_ENABLE_MASK;
+}
 
-	while (true) {
-		nextproc = nextproc->next;
-		if (nextproc->state == PROC_QUEUE || nextproc->state == PROC_READY) {
-			_current_process->state = PROC_QUEUE;
-			nextproc->state = PROC_READY;
-			_current_process = nextproc;
-			break;
-		}
-	}
-
-	return _current_process->sp;
+void sched_hwtimer_resume(void)
+{
+	REG_SYSTICK_CTRL |= REG_SYSTICK_CTRL_ENABLE_MASK;
 }

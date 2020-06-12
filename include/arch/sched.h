@@ -25,54 +25,21 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arch/sched.h>
-#include <ardix/clock.h>
-#include <ardix/sched.h>
-#include <ardix/types.h>
-#include <stddef.h>
+#pragma once
 
-extern uint32_t _sstack;
-extern uint32_t _estack;
+/**
+ * Initialize a hardware timer for schduling.
+ *
+ * @param freq: The timer frequency in Hertz.
+ */
+int sched_hwtimer_init(unsigned int freq);
 
-struct process *_current_process;
+/**
+ * Temporarily pause the scheduling timer (for atomic contexts).
+ */
+void sched_hwtimer_pause(void);
 
-static struct process procs[SCHED_MAXPROC + 1];
-
-int sched_init(void)
-{
-	int i;
-
-	_current_process = &procs[0];
-	_current_process->next = _current_process;
-	_current_process->sp = &_sstack;
-	_current_process->stack_bottom = &_estack;
-	_current_process->pid = 0;
-	_current_process->state = PROC_READY;
-
-	for (i = 1; i < SCHED_MAXPROC + 1; i++) {
-		procs[i].state = PROC_DEAD;
-		procs[i].pid = -1;
-	}
-
-	i = sched_hwtimer_init(10000);
-
-	return i;
-}
-
-void *sched_process_switch(void *curr_sp)
-{
-	struct process *nextproc = _current_process;
-	_current_process->sp = curr_sp;
-
-	while (true) {
-		nextproc = nextproc->next;
-		if (nextproc->state == PROC_QUEUE || nextproc->state == PROC_READY) {
-			_current_process->state = PROC_QUEUE;
-			nextproc->state = PROC_READY;
-			_current_process = nextproc;
-			break;
-		}
-	}
-
-	return _current_process->sp;
-}
+/**
+ * Resume the previously paused scheduling timer.
+ */
+void sched_hwtimer_resume(void);
