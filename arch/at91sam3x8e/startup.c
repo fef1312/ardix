@@ -47,9 +47,9 @@ void do_bootstrap(void);
 
 void isr_reset(void)
 {
-	memcpy(
-		&_etext,
+	memmove(
 		&_srelocate,
+		&_etext,
 		(size_t)(&_erelocate) - (size_t)(&_srelocate)
 	);
 	memset(
