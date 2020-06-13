@@ -28,6 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <arch/at91sam3x8e/interrupt.h>
+#include <ardix/string.h>
 #include <toolchain.h>
 
 /* from flash.ld */
@@ -46,19 +47,16 @@ void do_bootstrap(void);
 
 void isr_reset(void)
 {
-	uint32_t *src;
-	uint32_t *dest;
-
-	/* copy .data to sram */
-	dest = &_etext;
-	src = &_srelocate;
-	while (src < &_erelocate)
-		*dest++ = *src++;
-
-	/** clear .bss */
-	dest = &_szero;
-	while (dest <= &_ezero)
-		*dest++ = 0;
+	memcpy(
+		&_etext,
+		&_srelocate,
+		(size_t)(&_erelocate) - (size_t)(&_srelocate)
+	);
+	memset(
+		&_szero,
+		0,
+		(size_t)(&_ezero) - (size_t)(&_szero)
+	);
 
 	/* start the Kernel */
 	do_bootstrap();
