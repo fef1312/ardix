@@ -25,9 +25,11 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <arch/hardware.h>
 #include <arch/sched.h>
 #include <ardix/clock.h>
 #include <ardix/sched.h>
+#include <ardix/string.h>
 #include <ardix/types.h>
 #include <stddef.h>
 
@@ -36,7 +38,12 @@ extern uint32_t _estack;
 
 struct process *_current_process;
 
-static struct process procs[SCHED_MAXPROC + 1];
+/**
+ * An array of all processes.
+ * The `pid` not only identifies each process, it is also the index of the
+ * struct in this array.  Unused slots have a `pid` of `-1`, however.
+ */
+static struct process procs[CONFIG_SCHED_MAXPROC + 1];
 
 int sched_init(void)
 {
@@ -49,14 +56,35 @@ int sched_init(void)
 	_current_process->pid = 0;
 	_current_process->state = PROC_READY;
 
-	for (i = 1; i < SCHED_MAXPROC + 1; i++) {
-		procs[i].state = PROC_DEAD;
+	for (i = 1; i < CONFIG_SCHED_MAXPROC + 1; i++) {
+		procs[i].next = NULL;
+		procs[i].sp = NULL;
+		procs[i].stack_bottom = NULL;
 		procs[i].pid = -1;
+		procs[i].state = PROC_DEAD;
 	}
 
-	i = sched_hwtimer_init(10000);
+	i = sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
 
 	return i;
+}
+
+/**
+ * Determine whether the specified process should be executed next.
+ *
+ * @param proc: The process.
+ * @returns Whether `proc` should be next in line for the scheduler.
+ */
+static inline bool sched_proc_should_run(const struct process *proc)
+{
+	unsigned long int sleep_usecs;
+	unsigned long int lastexec;
+	enum proc_state state = proc->state;
+
+	if (state == PROC_QUEUE || state == PROC_READY)
+		return true;
+
+	return false;
 }
 
 void *sched_process_switch(void *curr_sp)
@@ -64,14 +92,20 @@ void *sched_process_switch(void *curr_sp)
 	struct process *nextproc = _current_process;
 	_current_process->sp = curr_sp;
 
+	if (_current_process->state != PROC_SLEEP)
+		_current_process->state = PROC_QUEUE;
+
+	sched_interrupts++;
+
 	while (true) {
 		nextproc = nextproc->next;
-		if (nextproc->state == PROC_QUEUE || nextproc->state == PROC_READY) {
-			_current_process->state = PROC_QUEUE;
+		if (sched_proc_should_run(nextproc)) {
 			nextproc->state = PROC_READY;
 			_current_process = nextproc;
 			break;
 		}
+
+		/* TODO: Let the CPU sleep if there is nothing to do */
 	}
 
 	return _current_process->sp;

@@ -27,6 +27,29 @@
 
 #include <arch/sched.h>
 #include <arch/at91sam3x8e/hardware.h>
+#include <ardix/string.h>
+#include <ardix/sched.h>
+#include <stdbool.h>
+#include <toolchain.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
+static __always_inline void sched_pendsv_req(void)
+{
+	SCB_ICSR |= SCB_PENDSVSET_MASK;
+}
+
+void isr_sys_tick(void)
+{
+	/*
+	 * fire a PendSV interrupt and do the actual context switching there
+	 * because it is faster that way (according to the docs, at least)
+	 */
+	sched_pendsv_req();
+}
 
 int sched_hwtimer_init(unsigned int freq)
 {
@@ -36,19 +59,19 @@ int sched_hwtimer_init(unsigned int freq)
 
 	REG_SYSTICK_LOAD = (ticks & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
 	REG_SYSTICK_VAL = 0U;
-	REG_SYSTICK_CTRL = REG_SYSTICK_CTRL_CLKSOURCE_MASK
-			 | REG_SYSTICK_CTRL_TICKINT_MASK
-			 | REG_SYSTICK_CTRL_ENABLE_MASK;
+	REG_SYSTICK_CTRL = REG_SYSTICK_CTRL_CLKSOURCE_BIT /* MCK */
+			 | REG_SYSTICK_CTRL_TICKINT_BIT /* trigger exception */
+			 | REG_SYSTICK_CTRL_ENABLE_BIT; /* enable SysTick */
 
 	return 0;
 }
 
-void sched_hwtimer_pause(void)
 {
-	REG_SYSTICK_CTRL &= ~REG_SYSTICK_CTRL_ENABLE_MASK;
 }
 
-void sched_hwtimer_resume(void)
 {
-	REG_SYSTICK_CTRL |= REG_SYSTICK_CTRL_ENABLE_MASK;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */

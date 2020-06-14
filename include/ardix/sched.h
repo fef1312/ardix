@@ -30,14 +30,19 @@
 #include <ardix/types.h>
 #include <arch/hardware.h>
 
-#ifndef SCHED_MAXPROC
+#ifndef CONFIG_SCHED_MAXPROC
 /** The maximum number of processes. */
-#define SCHED_MAXPROC 16
+#define CONFIG_SCHED_MAXPROC 16
 #endif /* SCHED_MAXPROC */
 
-#if SCHED_MAXPROC > 64
-#warning "SCHED_MAXPROC is > 64, this could have a significant impact on performance"
-#endif /* SCHED_MAXPROC > 64 */
+#if CONFIG_SCHED_MAXPROC > 64
+#warning "CONFIG_SCHED_MAXPROC is > 64, this could have a significant impact on performance"
+#endif /* CONFIG_SCHED_MAXPROC > 64 */
+
+#ifndef CONFIG_SCHED_INTR_FREQ
+/** Frequency (in Hertz) at which a scheduling interrupt should be fired */
+#define CONFIG_SCHED_INTR_FREQ 10000U
+#endif
 
 enum proc_state {
 	/** Process is dead / ddoesn't exist */
@@ -115,7 +120,7 @@ struct process *sched_process_create(void (*exec)(void));
  *
  * @param msecs: The amount of milliseconds to (approximately) sleep for.
  */
-void sleep(unsigned long int msecs);
+void msleep(unsigned long int msecs);
 
 /**
  * Block the entire CPU from execution for the specified amount of microseconds.

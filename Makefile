@@ -37,7 +37,7 @@ CFLAGS = $(EXTRA_CFLAGS)
 CFLAGS += -g -nodefaultlibs -nostartfiles
 CFLAGS += -I$(PWD)/include
 CFLAGS += -DARCH=$(ARCH)
-CFLAGS += -fpack-struct -fno-builtin -std=gnu11
+CFLAGS += -fno-builtin -std=gnu11
 
 EXTRA_LDFLAGS ?=
 LDFLAGS = $(EXTRA_LDFLAGS)

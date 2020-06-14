@@ -27,6 +27,36 @@
 
 #pragma once
 
+/**
+ * Block the CPU by continuously checking the same expression in an
+ * infinite loop, until the condition is true.  Useful for polling.
+ *
+ * @param expr The expression.
+ */
+#define mom_are_we_there_yet(expr) ({ while (!(expr)); })
+
+/**
+ * Initialize the system hardware.
+ * This function is responsible for putting the entire system to a state that
+ * allows the Kernel to perform its bootstrap procedure and is therefore the
+ * first thing to be called by `do_bootstrap`.  Possible tasks to be dealt with
+ * here include:
+ *
+ * - Performing sanity checks to see if there are any major hardware faults
+ * - Setting up the CPU frequency and other oscillators
+ * - Communicating that frequency change to any hardware component that needs
+ *   to know about it (especially the flash controller)
+ * - Enabling interrupts that are vital for stable operation
+ *
+ * If any of this fails, a nonzero value must be returned to indicate the error
+ * condition.  An on-chip LED should be used to "morse" some kind of diagnostic
+ * message, if the system has one (kind of like BIOS beep codes).
+ *
+ * @returns `0` on success, a negative POSIX error code if applicable, or a
+ *	positive (platform-dependant) number on hardware fault.
+ */
+int sys_init(void);
+
 #if defined(ARCH_ATMEGA328P)
 #error "ATmega328p is not implemented (yet?)"
 #elif defined(ARCH_AT91SAM3X8E)
