@@ -26,4 +26,5 @@
 ARDIX_LIB_PWD := $(PWD)/lib
 
 ARDIX_SOURCES += \
+	$(ARDIX_LIB_PWD)/ctype.c \
 	$(ARDIX_LIB_PWD)/string.c
