@@ -50,16 +50,17 @@ void do_bootstrap(void)
 	REG_PIOB_OER |= state;
 	REG_PIOB_PER |= state;
 
-	while (true)
-	{
+	/* we'll only let the LED flash for now */
+
+	while (true) {
 		if (count++ != 100000)
 			continue;
 
 		if (on) {
-			REG_PIOB_SODR |= (1 << 27);
+			REG_PIOB_SODR |= state;
 			on = false;
 		} else {
-			REG_PIOB_CODR |= (1 << 27);
+			REG_PIOB_CODR |= state;
 			on = true;
 		}
 		count = 0;
