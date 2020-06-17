@@ -57,12 +57,11 @@
                 "./include"
             ],
             "compilerArgs": [
-                "-mcpu=at91sam3x8e",
+                "-mcpu=cortex-m3",
                 "-mthumb",
                 "-nodefaultlibs",
                 "-nostartfiles",
                 "-fno-builtin",
-                "-fpack-struct",
                 "-Wall",
                 "-Wstrict-prototypes",
                 "-Wredundant-decls",
