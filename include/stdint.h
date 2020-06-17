@@ -78,22 +78,3 @@ typedef unsigned long int	uint32_t;
 #endif /* __UINT32_TYPE__ */
 
 typedef uint8_t			bool;
-
-/*
- * integer limits
- */
-
-#define CHAR_MAX		((char)0x7f)
-#define CHAR_MIN		(CHAR_MAX + 1)
-#define UCHAR_MAX		((unsigned char)0xff)
-#define UCHAR_MIN		((unsigned char)0x00)
-
-#define INT_MAX			((int)0x7fff)
-#define INT_MIN			(INT_MAX + 1)
-#define UINT_MAX		((unsigned int)0xffff)
-#define UINT_MIN		((unsigned int)0x0000)
-
-#define LONG_MAX		((long)0x7fffffff)
-#define LONG_MIN		(LONG_MAX + 1)
-#define ULONG_MAX		((unsigned long)0xffffffff)
-#define ULONG_MIN		((unsigned long)0x00000000)

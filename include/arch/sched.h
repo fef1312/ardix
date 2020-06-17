@@ -27,6 +27,9 @@
 
 #pragma once
 
+#include <arch/hardware.h>
+#include <stdbool.h>
+
 /**
  * Initialize a hardware timer for schduling.
  *
@@ -35,11 +38,30 @@
 int sched_hwtimer_init(unsigned int freq);
 
 /**
- * Temporarily pause the scheduling timer (for atomic contexts).
+ * Disable all scheduling interrupts in order to enter atomic context.
  */
-void sched_hwtimer_pause(void);
+void sched_atomic_enter(void);
 
 /**
- * Resume the previously paused scheduling timer.
+ * Re-enable scheduling interrupts, i.e. leave atomic context.
+ *
+ * @param resched: If `true`, request the scheduler to proceed to the next
+ *	process ASAP.  Until then, put the CPU to sleep if required.
  */
-void sched_hwtimer_resume(void);
+void sched_atomic_leave(bool resched);
+
+/**
+ * Infinite loop of sleep instructions.
+ */
+void sched_idle_process_loop(void);
+
+/**
+ * Initialize the register values of a newly allocated process image.
+ * Called by the scheduling subsystem when a process is being created.
+ *
+ * @param reg_snap: The stack memory location where the initial register values
+ *	are to be loaded from.
+ * @param entry: The process entry point.
+ */
+void sched_init_process_regs(struct reg_snapshot *reg_snap,
+			     void (*entry)(void));

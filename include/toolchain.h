@@ -67,5 +67,5 @@
  *
  * @param name: The section name w/out quotes.
  */
-#define __section(name) __attribute((section(#name)))
+#define __section(name) __attribute__((section(#name)))
 #endif /* __section */
