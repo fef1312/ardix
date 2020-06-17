@@ -33,10 +33,34 @@
 #define __SIZE_TYPE__ unsigned long int
 #endif /* __SIZE_TYPE__ */
 
+#if __SIZEOF_SIZE_T__ == 1
+#define _SSIZE_TYPE_ int8_t;
+#elif __SIZEOF_SIZE_T__ == 2
+#define _SSIZE_TYPE_ int16_t;
+#else
+#define _SSIZE_TYPE_ int32_t;
+#endif /* __SIZEOF_SIZE_T__ */
+
 /** Unsigned size specifier. */
 typedef __SIZE_TYPE__		size_t;
 /** Signed size specifier (negative sizes mean error codes). */
-typedef signed long int		ssize_t;
+typedef __PTRDIFF_TYPE__	ssize_t;
+
+#if CONFIG_SCHED_MAXPROC < 128
+#define _PID_TYPE_ int8_t
+#elif CONFIG_SCHED_MAXPROC < 65536
+#define _PID_TYPE_ int16_t
+#else
+#define _PID_TYPE_ int32_t
+#endif /* SCHED_MAXPROC */
 
 /** Process identifier. */
-typedef int8_t			pid_t;
+typedef _PID_TYPE_		pid_t;
+
+#ifndef __SIG_ATOMIC_TYPE__
+#define __SIG_ATOMIC_TYPE__ int
+#endif /* __SIG_ATOMIC_TYPE__ */
+
+typedef struct {
+	__SIG_ATOMIC_TYPE__ lock;
+} atomic_t;

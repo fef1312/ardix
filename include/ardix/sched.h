@@ -45,7 +45,7 @@
 #endif
 
 enum proc_state {
-	/** Process is dead / ddoesn't exist */
+	/** Process is dead / doesn't exist */
 	PROC_DEAD,
 	/** Process is ready for execution or currently running. */
 	PROC_READY,
@@ -131,3 +131,13 @@ void msleep(unsigned long int msecs);
  * @param usecs: The amount of microseconds to halt the CPU for.
  */
 void atomic_udelay(unsigned long int usecs);
+
+/**
+ * Attempt to acquire an atomic lock.
+ *
+ * @param mutex: The pointer to the mutex.
+ * @returns `0` if the lock could be acquired, and `-EAGAIN` if not.
+ */
+int atomic_lock(atomic_t *mutex);
+
+void atomic_unlock(atomic_t *mutex);

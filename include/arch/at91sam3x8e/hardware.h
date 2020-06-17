@@ -29,8 +29,8 @@
 
 #include <ardix/types.h>
 
-/** CPU clock frequency in Hertz */
-#define F_CPU 84000000UL
+/** Current (volatile) system frequency in Hertz. */
+extern uint32_t sys_core_clock;
 
 /** Pointer size in bytes */
 #define PTRSIZE 4
@@ -150,21 +150,21 @@ struct reg_snapshot {
  */
 
 /** UART Control Register */
-#define REG_UART_CR		(*(uint32_t *)0x400E0800U)
+#define REG_UART_CR			(*(uint32_t *)0x400E0800U)
 /** UART Control Register Reset Status Bits bitmask (for `REG_UART_CR`) */
-#define REG_RSTSTA_MASK		((uint32_t)1 << 8)
+#define REG_UART_CR_RSTSTA_MASK		((uint32_t)1 << 8)
 /** UART Control Register Transmitter Disable bitmaask (for `REG_UART_CR`) */
-#define REG_TXDIS_MASK		((uint32_t)1 << 7)
+#define REG_UART_CR_TXDIS_MASK		((uint32_t)1 << 7)
 /** UART Control Register Transmitter Enable bitmaask (for `REG_UART_CR`) */
-#define REG_TXEN_MASK		((uint32_t)1 << 6)
+#define REG_UART_CS_TXEN_MASK		((uint32_t)1 << 6)
 /** UART Control Register Receiver Disable bitmask (for `REG_UART_CR`) */
-#define REG_RXDIS_MASK		((uint32_t)1 << 5)
+#define REG_UART_CS_RXDIS_MASK		((uint32_t)1 << 5)
 /** UART Control Register Receiver Enable bitmask (for `REG_UART_CR`) */
-#define REG_RXEN_MASK		((uint32_t)1 << 4)
+#define REG_UART_CS_RXEN_MASK		((uint32_t)1 << 4)
 /** UART Control Register Reset Transmitter bitmask (for `REG_UART_CR`) */
-#define REG_RSTTX_MASK		((uint32_t)1 << 3)
+#define REG_UART_CS_RSTTX_MASK		((uint32_t)1 << 3)
 /** UART Control Register Reset Receiver bitmask (for `REG_UART_CR`) */
-#define REG_RSTRX_MASK		((uint32_t)1 << 2)
+#define REG_UART_CS_RSTRX_MASK		((uint32_t)1 << 2)
 
 /** UART Mode Register */
 #define REG_UART_MR		(*(uint32_t *)0x400E0804U)
@@ -174,26 +174,47 @@ struct reg_snapshot {
  */
 
 /** System Control Block: Interrupt Control and State Register */
-#define SCB_ICSR		(*(uint32_t *)0xE000ED04U)
-/** ICSR PendSV set-pending bit bitmask (for `SCB_ICSR`) */
-#define SCB_PENDSVSET_MASK	((uint32_t)1 << 28)
-/** ICSR PendSV clear-pending bit bitmask (for `SCB_ICSR`) */
-#define SCB_PENDSVCLR_MASK	((uint32_t)1 << 27)
-/** ICSR SysTick exception set-pending bit bitmask (for `SCB_ICSR`) */
-#define SCB_PENDSTSET_MASK	((uint32_t)1 << 26)
-/** ICSR SysTick exception clear-pending bit bitmask (for `SCB_ICSR`) */
-#define SCB_PENDSTCLR_MASK	((uint32_t)1 << 25)
-/** ICSR Interrupt pending flag, excluding Faults bitmask (for `SCB_ICSR`) */
-#define SCB_ISRPENDING_MASK	((uint32_t)1 << 22)
+#define REG_SCB_ICSR			(*(uint32_t *)0xE000ED04U)
+/** ICSR PendSV set-pending bit bitmask */
+#define REG_SCB_ICSR_PENDSVSET_BIT	((uint32_t)1 << 28)
+/** ICSR PendSV clear-pending bit bitmask */
+#define REG_SCB_ICSR_PENDSVCLR_BIT	((uint32_t)1 << 27)
+/** ICSR SysTick exception set-pending bit bitmask */
+#define REG_SCB_ICSR_PENDSTSET_BIT	((uint32_t)1 << 26)
+/** ICSR SysTick exception clear-pending bit bitmask */
+#define REG_SCB_ICSR_PENDSTCLR_BIT	((uint32_t)1 << 25)
+/** ICSR Interrupt pending flag, excluding Faults bitmask */
+#define REG_SCB_ICSR_ISRPENDING_BIT	((uint32_t)1 << 22)
 /**
  * ICSR bitmask for highest priority pending & enabled exception
  * (for `SCB_ICSR`).  The value is shifted 12 to the left.
  */
-#define SCB_VECTPENDING_MASK	((uint32_t)0b1111111111u << 12)
-/** ICSR bitmask for whether there are preempted active exceptions (for `SCB_ICSR`) */
-#define SCB_RETTOBASE_MASK	((uint32_t)1 << 11)
-/** ICSR active exception number bitmask (for `SCB_ICSR`) */
-#define SCB_VECTACTIVE_MASK	((uint32_t)0b111111111u)
+#define REG_SCB_ICSR_VECTPENDING_MASK	((uint32_t)0b1111111111u << 12)
+#define REG_SCB_ICSR_VECTPENDING_VAL(x) \
+	( ((uint32_t)(x) << 12) & REG_SCB_ICSR_VECTPENDING_MASK )
+/** ICSR bitmask for whether there are preempted active exceptions */
+#define REG_SCB_ICSR_RETTOBASE_BIT	((uint32_t)1 << 11)
+/** ICSR active exception number bitmask */
+#define REG_SCB_ICSR_VECTACTIVE_MASK	((uint32_t)0b111111111u)
+#define REG_SCB_ICSR_VECTACTIVE_VAL(x) \
+	((uint32_t)(x) & REG_SCB_ICSR_VECTACTIVE_MASK)
+
+/*
+ * System Control Block:
+ * Application Interrupt and Reset Control Register
+ */
+
+/** Application Interrupt and Reset Control Register (AIRCR) */
+#define REG_SCB_AIRCR			(*(uint32_t *)0xE000ED0CU)
+#define REG_SCB_AIRCR_VECTKEY_MASK	((uint32_t)0xFFFF << 16)
+#define REG_SCB_AIRCR_VECTKEY_VAL(x) \
+	( ((uint32_t)(x) << 16) & REG_SCB_AIRCR_VECTKEY_MASK )
+#define REG_SCB_AIRCR_VECTKEY_MAGIC	0x05FA
+#define REG_SCB_AIRCR_ENDIANESS_BIT	((uint32_t)1 << 15)
+#define REG_SCB_AIRCR_PRIGROUP_MASK	((uint32_t)0x3 << 8)
+#define REG_SCB_AIRCR_PRIGROUP_VAL(x) \
+	( ((uint32_t)(x) << 8) & REG_SCB_AIRCR_PRIGROUP_MASK )
+#define REG_SCB_AIRCR_SYSRESETREQ_BIT	((uint32_t)1 << 2)
 
 /*
  * Enhanced Embedded Flash Controller (EEFC)

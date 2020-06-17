@@ -45,6 +45,30 @@ struct process *_current_process;
  */
 static struct process procs[CONFIG_SCHED_MAXPROC + 1];
 
+/**
+ * Find an unused process slot in the `procs` array, insert that process into
+ * the scheduler's ring queue and return it.  Must run in atomic context.
+ *
+ * @returns A pointer to the new process slot, or `NULL` if none are available.
+ */
+static struct process *sched_find_free_slot_and_link(void)
+{
+	pid_t i;
+	struct process *newproc = NULL;
+
+	for (i = 1; i < CONFIG_SCHED_MAXPROC + 1; i++) {
+		if (procs[i].pid == -1 && procs[i].state == PROC_DEAD) {
+			newproc = &procs[i];
+			newproc->next = procs[i - 1].next;
+			procs[i - 1].next = newproc;
+			newproc->pid = i;
+			break;
+		}
+	}
+
+	return newproc;
+}
+
 int sched_init(void)
 {
 	int i;
@@ -94,8 +118,6 @@ void *sched_process_switch(void *curr_sp)
 
 	if (_current_process->state != PROC_SLEEP)
 		_current_process->state = PROC_QUEUE;
-
-	sched_interrupts++;
 
 	while (true) {
 		nextproc = nextproc->next;

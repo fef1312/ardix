@@ -32,6 +32,8 @@
 #include <ardix/string.h>
 #include <toolchain.h>
 
+uint32_t sys_core_clock = 4000000UL; /* default internal 4MHz RC oscillator */
+
 int sys_init(void)
 {
 	/*
@@ -104,5 +106,6 @@ int sys_init(void)
 	/* turn osc write protection on again */
 	REG_PMC_WPMR |= REG_PMC_WPMR_WPEN_BIT;
 
+	sys_core_clock = 84000000UL;
 	return 0;
 }

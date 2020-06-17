@@ -25,51 +25,29 @@
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arch/hardware.h>
-#include <ardix/sched.h>
-#include <stdint.h>
-#include <stddef.h>
+#pragma once
 
-#define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
-#define REG_PIOB_PDR			(*(uint32_t *)0x400E1004U)
-#define REG_PIOB_OER			(*(uint32_t *)0x400E1010U)
-#define REG_PIOB_ODR			(*(uint32_t *)0x400E1014U)
-#define REG_PIOB_SODR			(*(uint32_t *)0x400E1030U)
-#define REG_PIOB_CODR			(*(uint32_t *)0x400E1034U)
+#define CHAR_MAX		__SCHAR_MAX__
+#define CHAR_MIN		(CHAR_MAX + 1)
+#define UCHAR_MAX		((unsigned char)0 - 1)
+#define UCHAR_MIN		((unsigned char)0)
 
-/**
- * Core init routine.
- *
- * This is invoked from the startup code (usually) located in
- * arch/<architecture>/startup.c.
- */
-void do_bootstrap(void)
-{
-	bool on = true;
-	uint32_t state = (1 << 27);
-	uint32_t count = 0;
+#define SHRT_MAX		__SHRT_MAX__
+#define SHRT_MIN		(SHRT_MAX + 1)
+#define USHRT_MAX		((unsigned short)0 - 1)
+#define USHRT_MIN		((unsigned short)0)
 
-	sys_init();
+#define INT_MAX			__INT_MAX__
+#define INT_MIN			(INT_MAX + 1)
+#define UINT_MAX		((unsigned int)0 - 1)
+#define UINT_MIN		((unsigned int)0)
 
-	sched_init();
+#define LONG_MAX		__LONG_MAX__
+#define LONG_MIN		(LONG_MAX + 1)
+#define ULONG_MAX		((unsigned long)0 - 1)
+#define ULONG_MIN		((unsigned long)0)
 
-	REG_PIOB_OER |= state;
-	REG_PIOB_PER |= state;
-
-	/* we'll only let the LED flash for now */
-
-	while (true) {
-		if (count++ != 100000)
-			continue;
-
-		if (on) {
-			REG_PIOB_SODR |= state;
-			on = false;
-		} else {
-			REG_PIOB_CODR |= state;
-			on = true;
-		}
-
-		count = 0;
-	}
-}
+#define LLONG_MAX		__LLONG_MAX__
+#define LLONG_MIN		(LLONG_MAX + 1)
+#define ULLONG_MAX		((unsigned long long)0 - 1)
+#define ULLONG_MIN		((unsigned long long)0)

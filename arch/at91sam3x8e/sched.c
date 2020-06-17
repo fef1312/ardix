@@ -37,9 +37,12 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+/**
+ * Set the PENDSV bit in the system control block.
+ */
 static __always_inline void sched_pendsv_req(void)
 {
-	SCB_ICSR |= SCB_PENDSVSET_MASK;
+	REG_SCB_ICSR |= REG_SCB_ICSR_PENDSVSET_BIT;
 }
 
 void isr_sys_tick(void)
@@ -51,11 +54,41 @@ void isr_sys_tick(void)
 	sched_pendsv_req();
 }
 
+void sched_init_process_regs(struct reg_snapshot *reg_snap, void (*entry)(void))
+{
+	memset(reg_snap, 0, sizeof(*reg_snap));
+
+	reg_snap->hw.lr = (void *)0xFFFFFFF9U;
+	reg_snap->hw.pc = entry;
+	reg_snap->hw.psr = 0x01000000U;
+}
+
+/**
+ * Set the NVIC priority grouping field in `AIRCR`.
+ * Only values from 0..7 are allowed, see the SAM3X documentation.
+ *
+ * @param prio_group: The new priority grouping value.
+ */
+static inline void sched_nvic_set_prio_group(uint32_t prio_group)
+{
+	uint32_t reg_val = REG_SCB_AIRCR;
+
+	reg_val &= ~(REG_SCB_AIRCR_VECTKEY_MASK | REG_SCB_AIRCR_PRIGROUP_MASK);
+	reg_val = reg_val
+		| REG_SCB_AIRCR_VECTKEY_VAL(REG_SCB_AIRCR_VECTKEY_MAGIC)
+		| REG_SCB_AIRCR_PRIGROUP_VAL(prio_group);
+
+	REG_SCB_AIRCR = reg_val;
+}
+
 int sched_hwtimer_init(unsigned int freq)
 {
-	uint32_t ticks = F_CPU / freq;
+	uint32_t ticks = sys_core_clock / freq;
 	if (ticks > REG_SYSTICK_LOAD_RELOAD_MASK)
 		return 1;
+
+	/* Ensure SysTick and PendSV are preemptive */
+	sched_nvic_set_prio_group(0b011);
 
 	REG_SYSTICK_LOAD = (ticks & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
 	REG_SYSTICK_VAL = 0U;
@@ -66,10 +99,20 @@ int sched_hwtimer_init(unsigned int freq)
 	return 0;
 }
 
+inline void sched_atomic_enter(void)
 {
+	REG_SYSTICK_CTRL &= ~REG_SYSTICK_CTRL_ENABLE_BIT;
 }
 
+inline void sched_atomic_leave(bool resched)
 {
+	REG_SYSTICK_CTRL |= REG_SYSTICK_CTRL_ENABLE_BIT;
+}
+
+void sched_exec_early(void)
+{
+	REG_SYSTICK_VAL = 0U; /* Reset timer */
+	sched_pendsv_req();
 }
 
 #ifdef __cplusplus
