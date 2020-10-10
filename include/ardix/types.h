@@ -48,7 +48,7 @@ typedef __PTRDIFF_TYPE__	ssize_t;
 
 #if CONFIG_SCHED_MAXPROC < 128
 #define _PID_TYPE_ int8_t
-#elif CONFIG_SCHED_MAXPROC < 65536
+#elif CONFIG_SCHED_MAXPROC < 32767
 #define _PID_TYPE_ int16_t
 #else
 #define _PID_TYPE_ int32_t

@@ -29,6 +29,8 @@
 
 #include <stdint.h>
 
+typedef _Bool bool;
+
 #ifndef true
 #define true ((bool)1)
 #endif /* true */

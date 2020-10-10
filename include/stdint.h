@@ -76,5 +76,3 @@ typedef __UINT32_TYPE__		uint32_t;
 /** Unsigned 32-bit integer. */
 typedef unsigned long int	uint32_t;
 #endif /* __UINT32_TYPE__ */
-
-typedef uint8_t			bool;

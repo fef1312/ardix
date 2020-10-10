@@ -27,7 +27,6 @@
 
 #include <arch/hardware.h>
 #include <arch/sched.h>
-#include <ardix/clock.h>
 #include <ardix/sched.h>
 #include <ardix/string.h>
 #include <ardix/types.h>

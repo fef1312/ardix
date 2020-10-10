@@ -154,7 +154,7 @@ enum irqno {
 	IRQNO_EFC1		= 7,
 	IRQNO_UART		= 8,
 	IRQNO_SMC		= 9,
-	IRQNO_POIA		= 11,
+	IRQNO_PIOA		= 11,
 	IRQNO_PIOB		= 12,
 	IRQNO_PIOC		= 13,
 	IRQNO_PIOD		= 14,
