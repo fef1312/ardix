@@ -45,7 +45,7 @@ extern uint32_t _estack;	/* stack end */
 /* implementation in init/main.c */
 void do_bootstrap(void);
 
-void isr_reset(void)
+void irq_reset(void)
 {
 	memmove(
 		&_srelocate,
@@ -66,130 +66,130 @@ void isr_reset(void)
 }
 
 /**
- * Default ISR for unimplemented interrupts.
+ * Default IRQ for unimplemented interrupts.
  * This will halt the system.
  */
-void isr_stub(void)
+void irq_stub(void)
 {
 	while (1);
 }
 
-__weak __alias(isr_stub) void isr_nmi(void);
-__weak __alias(isr_stub) void isr_hard_fault(void);
-__weak __alias(isr_stub) void isr_mem_fault(void);
-__weak __alias(isr_stub) void isr_bus_fault(void);
-__weak __alias(isr_stub) void isr_usage_fault(void);
-__weak __alias(isr_stub) void isr_svc(void);
-__weak __alias(isr_stub) void isr_debug_mon(void);
-__weak __alias(isr_stub) void isr_pend_sv(void);
-__weak __alias(isr_stub) void isr_sys_tick(void);
+__weak __alias(irq_stub) void irq_nmi(void);
+__weak __alias(irq_stub) void irq_hard_fault(void);
+__weak __alias(irq_stub) void irq_mem_fault(void);
+__weak __alias(irq_stub) void irq_bus_fault(void);
+__weak __alias(irq_stub) void irq_usage_fault(void);
+__weak __alias(irq_stub) void irq_svc(void);
+__weak __alias(irq_stub) void irq_debug_mon(void);
+__weak __alias(irq_stub) void irq_pend_sv(void);
+__weak __alias(irq_stub) void irq_sys_tick(void);
 
-__weak __alias(isr_stub) void isr_supc(void);
-__weak __alias(isr_stub) void isr_rstc(void);
-__weak __alias(isr_stub) void isr_rtc(void);
-__weak __alias(isr_stub) void isr_rtt(void);
-__weak __alias(isr_stub) void isr_wdt(void);
-__weak __alias(isr_stub) void isr_pmc(void);
-__weak __alias(isr_stub) void isr_efc0(void);
-__weak __alias(isr_stub) void isr_efc1(void);
-__weak __alias(isr_stub) void isr_uart(void);
-__weak __alias(isr_stub) void isr_smc(void);
-__weak __alias(isr_stub) void isr_pioa(void);
-__weak __alias(isr_stub) void isr_piob(void);
-__weak __alias(isr_stub) void isr_pioc(void);
-__weak __alias(isr_stub) void isr_piod(void);
-__weak __alias(isr_stub) void isr_usart0(void);
-__weak __alias(isr_stub) void isr_usart1(void);
-__weak __alias(isr_stub) void isr_usart2(void);
-__weak __alias(isr_stub) void isr_usart3(void);
-__weak __alias(isr_stub) void isr_hsmci(void);
-__weak __alias(isr_stub) void isr_twi0(void);
-__weak __alias(isr_stub) void isr_twi1(void);
-__weak __alias(isr_stub) void isr_spi0(void);
-__weak __alias(isr_stub) void isr_ssc(void);
-__weak __alias(isr_stub) void isr_tc0(void);
-__weak __alias(isr_stub) void isr_tc1(void);
-__weak __alias(isr_stub) void isr_tc2(void);
-__weak __alias(isr_stub) void isr_tc3(void);
-__weak __alias(isr_stub) void isr_tc4(void);
-__weak __alias(isr_stub) void isr_tc5(void);
-__weak __alias(isr_stub) void isr_tc6(void);
-__weak __alias(isr_stub) void isr_tc7(void);
-__weak __alias(isr_stub) void isr_tc8(void);
-__weak __alias(isr_stub) void isr_pwm(void);
-__weak __alias(isr_stub) void isr_adc(void);
-__weak __alias(isr_stub) void isr_dacc(void);
-__weak __alias(isr_stub) void isr_dmac(void);
-__weak __alias(isr_stub) void isr_uotghs(void);
-__weak __alias(isr_stub) void isr_trng(void);
-__weak __alias(isr_stub) void isr_emac(void);
-__weak __alias(isr_stub) void isr_can0(void);
-__weak __alias(isr_stub) void isr_can1(void);
+__weak __alias(irq_stub) void irq_supc(void);
+__weak __alias(irq_stub) void irq_rstc(void);
+__weak __alias(irq_stub) void irq_rtc(void);
+__weak __alias(irq_stub) void irq_rtt(void);
+__weak __alias(irq_stub) void irq_wdt(void);
+__weak __alias(irq_stub) void irq_pmc(void);
+__weak __alias(irq_stub) void irq_efc0(void);
+__weak __alias(irq_stub) void irq_efc1(void);
+__weak __alias(irq_stub) void irq_uart(void);
+__weak __alias(irq_stub) void irq_smc(void);
+__weak __alias(irq_stub) void irq_pioa(void);
+__weak __alias(irq_stub) void irq_piob(void);
+__weak __alias(irq_stub) void irq_pioc(void);
+__weak __alias(irq_stub) void irq_piod(void);
+__weak __alias(irq_stub) void irq_usart0(void);
+__weak __alias(irq_stub) void irq_usart1(void);
+__weak __alias(irq_stub) void irq_usart2(void);
+__weak __alias(irq_stub) void irq_usart3(void);
+__weak __alias(irq_stub) void irq_hsmci(void);
+__weak __alias(irq_stub) void irq_twi0(void);
+__weak __alias(irq_stub) void irq_twi1(void);
+__weak __alias(irq_stub) void irq_spi0(void);
+__weak __alias(irq_stub) void irq_ssc(void);
+__weak __alias(irq_stub) void irq_tc0(void);
+__weak __alias(irq_stub) void irq_tc1(void);
+__weak __alias(irq_stub) void irq_tc2(void);
+__weak __alias(irq_stub) void irq_tc3(void);
+__weak __alias(irq_stub) void irq_tc4(void);
+__weak __alias(irq_stub) void irq_tc5(void);
+__weak __alias(irq_stub) void irq_tc6(void);
+__weak __alias(irq_stub) void irq_tc7(void);
+__weak __alias(irq_stub) void irq_tc8(void);
+__weak __alias(irq_stub) void irq_pwm(void);
+__weak __alias(irq_stub) void irq_adc(void);
+__weak __alias(irq_stub) void irq_dacc(void);
+__weak __alias(irq_stub) void irq_dmac(void);
+__weak __alias(irq_stub) void irq_uotghs(void);
+__weak __alias(irq_stub) void irq_trng(void);
+__weak __alias(irq_stub) void irq_emac(void);
+__weak __alias(irq_stub) void irq_can0(void);
+__weak __alias(irq_stub) void irq_can1(void);
 
 __section(.vectors) const void *exception_table[] = {
 	&_estack,		/* initial SP value (stack grows down) */
-	&isr_reset,		/* reset vector */
+	&irq_reset,		/* reset vector */
 	NULL,			/* reserved */
-	&isr_hard_fault,	/* hard fault */
-	&isr_mem_fault,		/* hemory management fault */
-	&isr_bus_fault,		/* bus fault */
-	&isr_usage_fault,	/* usage fault */
-	NULL,			/* reserved */
-	NULL,			/* reserved */
+	&irq_hard_fault,	/* hard fault */
+	&irq_mem_fault,		/* hemory management fault */
+	&irq_bus_fault,		/* bus fault */
+	&irq_usage_fault,	/* usage fault */
 	NULL,			/* reserved */
 	NULL,			/* reserved */
-	&isr_svc,		/* SVC call (used for syscalls) */
-	&isr_debug_mon,		/* reserved for debug */
 	NULL,			/* reserved */
-	&isr_pend_sv,		/* PendSV (used by the scheduler) */
-	&isr_sys_tick,		/* SysTick */
+	NULL,			/* reserved */
+	&irq_svc,		/* SVC call (used for syscalls) */
+	&irq_debug_mon,		/* reserved for debug */
+	NULL,			/* reserved */
+	&irq_pend_sv,		/* PendSV (used by the scheduler) */
+	&irq_sys_tick,		/* SysTick */
 
 	/*
 	 * Ok I am REALLY tired of writing out mnemonics.
 	 * Just have a look at include/arch/at91sam3x8e.h for details.
 	 */
-	&isr_rstc,
-	&isr_rtc,
-	&isr_rtt,
-	&isr_wdt,
-	&isr_pmc,
-	&isr_efc0,
-	&isr_efc1,
-	&isr_uart,
-	&isr_smc,
+	&irq_rstc,
+	&irq_rtc,
+	&irq_rtt,
+	&irq_wdt,
+	&irq_pmc,
+	&irq_efc0,
+	&irq_efc1,
+	&irq_uart,
+	&irq_smc,
 	NULL,			/* reserved */
-	&isr_pioa,
-	&isr_piob,
-	&isr_pioc,
-	&isr_piod,
+	&irq_pioa,
+	&irq_piob,
+	&irq_pioc,
+	&irq_piod,
 	NULL,			/* reserved */
 	NULL,			/* reserved */
-	&isr_usart0,
-	&isr_usart1,
-	&isr_usart2,
-	&isr_usart3,
-	&isr_hsmci,
-	&isr_twi0,
-	&isr_twi1,
-	&isr_spi0,
+	&irq_usart0,
+	&irq_usart1,
+	&irq_usart2,
+	&irq_usart3,
+	&irq_hsmci,
+	&irq_twi0,
+	&irq_twi1,
+	&irq_spi0,
 	NULL,			/* reserved */
-	&isr_ssc,
-	&isr_tc0,
-	&isr_tc1,
-	&isr_tc2,
-	&isr_tc3,
-	&isr_tc4,
-	&isr_tc5,
-	&isr_tc6,
-	&isr_tc7,
-	&isr_tc8,
-	&isr_pwm,
-	&isr_adc,
-	&isr_dacc,
-	&isr_dmac,
-	&isr_uotghs,
-	&isr_trng,
-	&isr_emac,
-	&isr_can0,
-	&isr_can1,
+	&irq_ssc,
+	&irq_tc0,
+	&irq_tc1,
+	&irq_tc2,
+	&irq_tc3,
+	&irq_tc4,
+	&irq_tc5,
+	&irq_tc6,
+	&irq_tc7,
+	&irq_tc8,
+	&irq_pwm,
+	&irq_adc,
+	&irq_dacc,
+	&irq_dmac,
+	&irq_uotghs,
+	&irq_trng,
+	&irq_emac,
+	&irq_can0,
+	&irq_can1,
 };

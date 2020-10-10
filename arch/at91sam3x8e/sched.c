@@ -45,7 +45,7 @@ static __always_inline void sched_pendsv_req(void)
 	REG_SCB_ICSR |= REG_SCB_ICSR_PENDSVSET_BIT;
 }
 
-void isr_sys_tick(void)
+void irq_sys_tick(void)
 {
 	/*
 	 * fire a PendSV interrupt and do the actual context switching there

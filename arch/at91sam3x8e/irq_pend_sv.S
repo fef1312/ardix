@@ -33,11 +33,11 @@
 .extern sched_process_switch
 
 .thumb_func
-.global isr_pend_sv
-.type isr_pend_sv, %function
+.global irq_pend_sv
+.type irq_pend_sv, %function
 
-/* void isr_pend_sv(void); */
-isr_pend_sv:
+/* void irq_pend_sv(void); */
+irq_pend_sv:
 	/*
 	 * There seems to be a limitation in Thumb which prohibits popping to
 	 * any register > r7.  Hence, we need to split the PUSHes and POPs into
@@ -47,7 +47,7 @@ isr_pend_sv:
 	/*
 	 * Some registers have already been saved by hardware at this point,
 	 * we only need to take care of r4-r11 and lr (the latter of which is
-	 * required because lr is overwritten when entering the isr).
+	 * required because lr is overwritten when entering the irq).
 	 * The stuff we push onto the stack manually looks about like this:
 	 *
 	 * >>> stack grow direction >>>
@@ -95,4 +95,4 @@ isr_pend_sv:
 	 */
 	bx	lr
 
-.size isr_pend_sv, .-isr_pend_sv
+.size irq_pend_sv, .-irq_pend_sv

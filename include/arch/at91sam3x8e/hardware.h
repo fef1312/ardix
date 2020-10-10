@@ -37,7 +37,7 @@ extern uint32_t sys_core_clock;
 
 /**
  * A software snapshot of all registers that have not been saved by automated
- * hardware routines on ISR entry.  Required for scheduling / context switching.
+ * hardware routines on IRQ entry.  Required for scheduling / context switching.
  */
 struct reg_sw_snapshot {
 	uint32_t r8;
@@ -46,7 +46,7 @@ struct reg_sw_snapshot {
 	uint32_t r11;
 	/*
 	 * lr is saved by hardware, but we need to store it twice
-	 * because the ISR entry overwrites it
+	 * because the IRQ entry overwrites it
 	 */
 	void *lr;	/* alias r14 */
 	uint32_t r4;
@@ -57,7 +57,7 @@ struct reg_sw_snapshot {
 
 /**
  * All registers that are automatically saved by hardware routines when entering
- * an ISR, in the correct order.
+ * an IRQ, in the correct order.
  */
 struct reg_hw_snapshot {
 	uint32_t r0;
@@ -184,7 +184,7 @@ struct reg_snapshot {
 /** ICSR SysTick exception clear-pending bit bitmask */
 #define REG_SCB_ICSR_PENDSTCLR_BIT	((uint32_t)1 << 25)
 /** ICSR Interrupt pending flag, excluding Faults bitmask */
-#define REG_SCB_ICSR_ISRPENDING_BIT	((uint32_t)1 << 22)
+#define REG_SCB_ICSR_IRQPENDING_BIT	((uint32_t)1 << 22)
 /**
  * ICSR bitmask for highest priority pending & enabled exception
  * (for `SCB_ICSR`).  The value is shifted 12 to the left.
