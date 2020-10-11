@@ -146,7 +146,7 @@ void *malloc(size_t size)
 
 		/* ... and insert it into the list */
 		list_for_each_entry_reverse(&blk->list, cursor, list) {
-			if (cursor->size < remaining_blksz || cursor == &memblk_free_list) {
+			if (cursor->size < remaining_blksz || &cursor->list == &memblk_free_list) {
 				list_insert(&cursor->list, &newblk->list);
 				break;
 			}
@@ -196,7 +196,7 @@ void free(void *ptr)
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
 	neighsz = (void *)blk + MEMBLK_OVERHEAD + blk->size;
-	if (*neighsz & 0x1 == 0) {
+	if ((*neighsz & 0x1) == 0) {
 		tmp = (struct memblk *)neighsz;
 		memblk_merge(blk, tmp);
 		list_delete(&tmp->list);
@@ -204,7 +204,7 @@ void free(void *ptr)
 
 	/* same thing for the lower/left block */
 	neighsz = (void *)blk - MEMBLK_HDR_SIZE_LENGTH;
-	if (*neighsz & 0x1 == 0) {
+	if ((*neighsz & 0x1) == 0) {
 		tmp = (void *)neighsz - *neighsz - MEMBLK_HDR_SIZE_LENGTH;
 		memblk_merge(tmp, blk);
 		list_delete(&tmp->list);
