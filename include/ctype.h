@@ -141,15 +141,3 @@ __always_inline int isalnum(int c)
 {
 	return isalpha(c) || isdigit(c);
 }
-
-/**
- * Check whether `c` is an alphabetic character in the C locale.
- * Equivalent to `(isupper(c) || islower(c))`.
- *
- * @param c: The character, cast to an `int`.
- * @returns A nonzero value if it is an alphabetic character, zero if not.
- */
-__always_inline int isalpha(int c)
-{
-	return isupper(c) || islower(c);
-}
