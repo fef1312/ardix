@@ -1,6 +1,13 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* See the end of this file for copyright, licensing, and warranty information. */
+
 /*
- * SPDX-License-Identifier: BSD-3-Clause
- *
+ * stack size is 32K (uses the entire sram1 bank)
+ * TODO: modify flash.ld to actually align this properly
+ */
+STACK_SIZE = 0x8000;
+
+/*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -24,9 +31,3 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/*
- * stack size is 32K (uses the entire sram1 bank)
- * TODO: modify flash.ld to actually align this properly
- */
-STACK_SIZE = 0x8000;

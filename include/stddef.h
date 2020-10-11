@@ -1,6 +1,29 @@
-/*
- * SPDX-License-Identifier: BSD-3-Clause
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* See the end of this file for copyright, licensing, and warranty information. */
+
+#pragma once
+
+#include <ardix/types.h>
+
+#ifndef offsetof
+/**
+ * Calculate the byte offset of a struct member relative to the struct itself.
  *
+ * @param type: The structure type.
+ * @param member: The member inside the struct to the offset of.
+ * @returns The offset of `member` reelative to `type`, casted to a `size_t`.
+ */
+#define offsetof(type, member) ((size_t)&((type *)0)->member)
+#endif /* offsetof */
+
+#ifndef NULL
+/** The `NULL` pointer. */
+#define NULL ((void *)0)
+#endif /* NULL */
+
+#include <stdbool.h>
+
+/*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -24,25 +47,3 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#pragma once
-
-#include <ardix/types.h>
-
-#ifndef offsetof
-/**
- * Calculate the byte offset of a struct member relative to the struct itself.
- *
- * @param type: The structure type.
- * @param member: The member inside the struct to the offset of.
- * @returns The offset of `member` reelative to `type`, casted to a `size_t`.
- */
-#define offsetof(type, member) ((size_t)&((type *)0)->member)
-#endif /* offsetof */
-
-#ifndef NULL
-/** The `NULL` pointer. */
-#define NULL ((void *)0)
-#endif /* NULL */
-
-#include <stdbool.h>

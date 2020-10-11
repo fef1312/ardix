@@ -1,6 +1,21 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* See the end of this file for copyright, licensing, and warranty information. */
+
+#pragma once
+
+#include <stdint.h>
+
+typedef _Bool bool;
+
+#ifndef true
+#define true ((bool)1)
+#endif /* true */
+
+#ifndef false
+#define false ((bool)0)
+#endif /* false */
+
 /*
- * SPDX-License-Identifier: BSD-3-Clause
- *
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -24,17 +39,3 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#pragma once
-
-#include <stdint.h>
-
-typedef _Bool bool;
-
-#ifndef true
-#define true ((bool)1)
-#endif /* true */
-
-#ifndef false
-#define false ((bool)0)
-#endif /* false */

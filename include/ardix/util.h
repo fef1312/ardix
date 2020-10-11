@@ -1,6 +1,22 @@
-/*
- * SPDX-License-Identifier: BSD-3-Clause
+/* SPDX-License-Identifier: BSD-3-Clause */
+/* See the end of this file for copyright, licensing, and warranty information. */
+
+#pragma once
+
+#include <stddef.h>
+
+/**
+ * Cast a pointer to a member of a struct out to the containing structure.
  *
+ * @param ptr A pointer to the nested struct.
+ * @param type The type of the containing struct.
+ * @param member Name of the member within the containing struct.
+ * @return A pointer to the containing struct.
+ */
+#define container_of(ptr, type, member) \
+	( (type *)((void *)(ptr) - offsetof(type, member)) )
+
+/*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -24,18 +40,3 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#pragma once
-
-#include <stddef.h>
-
-/**
- * Cast a pointer to a member of a struct out to the containing structure.
- *
- * @param ptr A pointer to the nested struct.
- * @param type The type of the containing struct.
- * @param member Name of the member within the containing struct.
- * @return A pointer to the containing struct.
- */
-#define container_of(ptr, type, member) \
-	( (type *)((void *)(ptr) - offsetof(type, member)) )
