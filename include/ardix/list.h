@@ -21,8 +21,20 @@ struct list_head {
 	(head).prev = &(head);		\
 })
 
-#define list_entry(ptr, type, member) container_of(ptr, type, member)
-#define list_next_entry(ptr, type, member) container_of((ptr)->next, type, member)
+#define list_entry(ptr, type, member) \
+	container_of(ptr, type, member)
+
+#define list_next_entry(ptr, member) \
+	container_of((ptr)->member->next, typeof(*(ptr)), member)
+
+#define list_prev_entry(ptr, member) \
+	container_of((ptr)->member->prev, typeof(*(ptr)), member)
+
+#define list_first_entry(head, type, member) \
+	container_of((head)->next, type, member)
+
+#define list_last_entry(head, type, memner) \
+	container_of((head)->prev, type, member)
 
 #define list_is_empty(head) ((head)->next == head)
 
@@ -41,22 +53,22 @@ struct list_head {
 	     tmp != head;				\
 	     tmp = (tmp)->next, cursor = tmp)
 
-#define list_for_each_entry(head, cursor, member)					\
-	for (cursor = list_entry((head)->next, typeof(*(cursor)), member);		\
-	     &(cursor)->member != head;							\
-	     cursor = list_entry(&(cursor)->member.next, typeof(*(cursor)), member))
+#define list_for_each_entry(head, cursor, member)				\
+	for (cursor = list_first_entry(head, typeof(*(cursor)), member);	\
+	     &(cursor)->member != head;						\
+	     cursor = list_next_entry(cursor, member))
 
-#define list_for_each_entry_reverse(head, cursor, member)				\
-	for (cursor = list_entry((head)->prev, typeof(*(cursor)), member);		\
-	     &(cursor)->member != head;							\
-	     cursor = list_entry(&(cursor)->member.prev, typeof(*(cursor)), member))
+#define list_for_each_entry_reverse(head, cursor, member)			\
+	for (cursor = list_last_entry(head, typeof(*(cursor)), member);		\
+	     &(cursor)->member != head;						\
+	     cursor = list_prev_entry(cursor, member))
 
-#define list_for_each_entry_safe(head, cursor, tmp, member)				\
-	for (cursor = list_next_entry(head, typeof(*(cursor)), member),			\
-	     tmp = list_next_entry(&(cursor)->member, typeof(*(cursor)), member);	\
-	     tmp != head;								\
-	     cursor = tmp,								\
-	     tmp = list_next_entry(&(tmp)->member, typeof(*(cursor)), member))
+#define list_for_each_entry_safe(head, cursor, tmp, member)			\
+	for (cursor = list_first_entry(head, typeof(*(cursor)), member),	\
+	     tmp = list_next_entry(cursor, member);				\
+	     tmp != head;							\
+	     cursor = tmp,							\
+	     tmp = list_next_entry(tmp, member))
 
 void list_insert(struct list_head *head, struct list_head *new)
 {
