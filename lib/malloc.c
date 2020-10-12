@@ -192,6 +192,9 @@ void free(void *ptr)
 	if (ptr == NULL)
 		return; /* as per POSIX.1-2008 */
 
+	if ((blk->size & 0x1) == 0)
+		return; /* TODO: Raise exception on double-free */
+
 	memblk_set_size(blk, (blk->size >> 1) << 1 /* clear allocated bit */);
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
