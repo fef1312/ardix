@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <arch/at91sam3x8e/interrupt.h>
+#include <ardix/malloc.h>
 #include <ardix/string.h>
 #include <toolchain.h>
 
@@ -15,6 +16,7 @@ extern uint32_t _srelocate;	/* relocate (.data) start */
 extern uint32_t _erelocate;	/* relocate end */
 extern uint32_t _szero;		/* zero area (.bss) start */
 extern uint32_t _ezero;		/* zero area end */
+/* the entire heap sits in between _ezero and _sstack */
 extern uint32_t _sstack;	/* stack start */
 extern uint32_t _estack;	/* stack end */
 
@@ -32,6 +34,12 @@ void irq_reset(void)
 		&_szero,
 		0,
 		(size_t)(&_ezero) - (size_t)(&_szero)
+	);
+
+	/* There is no userspace yet, so the Kernel gets the entire heap for now */
+	malloc_init(
+		&_ezero + sizeof(void *),
+		(size_t)(&_sstack) - (size_t)(&_ezero) - sizeof(void *)
 	);
 
 	/* start the Kernel */
@@ -107,7 +115,7 @@ __section(.vectors) const void *exception_table[] = {
 	&irq_reset,		/* reset vector */
 	NULL,			/* reserved */
 	&irq_hard_fault,	/* hard fault */
-	&irq_mem_fault,		/* hemory management fault */
+	&irq_mem_fault,		/* memory management fault */
 	&irq_bus_fault,		/* bus fault */
 	&irq_usage_fault,	/* usage fault */
 	NULL,			/* reserved */

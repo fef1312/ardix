@@ -69,29 +69,11 @@ struct list_head {
 	     tmp != (head);							\
 	     cursor = tmp, tmp = list_next_entry(tmp, member))
 
-void list_insert(struct list_head *head, struct list_head *new)
-{
-	new->next = head->next;
-	head->next->prev = new;
+void list_insert(struct list_head *head, struct list_head *new);
 
-	new->prev = head;
-	head->next = new;
-}
+void list_insert_before(struct list_head *head, struct list_head *new);
 
-void list_insert_before(struct list_head *head, struct list_head *new)
-{
-	new->next = head;
-	head->prev->next = new;
-
-	new->prev = head->prev;
-	head->prev = new;
-}
-
-void list_delete(struct list_head *head)
-{
-	head->next->prev = head->prev;
-	head->prev->next = head->next;
-}
+void list_delete(struct list_head *head);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

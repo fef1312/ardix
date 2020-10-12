@@ -1,39 +1,31 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
-
-#include <ardix/types.h>
 #include <ardix/list.h>
 
-/**
- * Allocate `size` bytes of memory *w/out initializing it*.
- *
- * @param size The amount of bytes to allocate.
- * @return A pointer to the beginning of the memory area, or `NULL` if
- *	`size` was 0 or there is not enough free memory left.
- */
-void *malloc(size_t size);
+void list_insert(struct list_head *head, struct list_head *new)
+{
+	new->next = head->next;
+	head->next->prev = new;
 
-/**
- * Allocate an array and initialize the memory to zeroes.
- *
- * @param nmemb The amount of members.
- * @param size The size of an individual member.
- * @return A pointer to the zeroed-out memory, or `NULL` of `ENOMEM`.
- */
-void *calloc(size_t nmemb, size_t size);
+	new->prev = head;
+	head->next = new;
+}
 
-/**
- * Free a previously allocated memory region.
- * Passing `NULL` has no effect.
- *
- * @param ptr The pointer, as returned by `malloc`/`calloc`.
- */
-void free(void *ptr);
+void list_insert_before(struct list_head *head, struct list_head *new)
+{
+	new->next = head;
+	head->prev->next = new;
 
-/** Initialize the memory allocator, this is only called by the Kernel on early bootstrap. */
-void malloc_init(void *heap, size_t size);
+	new->prev = head->prev;
+	head->prev = new;
+}
+
+void list_delete(struct list_head *head)
+{
+	head->next->prev = head->prev;
+	head->prev->next = head->next;
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

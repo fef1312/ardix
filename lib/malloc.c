@@ -2,7 +2,7 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <ardix/list.h>
-#include <ardix/mem.h>
+#include <ardix/malloc.h>
 #include <ardix/string.h>
 #include <ardix/types.h>
 
@@ -55,7 +55,7 @@
 struct memblk {
 	/**
 	 * The block's effectively usable size, i.e. the total block size minus
-	 * `2 * MEMBLK_HDR_SIZE_LENGTH`.
+	 * `2 * MEMBLK_SIZE_LENGTH`.
 	 *
 	 * This size will also be written to the very end of the block, just after
 	 * the last usable address.  Additionally, since blocks are always aligned
@@ -75,21 +75,24 @@ struct memblk {
 };
 
 /** The length of the `size` member in `struct memblk`. */
-#define MEMBLK_HDR_SIZE_LENGTH (sizeof( typeof(((struct memblk *)0)->size) ))
-#define MEMBLK_OVERHEAD (2 * MEMBLK_HDR_SIZE_LENGTH)
+#define MEMBLK_SIZE_LENGTH (sizeof( typeof(((struct memblk *)0)->size) ))
+/** Total overhead per allocated block in bytes (2 * size_t). */
+#define MEMBLK_OVERHEAD (2 * MEMBLK_SIZE_LENGTH)
 
-/** Minimum effective allocation size */
+/** Minimum effective allocation size (and all sizes must be a multiple of this one). */
 #define MIN_BLKSZ (sizeof(struct list_head))
 
-/** The list of free blocks, ordered ascending by size. */
+#define without_lsb(x) (((x) >> 1u) << 1u)
+
+/** The list of free blocks, ordered by ascending size. */
 LIST_HEAD(memblk_free_list);
 
 static void memblk_set_size(struct memblk *block, size_t size)
 {
 	block->size = size;
 	void *endptr = block;
-	endptr += MEMBLK_HDR_SIZE_LENGTH;
-	endptr += ((size >> 1u) << 1u); /* discard the allocated bit */
+	endptr += MEMBLK_SIZE_LENGTH;
+	endptr += without_lsb(size); /* discard the allocated bit */
 	*(size_t *)(endptr) = size;
 }
 
@@ -106,9 +109,9 @@ static void memblk_set_size(struct memblk *block, size_t size)
 static struct memblk *memblk_split(struct memblk *blk, size_t size)
 {
 	struct memblk *cursor;
-	struct memblk *newblk = (void *)blk + MEMBLK_OVERHEAD + ((size >> 1u) << 1u);
+	struct memblk *newblk = (void *)blk + MEMBLK_OVERHEAD + without_lsb(size);
 
-	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - ((size >> 1u) << 1u));
+	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - without_lsb(size));
 	memblk_set_size(blk, size);
 
 	list_for_each_entry_reverse(&blk->list, cursor, list) {
@@ -131,6 +134,7 @@ void malloc_init(void *heap, size_t size)
 	 *       dispatching/handling routines, we should do that here.
 	 */
 	if (list_is_empty(&memblk_free_list)) {
+		memset(heap, 0, size);
 		memblk_set_size(blk, size - MEMBLK_OVERHEAD);
 		list_insert(&memblk_free_list, &blk->list);
 	}
@@ -173,7 +177,7 @@ void *malloc(size_t size)
 	list_delete(&blk->list);
 
 	/* Keep the size field intact */
-	return ((void *)blk) + MEMBLK_HDR_SIZE_LENGTH;
+	return ((void *)blk) + MEMBLK_SIZE_LENGTH;
 }
 
 __attribute__((malloc))
@@ -190,7 +194,7 @@ void *calloc(size_t nmemb, size_t size)
 /** Merge two neighboring free blocks to one big block */
 static void memblk_merge(struct memblk *lblk, struct memblk *hblk)
 {
-	size_t *endsz = (void *)hblk + hblk->size + MEMBLK_HDR_SIZE_LENGTH;
+	size_t *endsz = (void *)hblk + hblk->size + MEMBLK_SIZE_LENGTH;
 	lblk->size = lblk->size + hblk->size + MEMBLK_OVERHEAD;
 	*endsz = lblk->size;
 }
@@ -198,7 +202,7 @@ static void memblk_merge(struct memblk *lblk, struct memblk *hblk)
 void free(void *ptr)
 {
 	struct memblk *tmp;
-	struct memblk *blk = ptr - MEMBLK_HDR_SIZE_LENGTH;
+	struct memblk *blk = ptr - MEMBLK_SIZE_LENGTH;
 	size_t *neighsz;
 
 	if (ptr == NULL)
@@ -207,7 +211,7 @@ void free(void *ptr)
 	if ((blk->size & 0x1u) == 0)
 		return; /* TODO: Raise exception on double-free */
 
-	memblk_set_size(blk, (blk->size >> 1u) << 1u /* clear allocated bit */);
+	memblk_set_size(blk, without_lsb(blk->size));
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
 	neighsz = (void *)blk + MEMBLK_OVERHEAD + blk->size;
@@ -218,9 +222,9 @@ void free(void *ptr)
 	}
 
 	/* same thing for the lower/left block */
-	neighsz = (void *)blk - MEMBLK_HDR_SIZE_LENGTH;
+	neighsz = (void *)blk - MEMBLK_SIZE_LENGTH;
 	if ((*neighsz & 0x1u) == 0) {
-		tmp = (void *)neighsz - *neighsz - MEMBLK_HDR_SIZE_LENGTH;
+		tmp = (void *)neighsz - *neighsz - MEMBLK_SIZE_LENGTH;
 		memblk_merge(tmp, blk);
 		list_delete(&tmp->list);
 		blk = tmp; /* discard the higher (now partial) block */
