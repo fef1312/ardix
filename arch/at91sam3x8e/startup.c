@@ -16,9 +16,10 @@ extern uint32_t _srelocate;	/* relocate (.data) start */
 extern uint32_t _erelocate;	/* relocate end */
 extern uint32_t _szero;		/* zero area (.bss) start */
 extern uint32_t _ezero;		/* zero area end */
-/* the entire heap sits in between _ezero and _sstack */
 extern uint32_t _sstack;	/* stack start */
 extern uint32_t _estack;	/* stack end */
+extern uint32_t _sheap;		/* heap start */
+extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
 void do_bootstrap(void);
@@ -38,8 +39,8 @@ void irq_reset(void)
 
 	/* There is no userspace yet, so the Kernel gets the entire heap for now */
 	malloc_init(
-		&_ezero + sizeof(void *),
-		(size_t)(&_sstack) - (size_t)(&_ezero) - sizeof(void *)
+		&_sheap,
+		(size_t)(&_sheap) - (size_t)(&_sheap)
 	);
 
 	/* start the Kernel */

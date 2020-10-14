@@ -141,4 +141,7 @@ SECTIONS
 
     . = ALIGN(4);
     _end = . ;
+
+    _sheap = .;
+    _eheap = ORIGIN(ram) + LENGTH(ram) - 4;
 }

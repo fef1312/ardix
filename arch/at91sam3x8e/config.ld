@@ -2,10 +2,10 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 /*
- * stack size is 32K (uses the entire sram1 bank)
+ * stack size is 8K
  * TODO: modify flash.ld to actually align this properly
  */
-STACK_SIZE = 0x8000;
+STACK_SIZE = 0x2000;
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
