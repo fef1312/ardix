@@ -75,7 +75,7 @@ struct memblk {
 };
 
 /** The length of the `size` member in `struct memblk`. */
-#define MEMBLK_SIZE_LENGTH (sizeof( typeof(((struct memblk *)0)->size) ))
+#define MEMBLK_SIZE_LENGTH SIZEOF_MEMBER(struct memblk, size)
 /** Total overhead per allocated block in bytes (2 * size_t). */
 #define MEMBLK_OVERHEAD (2 * MEMBLK_SIZE_LENGTH)
 

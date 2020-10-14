@@ -16,6 +16,16 @@
 #define container_of(ptr, type, member) \
 	( (type *)((void *)(ptr) - offsetof(type, member)) )
 
+/**
+ * Get the size of a struct member.
+ *
+ * @param type The type of the containing struct.
+ * @param member The name of the member within the struct.
+ * @return The size of the member in bytes.
+ */
+#define SIZEOF_MEMBER(type, member) \
+	(sizeof( ((type *)0)->member ))
+
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
