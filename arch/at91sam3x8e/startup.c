@@ -40,7 +40,7 @@ void irq_reset(void)
 	/* There is no userspace yet, so the Kernel gets the entire heap for now */
 	malloc_init(
 		&_sheap,
-		(size_t)(&_sheap) - (size_t)(&_sheap)
+		(size_t)(&_eheap) - (size_t)(&_sheap)
 	);
 
 	/* start the Kernel */
