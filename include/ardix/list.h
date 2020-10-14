@@ -17,8 +17,8 @@ struct list_head {
 	}
 
 #define list_init(head) ({		\
-	(head).next = &(head);		\
-	(head).prev = &(head);		\
+	(head).next = head;		\
+	(head).prev = head;		\
 })
 
 #define list_entry(ptr, type, member) \
