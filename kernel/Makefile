@@ -26,5 +26,5 @@
 ARDIX_KERNEL_PWD = $(PWD)/kernel
 
 ARDIX_SOURCES += \
-	$(ARCHX_KERNEL_PWD)/ringbuf.c \
+	$(ARDIX_KERNEL_PWD)/ringbuf.c \
 	$(ARDIX_KERNEL_PWD)/sched.c

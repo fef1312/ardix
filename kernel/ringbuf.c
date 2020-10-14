@@ -5,6 +5,7 @@
 
 #include <ardix/malloc.h>
 #include <ardix/ringbuf.h>
+#include <ardix/types.h>
 #include <stddef.h>
 
 struct ringbuf *ringbuf_create(size_t size)
@@ -16,9 +17,11 @@ struct ringbuf *ringbuf_create(size_t size)
 	buf->size = size;
 	buf->rpos = &buf->data[0];
 	buf->wpos = &buf->data[0];
+
+	return buf;
 }
 
-void ringbuf_destroy(struct ringbuf *buf)
+inline void ringbuf_destroy(struct ringbuf *buf)
 {
 	free(buf);
 }
@@ -32,7 +35,7 @@ size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len)
 		n++;
 
 		/* wrap around */
-		if (buf->rpos - &buf->data[0] >= buf->size)
+		if ((ptrdiff_t)(buf->rpos) - (ptrdiff_t)(&buf->data[0]) >= (ptrdiff_t)(buf->size))
 			buf->rpos = &buf->data[0];
 	}
 
@@ -48,7 +51,7 @@ size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 		n++;
 
 		/* wrap around */
-		if (buf->wpos - &buf->data[0] >= buf->size)
+		if ((ptrdiff_t)(buf->wpos) - (ptrdiff_t)(&buf->data[0]) >= (ptrdiff_t)(buf->size))
 			buf->wpos = &buf->data[0];
 	}
 
