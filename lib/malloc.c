@@ -146,6 +146,9 @@ void *malloc(size_t size)
 	struct memblk *blk;
 	size_t remaining_blksz;
 
+	if (list_is_empty(&memblk_free_list))
+		return NULL;
+
 	if (size == 0)
 		return NULL; /* as per POSIX.1-2008 */
 
