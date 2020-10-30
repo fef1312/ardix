@@ -58,6 +58,18 @@ size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 	return n;
 }
 
+size_t ringbuf_size(struct ringbuf *buf)
+{
+	ptrdiff_t size = (ptrdiff_t)(buf->wpos) - (ptrdiff_t)(buf->rpos);
+	if (size < 0) {
+		/* wpos has wrapped around already, but rpos has not */
+		size = (ptrdiff_t)(buf->wpos) - (ptrdiff_t)(&buf->data[0]);
+		size += (ptrdiff_t)(buf->size) - ((ptrdiff_t)(buf->rpos) - (ptrdiff_t)(&buf->data[0]));
+	}
+
+	return (size_t)size;
+}
+
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *

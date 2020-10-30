@@ -15,7 +15,7 @@ struct ringbuf {
 /**
  * Create and initialize a new ring buffer.
  *
- * @param size Total buffer size in bytes.
+ * @param size: Total buffer size in bytes.
  * @returns The newly allocated buffer, or `NULL` if OOM.
  */
 struct ringbuf *rungbuf_create(size_t size);
@@ -23,7 +23,7 @@ struct ringbuf *rungbuf_create(size_t size);
 /**
  * Destroy a ring buffer previously created with `ringbuf_create`.
  *
- * @param buf The buffer to destroy.
+ * @param buf: The buffer to destroy.
  */
 void ringbuf_destroy(struct ringbuf *buf);
 
@@ -32,9 +32,9 @@ void ringbuf_destroy(struct ringbuf *buf);
  * Any byte that has been read once is discarded from the buffer.
  * If there are less than `len` bytes stored in the buffer, reading stops early.
  *
- * @param dest Where to write the data to.
- * @param buf The buffer to read from.
- * @param len The maximum amount of bytes to read.
+ * @param dest: Where to write the data to.
+ * @param buf: The buffer to read from.
+ * @param len: The maximum amount of bytes to read.
  * @returns The actual amount of bytes read.
  */
 size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len);
@@ -43,12 +43,20 @@ size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len);
  * Write up to `len` bytes to the buffer.
  * If the buffer would overflow, writing stops early.
  *
- * @param buf The buffer to write to.
- * @param src The data to write.
- * @param len The length of `src`.
+ * @param buf: The buffer to write to.
+ * @param src: The data to write.
+ * @param len: The length of `src`.
  * @returns The actual amount of bytes that were written.
  */
 size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len);
+
+/**
+ * Get the amount of bytes currently stored in the ring buffer.
+ *
+ * @param buf: The buffer.
+ * @returns The amount of bytes that are available for reading.
+ */
+size_t ringbuf_size(struct ringbuf *buf);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
