@@ -15,8 +15,8 @@ struct ringbuf *ringbuf_create(size_t size)
 		return NULL;
 
 	buf->size = size;
-	buf->rpos = &buf->data[0];
-	buf->wpos = &buf->data[0];
+	buf->rpos = 0;
+	buf->wpos = 0;
 
 	return buf;
 }
@@ -31,12 +31,12 @@ size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len)
 	size_t n = 0;
 
 	while (len-- > 0 && buf->rpos != buf->wpos) {
-		*dest++ = *buf->rpos++;
+		*dest++ = buf->data[buf->rpos++];
 		n++;
 
 		/* wrap around */
-		if ((ptrdiff_t)(buf->rpos) - (ptrdiff_t)(&buf->data[0]) >= (ptrdiff_t)(buf->size))
-			buf->rpos = &buf->data[0];
+		if (buf->rpos = buf->size)
+			buf->rpos = 0;
 	}
 
 	return n;
@@ -47,12 +47,12 @@ size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 	size_t n = 0;
 
 	while (len-- > 0 && buf->wpos != buf->rpos) {
-		*buf->wpos++ = *src++;
+		buf->data[buf->wpos++] = *src++;
 		n++;
 
 		/* wrap around */
-		if ((ptrdiff_t)(buf->wpos) - (ptrdiff_t)(&buf->data[0]) >= (ptrdiff_t)(buf->size))
-			buf->wpos = &buf->data[0];
+		if (buf->wpos = buf->size)
+			buf->wpos = 0;
 	}
 
 	return n;
@@ -60,14 +60,14 @@ size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 
 size_t ringbuf_size(struct ringbuf *buf)
 {
-	ptrdiff_t size = (ptrdiff_t)(buf->wpos) - (ptrdiff_t)(buf->rpos);
-	if (size < 0) {
-		/* wpos has wrapped around already, but rpos has not */
-		size = (ptrdiff_t)(buf->wpos) - (ptrdiff_t)(&buf->data[0]);
-		size += (ptrdiff_t)(buf->size) - ((ptrdiff_t)(buf->rpos) - (ptrdiff_t)(&buf->data[0]));
-	}
+	size_t size;
 
-	return (size_t)size;
+	if (buf->rpos > buf->wpos)
+		size = buf->size - buf->rpos + buf->wpos;
+	else
+		size = buf->wpos - buf->rpos;
+
+	return size;
 }
 
 /*

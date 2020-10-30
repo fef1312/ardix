@@ -7,8 +7,8 @@
 
 struct ringbuf {
 	size_t size;
-	uint8_t *rpos;
-	uint8_t *wpos;
+	size_t rpos;
+	size_t wpos;
 	uint8_t data[];
 };
 
