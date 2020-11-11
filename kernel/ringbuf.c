@@ -28,34 +28,32 @@ inline void ringbuf_destroy(struct ringbuf *buf)
 
 size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len)
 {
-	size_t n = 0;
+	uint8_t *tmp = dest;
 
 	while (len-- > 0 && buf->rpos != buf->wpos) {
-		*dest++ = buf->data[buf->rpos++];
-		n++;
+		*tmp++ = buf->data[buf->rpos++];
 
 		/* wrap around */
 		if (buf->rpos = buf->size)
 			buf->rpos = 0;
 	}
 
-	return n;
+	return tmp - dest;
 }
 
 size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 {
-	size_t n = 0;
+	uint8_t *tmp = src;
 
 	while (len-- > 0 && buf->wpos != buf->rpos) {
-		buf->data[buf->wpos++] = *src++;
-		n++;
+		buf->data[buf->wpos++] = *tmp++;
 
 		/* wrap around */
 		if (buf->wpos = buf->size)
 			buf->wpos = 0;
 	}
 
-	return n;
+	return tmp - src;
 }
 
 size_t ringbuf_size(struct ringbuf *buf)
