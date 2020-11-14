@@ -18,7 +18,7 @@ struct ringbuf {
  * @param size: Total buffer size in bytes.
  * @returns The newly allocated buffer, or `NULL` if OOM.
  */
-struct ringbuf *rungbuf_create(size_t size);
+struct ringbuf *ringbuf_create(size_t size);
 
 /**
  * Destroy a ring buffer previously created with `ringbuf_create`.

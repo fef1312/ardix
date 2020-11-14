@@ -34,26 +34,26 @@ size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len)
 		*tmp++ = buf->data[buf->rpos++];
 
 		/* wrap around */
-		if (buf->rpos = buf->size)
+		if (buf->rpos == buf->size)
 			buf->rpos = 0;
 	}
 
-	return tmp - dest;
+	return (size_t)tmp - (size_t)dest;
 }
 
 size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
 {
-	uint8_t *tmp = src;
+	const uint8_t *tmp = src;
 
 	while (len-- > 0 && buf->wpos != buf->rpos) {
 		buf->data[buf->wpos++] = *tmp++;
 
 		/* wrap around */
-		if (buf->wpos = buf->size)
+		if (buf->wpos == buf->size)
 			buf->wpos = 0;
 	}
 
-	return tmp - src;
+	return (size_t)tmp - (size_t)src;
 }
 
 size_t ringbuf_size(struct ringbuf *buf)
