@@ -7,20 +7,28 @@
 #include <ardix/ringbuf.h>
 #include <toolchain.h>
 
+#ifndef SERIAL_BUFSZ
+/** size of a serial I/O buffer in bytes */
+#define SERIAL_BUFSZ 64
+#endif
+
+struct serial_interface;
+
 /** Low-level hardware operations implemented by the serial driver. */
 struct serial_operations {
-	/** Begin transmission at the specified baud rate. */
-	int (*begin)(struct serial_interface *serial, long int baud);
+	/** Do any hardware setup required to transmit data. */
+	int (*begin)(struct serial_interface *serial);
 	/** Read from the hardware input buffer and store it into the rx ring buffer */
-	ssize_t (*read)(uint8_t *dest, struct serial_interface *serial, size_t len);
+	ssize_t (*read)(struct serial_interface *serial);
 	/** Read from the tx ring buffer and store it into the hardware output buffer */
-	ssize_t (*write)(struct serial_interface *serial, const uint8_t *src, size_t len);
+	ssize_t (*write)(struct serial_interface *serial);
 };
 
 struct serial_interface {
 	struct ringbuf *rx;
 	struct ringbuf *tx;
 	long int baud;
+	int id;
 	struct serial_operations operations;
 };
 
@@ -32,10 +40,9 @@ extern struct serial_interface *serial_default_interface;
  *
  * @param interface: The serial interface.
  * @param baud: The baud rate (bits/second).
- * @param buflen: The respective length of the read and write buffer.
  * @returns 0 on success, a negative number otherwise.
  */
-int serial_init(struct serial_interface *interface, long int baud, size_t buflen);
+int serial_init(struct serial_interface *interface, long int baud);
 
 /**
  * Flush all buffers (if possible) and close the serial interface.
