@@ -122,6 +122,78 @@ struct reg_snapshot {
 #define REG_RTC_CR		(*(uint32_t *)0x400E1A60U)
 
 /*
+ * Parallel Input/Output Controller (PIO)
+ */
+
+/* put these into the `n` parameter below */
+#define PIOA 0
+#define PIOB 1
+#define PIOC 2
+#define PIOD 3
+
+/** PIO Controller n Enable Register (requires `REG_PIOA_WPMR` to be cleared) */
+#define REG_PIO_PER(n)			(*(uint32_t *)0x400E0E00U + 0x200U * n)
+/** PIO Controller n Disable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_PDR(n)			(*(uint32_t *)0x400E0E04U + 0x200U * n) 
+/** PIO Controller n Status Register */
+#define REG_PIO_PSR(n)			(*(uint32_t *)0x400E0E08U + 0x200U * n)
+/** PIO Controller n Output Enable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_OER(n)			(*(uint32_t *)0x400E0E10U + 0x200U * n)
+/** PIO Controller n Output Disable Register (newwds `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_ODR(n)			(*(uint32_t *)0x400E0E14U + 0x200U * n)
+/** PIO Controller n Output Status Register */
+#define REG_PIO_OSR(n)			(*(uint32_t *)0x400E0E18U + 0x200U * n)
+/** PIO Controller n Input Filter Enable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_IFER(n)			(*(uint32_t *)0x400E0E20U + 0x200U * n)
+/** PIO Controller A Input Filter Disable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_IFDR(n)			(*(uint32_t *)0x400E0E24U + 0x200U * n)
+/** PIO Controller n Input Filter Status Register */
+#define REG_PIO_IFSR(n)			(*(uint32_t *)0x400E0E28U + 0x200U * n)
+/** PIO Controller n Set Output Data Register */
+#define REG_PIO_SODR(n)			(*(uint32_t *)0x400E0E30U + 0x200U * n)
+/** PIO Controller n Clear Output Data Register */
+#define REG_PIO_CODR(n)			(*(uint32_t *)0x400E0E34U + 0x200U * n)
+/** PIO Controller n Output Data Status Register */
+#define REG_PIO_ODSR(n)			(*(uint32_t *)0x400E0E38U + 0x200U * n)
+/** PIO Controller n Pin Data Status Register */
+#define REG_PIO_PDSR(n)			(*(uint32_t *)0x400E0E3CU + 0x200U * n)
+/** PIO Controller n Interrupt Enable Register */
+#define REG_PIO_IER(n)			(*(uint32_t *)0x400E0E40U + 0x200U * n)
+/** PIO Controller n Interrupt Disable Register */
+#define REG_PIO_IDR(n)			(*(uint32_t *)0x400E0E44U + 0x200U * n)
+/** PIO Controller n Interrupt Mask Register */
+#define REG_PIO_IMR(n)			(*(uint32_t *)0x400E0E48U + 0x200U * n)
+/** PIO Controller n Interrupt Status Register */
+#define REG_PIO_ISR(n)			(*(uint32_t *)0x400E0E4CU + 0x200U * n)
+/** PIO Controller n Multi-driver Enable Register */
+#define REG_PIO_MDER(n)			(*(uint32_t *)0x400E0E50U + 0x200U * n)
+/** PIO Controller n Multi-dtiver Disable Register */
+#define REG_PIO_MDDR(n)			(*(uint32_t *)0x400E0E54U + 0x200U * n)
+/** PIO Controller n Multi-driver Status Register */
+#define REG_PIO_MDSR(n)			(*(uint32_t *)0x400E0E58U + 0x200U * n)
+/** PIO Controller n Pull Up Disable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_PUDR(n)			(*(uint32_t *)0x400E0E60U + 0x200U * n)
+/** PIO Controller n Pull Up Enable Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_PUER(n)			(*(uint32_t *)0x400E0E64U + 0x200U * n)
+/** PIO Controller n Pull Up Status Register */
+#define REG_PIO_PUSR(n)			(*(uint32_t *)0x400E0E68U + 0x200U * n)
+/** PIO Controller n Peripheral AB Select Register (requires `REG_PIO_WPMR` to be cleared) */
+#define REG_PIO_ABSR(n)			(*(uint32_t *)0x400E0E70U + 0x200U * n)
+
+/* TODO: It's 3 am I really don't feel like doint the rest of these endless registers */
+
+/** PIO Controller n Write Protect Mode Register */
+#define REG_PIO_WPMR(n)			(*(uint32_t *)0x400E0EE4U + 0x200U * n)
+#define REG_PIO_WPMR_KEY		((uint32_t)0x50494FU << 8)
+#define REG_PIO_WPMR_WPEN_VAL(n, val)	((uint32_t)val | REG_PIO_WPMR_KEY)
+/** PIO Controller n Write Protect Status Register */
+#define REG_PIO_WPSR(n)			(*(uint32_t *)0x400E0EE8U + 0x200U * n)
+#define REG_PIO_WPSR_WPVSRC_MASK	((uint32_t)0x00FFFF00U)
+#define REG_PIO_WPSR_WPVSRC_VAL(val)	((val & REG_PIO_WPSR_WPVSRC_MASK) >> 8)
+#define REG_PIO_WPSR_WPVS_MASK		((uint32_t)1)
+#define REG_PIO_WPST_WPVS_VAL(val)	(val & 1U)
+
+/*
  * Universal Asynchronous Receiver Transceiver (UART)
  */
 
