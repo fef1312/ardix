@@ -143,7 +143,109 @@ struct reg_snapshot {
 #define REG_UART_CS_RSTRX_MASK		((uint32_t)1 << 2)
 
 /** UART Mode Register */
-#define REG_UART_MR		(*(uint32_t *)0x400E0804U)
+#define REG_UART_MR			(*(uint32_t *)0x400E0804U)
+
+/** UART Interrupt Enable Register */
+#define REG_UART_IER			(*(uint32_t *)0x400E0808U)
+/** UART IER Enable RXRDY Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_RXRDY_MASK		((uint32_t)1 << 0)
+/** UART IER Enable TXRDY Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_TXRDY_MASK		((uint32_t)1 << 1)
+/** UART IER Enable End of Receive Transfer Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_ENDRX_MASK		((uint32_t)1 << 3)
+/** UART IER Enable End of Transmit Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_ENDTX_MASK		((uint32_t)1 << 4)
+/** UART IER Enable Overrun Error Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_OVRE_MASK		((uint32_t)1 << 5)
+/** UART IER Enable Framing Error Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_FRAME_MASK		((uint32_t)1 << 6)
+/** UART IER Enable Parity Error Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_PARE_MASK		((uint32_t)1 << 7)
+/** UART IER Enable TXEMPTY Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_TXEMPTY_MASK	((uint32_t)1 << 9)
+/** UART IER Enable Buffer Empty Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_TXBUFE_MASK	((uint32_t)1 << 11)
+/** UART IER Enable Buffer Full Interrupt bitmask (for `REG_UART_IER`) */
+#define REG_UART_IER_RXBUFF_MASK	((uint32_t)1 << 12)
+
+/** UART Interrupt Disable Register */
+#define REG_UART_IDR			(*(uint32_t *)0x400E080CU)
+/** UART IDR Disable RXRDY Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_RXRDY_MASK		((uint32_t)1 << 0)
+/** UART IDR Disable TXRDY Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_TXRDY_MASK		((uint32_t)1 << 1)
+/** UART IDR Disable End of Receive Transfer Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_ENDRX_MASK		((uint32_t)1 << 3)
+/** UART IDR Disable End of Transmit Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_ENDTX_MASK		((uint32_t)1 << 4)
+/** UART IDR Disable Overrun Error Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_OVRE_MASK		((uint32_t)1 << 5)
+/** UART IDR Disable Framing Error Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_FRAME_MASK		((uint32_t)1 << 6)
+/** UART IDR Disable Parity Error Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_PARE_MASK		((uint32_t)1 << 7)
+/** UART IDR Disable TXEMPTY Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_TXEMPTY_MASK	((uint32_t)1 << 9)
+/** UART IDR Disable Buffer Empty Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_TXBUFE_MASK	((uint32_t)1 << 11)
+/** UART IDR Disable Buffer Full Interrupt bitmask (for `REG_UART_IDR`) */
+#define REG_UART_IDR_RXBUFF_MASK	((uint32_t)1 << 12)
+
+/** UART Interrupt Mask Register */
+#define REG_UART_IMR			(*(uint32_t *)0x400E0810U)
+/** UART IMR Mask RXRDY Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_RXRDY_MASK		((uint32_t)1 << 0)
+/** UART IMR Mask TXRDY Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_TXRDY_MASK		((uint32_t)1 << 1)
+/** UART IMR Mask End of Receive Transfer Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_ENDRX_MASK		((uint32_t)1 << 3)
+/** UART IMR Mask End of Transmit Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_ENDTX_MASK		((uint32_t)1 << 4)
+/** UART IMR Mask Overrun Error Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_OVRE_MASK		((uint32_t)1 << 5)
+/** UART IMR Mask Framing Error Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_FRAME_MASK		((uint32_t)1 << 6)
+/** UART IMR Mask Parity Error Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_PARE_MASK		((uint32_t)1 << 7)
+/** UART IMR Mask TXEMPTY Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_TXEMPTY_MASK	((uint32_t)1 << 9)
+/** UART IMR Mask Buffer Empty Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_TXBUFE_MASK	((uint32_t)1 << 11)
+/** UART IMR Mask Buffer Full Interrupt bitmask (for `REG_UART_IMR`) */
+#define REG_UART_IMR_RXBUFF_MASK	((uint32_t)1 << 12)
+
+/** UART Status Register */
+#define REG_UART_SR			(*(uint32_t *)0x400E0814U)
+/** UART SR Receiver Ready bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_RXRDY_MASK		((uint32_t)1 << 0)
+/** UART SR Transmitter Ready bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_TXRDY_MASK		((uint32_t)1 << 1)
+/** UART SR End of Receiver Transfer bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_ENDRX_MASK		((uint32_t)1 << 3)
+/** UART SR End of Transmitter Transfer bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_ENDTX_MASK		((uint32_t)1 << 4)
+/** UART SR Overrun Error bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_OVRE_MASK		((uint32_t)1 << 5)
+/** UART SR Framing Error bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_FRAME_MASK		((uint32_t)1 << 6)
+/** UART SR Parity Error bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_PARE_MASK		((uint32_t)1 << 7)
+/** UART SR TXEMPTY bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_TXEMPTY_MASK	((uint32_t)1 << 9)
+/** UART SR Buffer Empty bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_TXBUFE_MASK		((uint32_t)1 << 11)
+/** UART SR Buffer Full bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_RXBUFF_MASK		((uint32_t)1 << 12)
+
+/** UART Receiver Holding Register */
+#define REG_UART_RHR			(*(uint32_t *)0x400E0818U)
+/** UART Received Character bitmask (for `REG_UART_RHR`) */
+#define REG_UART_SR_RXCHR_MASK		((uint32_t)0xFU)
+
+/** UART Receiver Holding Register */
+#define REG_UART_THR			(*(uint32_t *)0x400E081CU)
+/** UART Character to be Transmitted bitmask (for `REG_UART_SR`) */
+#define REG_UART_SR_TXCHR_MASK		((uint32_t)0xFU)
 
 /*
  * Nested Vectored Interrupt Controller
