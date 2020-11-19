@@ -125,67 +125,70 @@ struct reg_snapshot {
  * Parallel Input/Output Controller (PIO)
  */
 
-/* put these into the `n` parameter below */
+/*
+ * put these into the `n` parameter below. PIOA - PIOF are exactly the same,
+ * except that their register addresses are offset by 0x200 respectively.
+ */
 #define PIOA 0
 #define PIOB 1
 #define PIOC 2
 #define PIOD 3
 
 /** PIO Controller n Enable Register (requires `REG_PIOA_WPMR` to be cleared) */
-#define REG_PIO_PER(n)			(*(uint32_t *)0x400E0E00U + 0x200U * n)
+#define REG_PIO_PER(n)			(*(uint32_t *)(0x400E0E00U + 0x200U * n))
 /** PIO Controller n Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PDR(n)			(*(uint32_t *)0x400E0E04U + 0x200U * n) 
+#define REG_PIO_PDR(n)			(*(uint32_t *)(0x400E0E04U + 0x200U * n))
 /** PIO Controller n Status Register */
-#define REG_PIO_PSR(n)			(*(uint32_t *)0x400E0E08U + 0x200U * n)
+#define REG_PIO_PSR(n)			(*(uint32_t *)(0x400E0E08U + 0x200U * n))
 /** PIO Controller n Output Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_OER(n)			(*(uint32_t *)0x400E0E10U + 0x200U * n)
+#define REG_PIO_OER(n)			(*(uint32_t *)(0x400E0E10U + 0x200U * n))
 /** PIO Controller n Output Disable Register (newwds `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_ODR(n)			(*(uint32_t *)0x400E0E14U + 0x200U * n)
+#define REG_PIO_ODR(n)			(*(uint32_t *)(0x400E0E14U + 0x200U * n))
 /** PIO Controller n Output Status Register */
-#define REG_PIO_OSR(n)			(*(uint32_t *)0x400E0E18U + 0x200U * n)
+#define REG_PIO_OSR(n)			(*(uint32_t *)(0x400E0E18U + 0x200U * n))
 /** PIO Controller n Input Filter Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_IFER(n)			(*(uint32_t *)0x400E0E20U + 0x200U * n)
+#define REG_PIO_IFER(n)			(*(uint32_t *)(0x400E0E20U + 0x200U * n))
 /** PIO Controller A Input Filter Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_IFDR(n)			(*(uint32_t *)0x400E0E24U + 0x200U * n)
+#define REG_PIO_IFDR(n)			(*(uint32_t *)(0x400E0E24U + 0x200U * n))
 /** PIO Controller n Input Filter Status Register */
-#define REG_PIO_IFSR(n)			(*(uint32_t *)0x400E0E28U + 0x200U * n)
+#define REG_PIO_IFSR(n)			(*(uint32_t *)(0x400E0E28U + 0x200U * n))
 /** PIO Controller n Set Output Data Register */
-#define REG_PIO_SODR(n)			(*(uint32_t *)0x400E0E30U + 0x200U * n)
+#define REG_PIO_SODR(n)			(*(uint32_t *)(0x400E0E30U + 0x200U * n))
 /** PIO Controller n Clear Output Data Register */
-#define REG_PIO_CODR(n)			(*(uint32_t *)0x400E0E34U + 0x200U * n)
+#define REG_PIO_CODR(n)			(*(uint32_t *)(0x400E0E34U + 0x200U * n))
 /** PIO Controller n Output Data Status Register */
-#define REG_PIO_ODSR(n)			(*(uint32_t *)0x400E0E38U + 0x200U * n)
+#define REG_PIO_ODSR(n)			(*(uint32_t *)(0x400E0E38U + 0x200U * n))
 /** PIO Controller n Pin Data Status Register */
-#define REG_PIO_PDSR(n)			(*(uint32_t *)0x400E0E3CU + 0x200U * n)
+#define REG_PIO_PDSR(n)			(*(uint32_t *)(0x400E0E3CU + 0x200U * n))
 /** PIO Controller n Interrupt Enable Register */
-#define REG_PIO_IER(n)			(*(uint32_t *)0x400E0E40U + 0x200U * n)
+#define REG_PIO_IER(n)			(*(uint32_t *)(0x400E0E40U + 0x200U * n))
 /** PIO Controller n Interrupt Disable Register */
-#define REG_PIO_IDR(n)			(*(uint32_t *)0x400E0E44U + 0x200U * n)
+#define REG_PIO_IDR(n)			(*(uint32_t *)(0x400E0E44U + 0x200U * n))
 /** PIO Controller n Interrupt Mask Register */
-#define REG_PIO_IMR(n)			(*(uint32_t *)0x400E0E48U + 0x200U * n)
+#define REG_PIO_IMR(n)			(*(uint32_t *)(0x400E0E48U + 0x200U * n))
 /** PIO Controller n Interrupt Status Register */
-#define REG_PIO_ISR(n)			(*(uint32_t *)0x400E0E4CU + 0x200U * n)
+#define REG_PIO_ISR(n)			(*(uint32_t *)(0x400E0E4CU + 0x200U * n))
 /** PIO Controller n Multi-driver Enable Register */
-#define REG_PIO_MDER(n)			(*(uint32_t *)0x400E0E50U + 0x200U * n)
+#define REG_PIO_MDER(n)			(*(uint32_t *)(0x400E0E50U + 0x200U * n))
 /** PIO Controller n Multi-dtiver Disable Register */
-#define REG_PIO_MDDR(n)			(*(uint32_t *)0x400E0E54U + 0x200U * n)
+#define REG_PIO_MDDR(n)			(*(uint32_t *)(0x400E0E54U + 0x200U * n))
 /** PIO Controller n Multi-driver Status Register */
-#define REG_PIO_MDSR(n)			(*(uint32_t *)0x400E0E58U + 0x200U * n)
+#define REG_PIO_MDSR(n)			(*(uint32_t *)(0x400E0E58U + 0x200U * n))
 /** PIO Controller n Pull Up Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PUDR(n)			(*(uint32_t *)0x400E0E60U + 0x200U * n)
+#define REG_PIO_PUDR(n)			(*(uint32_t *)(0x400E0E60U + 0x200U * n))
 /** PIO Controller n Pull Up Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PUER(n)			(*(uint32_t *)0x400E0E64U + 0x200U * n)
+#define REG_PIO_PUER(n)			(*(uint32_t *)(0x400E0E64U + 0x200U * n))
 /** PIO Controller n Pull Up Status Register */
-#define REG_PIO_PUSR(n)			(*(uint32_t *)0x400E0E68U + 0x200U * n)
+#define REG_PIO_PUSR(n)			(*(uint32_t *)(0x400E0E68U + 0x200U * n))
 /** PIO Controller n Peripheral AB Select Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_ABSR(n)			(*(uint32_t *)0x400E0E70U + 0x200U * n)
+#define REG_PIO_ABSR(n)			(*(uint32_t *)(0x400E0E70U + 0x200U * n))
 
 /* TODO: It's 3 am I really don't feel like doint the rest of these endless registers */
 
 /** PIO Controller n Write Protect Mode Register */
-#define REG_PIO_WPMR(n)			(*(uint32_t *)0x400E0EE4U + 0x200U * n)
+#define REG_PIO_WPMR(n)			(*(uint32_t *)(0x400E0EE4U + 0x200U * n))
 #define REG_PIO_WPMR_KEY		((uint32_t)0x50494FU << 8)
-#define REG_PIO_WPMR_WPEN_VAL(n, val)	((uint32_t)val | REG_PIO_WPMR_KEY)
+#define REG_PIO_WPMR_WPEN_VAL(val)	((uint32_t)val | REG_PIO_WPMR_KEY)
 /** PIO Controller n Write Protect Status Register */
 #define REG_PIO_WPSR(n)			(*(uint32_t *)0x400E0EE8U + 0x200U * n)
 #define REG_PIO_WPSR_WPVSRC_MASK	((uint32_t)0x00FFFF00U)
@@ -204,18 +207,40 @@ struct reg_snapshot {
 /** UART Control Register Transmitter Disable bitmaask (for `REG_UART_CR`) */
 #define REG_UART_CR_TXDIS_MASK		((uint32_t)1 << 7)
 /** UART Control Register Transmitter Enable bitmaask (for `REG_UART_CR`) */
-#define REG_UART_CS_TXEN_MASK		((uint32_t)1 << 6)
+#define REG_UART_CR_TXEN_MASK		((uint32_t)1 << 6)
 /** UART Control Register Receiver Disable bitmask (for `REG_UART_CR`) */
-#define REG_UART_CS_RXDIS_MASK		((uint32_t)1 << 5)
+#define REG_UART_CR_RXDIS_MASK		((uint32_t)1 << 5)
 /** UART Control Register Receiver Enable bitmask (for `REG_UART_CR`) */
-#define REG_UART_CS_RXEN_MASK		((uint32_t)1 << 4)
+#define REG_UART_CR_RXEN_MASK		((uint32_t)1 << 4)
 /** UART Control Register Reset Transmitter bitmask (for `REG_UART_CR`) */
-#define REG_UART_CS_RSTTX_MASK		((uint32_t)1 << 3)
+#define REG_UART_CR_RSTTX_MASK		((uint32_t)1 << 3)
 /** UART Control Register Reset Receiver bitmask (for `REG_UART_CR`) */
-#define REG_UART_CS_RSTRX_MASK		((uint32_t)1 << 2)
+#define REG_UART_CR_RSTRX_MASK		((uint32_t)1 << 2)
 
 /** UART Mode Register */
 #define REG_UART_MR			(*(uint32_t *)0x400E0804U)
+/** UART Mode Register Channel Mode bitmask (for `REG_UART_MR`) */
+#define REG_UART_MR_CHMODE_MASK		((uint32_t)3 << 14)
+/** Mask and shift the value of `REG_UART_MR` to get `CHMODE` */
+#define REG_UART_MR_CHMODE_VAL(val)	((val & REG_UART_MR_CHMODE_MASK) >> 14)
+/** UART Mode Register Parity Type bitmask (for `REG_UART_MR`) */
+#define REG_UART_MR_PAR_MASK		((uint32_t)7 << 9)
+/** Mask and shift the value of `REG_UART_MR` to get `PAR`*/
+#define REG_UART_MR_PAR_VAL(val)	((val & REG_UART_MR_PAR_MASK) >> 9)
+/** Normal mode */
+#define REG_UART_MR_CHMODE_NORMAL		((uint32_t)0)
+/** Automatic Echo */
+#define REG_UART_MR_CHMODE_AUTOMATIC		((uint32_t)1 << 14)
+/** Local Loopback */
+#define REG_UART_MR_CHMODE_LOCAL_LOOPBACK	((uint32_t)2 << 14)
+/** Remote Loopback */
+#define REG_UART_MR_CHMODE_REMOTE_LOOPBACK	((uint32_t)3 << 14)
+
+#define REG_UART_MR_PAR_EVEN		((uint32_t)0)
+#define REG_UART_MR_PAR_ODD		((uint32_t)1 << 9)
+#define REG_UART_MR_PAR_SPACE		((uint32_t)2 << 9)
+#define REG_UART_MR_PAR_MARK		((uint32_t)3 << 9)
+#define REG_UART_MR_PAR_NO		((uint32_t)4 << 9)
 
 /** UART Interrupt Enable Register */
 #define REG_UART_IER			(*(uint32_t *)0x400E0808U)
@@ -310,18 +335,30 @@ struct reg_snapshot {
 #define REG_UART_SR_RXBUFF_MASK		((uint32_t)1 << 12)
 
 /** UART Receiver Holding Register */
-#define REG_UART_RHR			(*(uint32_t *)0x400E0818U)
-/** UART Received Character bitmask (for `REG_UART_RHR`) */
-#define REG_UART_SR_RXCHR_MASK		((uint32_t)0xFU)
-
+#define REG_UART_RHR			(*(uint8_t *)0x400E0818U)
 /** UART Receiver Holding Register */
-#define REG_UART_THR			(*(uint32_t *)0x400E081CU)
-/** UART Character to be Transmitted bitmask (for `REG_UART_SR`) */
-#define REG_UART_SR_TXCHR_MASK		((uint32_t)0xFU)
+#define REG_UART_THR			(*(uint8_t *)0x400E081CU)
+
+#define REG_UART_BRGR			(*(uint16_t *)0x400E0820U)
 
 /*
  * Nested Vectored Interrupt Controller
  */
+
+/** NVIC Interrupt Set-Enable Registers (2 total) */
+#define REG_NVIC_ISER(n)		(((uint32_t *)0xE000E100U)[n])
+/** NVIC Interrupt Clear-Enable Registers (2 total) */
+#define REG_NVIC_ICER(n)		(((uint32_t *)0xE000E180U)[n])
+/** NVIC Interrupt Set-Pending Registers (2 total) */
+#define REG_NVIC_ISPR(n)		(((uint32_t *)0xE000E200U)[n])
+/** NVIC Interrupt Clear-Pending Registers (2 total) */
+#define REG_NVIC_ICPR(n)		(((uint32_t *)0xE000E280U)[n])
+/** NVIC Interrupt Active Bit Registers (2 total) */
+#define REG_NVIC_IABR(n)		(((uint32_t *)0xE000E300U)[n])
+/** NVIC Interrupt Priority Registers (8 total) */
+#define REG_NVIC_IPR(n)			((uint32_t *)0xE000E400U)[n])
+/** NVIC Software Trigger Interrupt Register */
+#define REG_NVIC_STIR			(*(uint32_t *)0xE000EF00U)
 
 /** System Control Block: Interrupt Control and State Register */
 #define REG_SCB_ICSR			(*(uint32_t *)0xE000ED04U)

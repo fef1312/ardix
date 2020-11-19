@@ -26,6 +26,7 @@
 ARDIX_ARCH_PWD = $(PWD)/arch/at91sam3x8e
 
 ARDIX_SOURCES += \
+	$(ARDIX_ARCH_PWD)/interrupt.c \
 	$(ARDIX_ARCH_PWD)/sched.c \
 	$(ARDIX_ARCH_PWD)/serial.c \
 	$(ARDIX_ARCH_PWD)/startup.c \

@@ -1,50 +1,18 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
-
-/**
- * Block the CPU by continuously checking the same expression in an
- * infinite loop, until the condition is true.  Useful for polling.
- *
- * @param expr The expression.
- */
-#define mom_are_we_there_yet(expr) ({ while (!(expr)); })
-
-/**
- * Initialize the system hardware.
- * This function is responsible for putting the entire system to a state that
- * allows the Kernel to perform its bootstrap procedure and is therefore the
- * first thing to be called by `do_bootstrap`.  Possible tasks to be dealt with
- * here include:
- *
- * - Performing sanity checks to see if there are any major hardware faults
- * - Setting up the CPU frequency and other oscillators
- * - Communicating that frequency change to any hardware component that needs
- *   to know about it (especially the flash controller)
- * - Enabling interrupts that are vital for stable operation
- *
- * If any of this fails, a nonzero value must be returned to indicate the error
- * condition.  An on-chip LED should be used to "morse" some kind of diagnostic
- * message, if the system has one (kind of like BIOS beep codes).
- *
- * @returns `0` on success, a negative POSIX error code if applicable, or a
- *	positive (platform-dependant) number on hardware fault.
- */
-int sys_init(void);
-
-#ifndef STACK_SIZE
-/** stack size per process in bytes */
-#define STACK_SIZE 2048U
-#endif
-
-#if defined(ARCH_ATMEGA328P)
-#error "ATmega328p is not implemented (yet?)"
-#elif defined(ARCH_AT91SAM3X8E)
 #include <arch/at91sam3x8e/hardware.h>
-#else
-#error "Unsupported architecture"
-#endif
+#include <arch/at91sam3x8e/interrupt.h>
+
+void arch_irq_enable(enum irqno irqno)
+{
+	REG_NVIC_ISER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+}
+
+void arch_irq_disable(enum irqno irqno)
+{
+	REG_NVIC_ICER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

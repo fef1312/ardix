@@ -163,6 +163,10 @@ enum irqno {
 	IRQNO_CAN1		= 44,
 };
 
+void arch_irq_enable(enum irqno irqno);
+
+void arch_irq_disable(enum irqno irqno);
+
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *
