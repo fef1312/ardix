@@ -10,18 +10,9 @@ int memcmp(const void *s1, const void *s2, size_t n)
 	int delta = 0;
 
 	while (n-- > 0) {
-		/*
-		 * TODO
-		 * See if avr-gcc is smart enough to combine the pointer
-		 * dereferencing and increment into a single `ld Rd,X+`
-		 * instruction even if there is an if statement in between
-		 */
-		delta = *(const unsigned char *)s1 - *(const unsigned char *)s2;
+		delta = *(const unsigned char *)s1++ - *(const unsigned char *)s2++;
 		if (delta != 0)
 			break;
-
-		s1++;
-		s2++;
 	}
 
 	return delta;
