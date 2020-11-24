@@ -14,7 +14,8 @@ struct ringbuf *ringbuf_create(size_t size)
 	if (buf == NULL)
 		return NULL;
 
-	buf->size = size;
+	buf->capacity = size;
+	buf->len = 0;
 	buf->rpos = 0;
 	buf->wpos = 0;
 
@@ -26,46 +27,36 @@ inline void ringbuf_destroy(struct ringbuf *buf)
 	free(buf);
 }
 
-size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len)
+size_t ringbuf_read(void *dest, struct ringbuf *buf, size_t len)
 {
 	uint8_t *tmp = dest;
 
-	while (len-- > 0 && buf->rpos != buf->wpos) {
+	while (len-- > 0 && buf->len > 0) {
 		*tmp++ = buf->data[buf->rpos++];
+		buf->len--;
 
 		/* wrap around */
-		if (buf->rpos == buf->size)
+		if (buf->rpos == buf->capacity)
 			buf->rpos = 0;
 	}
 
 	return (size_t)tmp - (size_t)dest;
 }
 
-size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len)
+size_t ringbuf_write(struct ringbuf *buf, const void *src, size_t len)
 {
 	const uint8_t *tmp = src;
 
-	while (len-- > 0 && buf->wpos != buf->rpos) {
+	while (len-- > 0 && buf->len < buf->capacity) {
 		buf->data[buf->wpos++] = *tmp++;
+		buf->len++;
 
 		/* wrap around */
-		if (buf->wpos == buf->size)
+		if (buf->wpos == buf->capacity)
 			buf->wpos = 0;
 	}
 
 	return (size_t)tmp - (size_t)src;
-}
-
-size_t ringbuf_size(struct ringbuf *buf)
-{
-	size_t size;
-
-	if (buf->rpos > buf->wpos)
-		size = buf->size - buf->rpos + buf->wpos;
-	else
-		size = buf->wpos - buf->rpos;
-
-	return size;
 }
 
 /*

@@ -6,7 +6,10 @@
 #include <ardix/types.h>
 
 struct ringbuf {
-	size_t size;
+	/** Total capacity */
+	size_t capacity;
+	/** Amount of bytes currently available for reading */
+	size_t len;
 	size_t rpos;
 	size_t wpos;
 	uint8_t data[];
@@ -37,7 +40,7 @@ void ringbuf_destroy(struct ringbuf *buf);
  * @param len: The maximum amount of bytes to read.
  * @returns The actual amount of bytes read.
  */
-size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len);
+size_t ringbuf_read(void *dest, struct ringbuf *buf, size_t len);
 
 /**
  * Write up to `len` bytes to the buffer.
@@ -48,15 +51,7 @@ size_t ringbuf_read(uint8_t *dest, struct ringbuf *buf, size_t len);
  * @param len: The length of `src`.
  * @returns The actual amount of bytes that were written.
  */
-size_t ringbuf_write(struct ringbuf *buf, const uint8_t *src, size_t len);
-
-/**
- * Get the amount of bytes currently stored in the ring buffer.
- *
- * @param buf: The buffer.
- * @returns The amount of bytes that are available for reading.
- */
-size_t ringbuf_size(struct ringbuf *buf);
+size_t ringbuf_write(struct ringbuf *buf, const void *src, size_t len);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
