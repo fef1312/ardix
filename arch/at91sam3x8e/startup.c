@@ -133,6 +133,7 @@ __section(.vectors) const void *exception_table[] = {
 	 * Ok I am REALLY tired of writing out mnemonics.
 	 * Just have a look at include/arch/at91sam3x8e.h for details.
 	 */
+	&irq_supc,
 	&irq_rstc,
 	&irq_rtc,
 	&irq_rtt,
