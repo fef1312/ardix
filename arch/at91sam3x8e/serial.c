@@ -9,18 +9,29 @@
 #include <arch/at91sam3x8e/interrupt.h>
 #include <arch/serial.h>
 
+#include <stddef.h>
+
+struct serial_interface arch_serial_default_interface = {
+	.tx = NULL,
+	.rx = NULL,
+	.id = 0,
+	.baud = 0,
+};
+struct serial_interface *serial_default_interface = &arch_serial_default_interface;
+
 int arch_serial_init(struct serial_interface *interface)
 {
 	if (interface->baud <= 0 || interface->id != 0)
 		return -1;
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
-	REG_PMC_PCER0 = REG_PMC_PCER0_PID(8);
+	REG_PMC_PCER0 |= REG_PMC_PCER0_PID(8);
 
-	/* UART is multiplexed with PIOA, so we need to enable that controller first */
-	REG_PIO_WPMR(PIOA) = REG_PIO_WPMR_WPEN_VAL(0); /* turn write protection off */
-	REG_PIO_PER(PIOA) = (1 << 8) | (1 << 9);
-	REG_PIO_WPMR(PIOA) = REG_PIO_WPMR_WPEN_VAL(1); /* turn write protection back on */
+	/* ensure the PIO controller is turned off on the serial pins */
+	REG_PIO_PDR(PIOA) = (1 << 8) | (1 << 9);
+
+	/* turn off PDC channel (we are manually writing byte-by-byte here) */
+	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTDIS_MASK;
 
 	/* reset & disable rx and tx */
 	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_RSTRX_MASK
@@ -30,15 +41,16 @@ int arch_serial_init(struct serial_interface *interface)
 	REG_UART_MR = REG_UART_MR_PAR_NO | REG_UART_MR_CHMODE_NORMAL;
 
 	/* From Atmel Datasheet: baud rate = MCK / (REG_UART_BRGR * 16) */
-	REG_UART_BRGR = (uint16_t)((sys_core_clock / (uint32_t)interface->baud) >> 4);
+	REG_UART_BRGR = (uint16_t)(( sys_core_clock / (uint32_t)interface->baud ) >> 4);
 
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
-	REG_UART_IER = REG_UART_IER_RXRDY_MASK | REG_UART_IER_OVRE_MASK | REG_UART_IER_FRAME_MASK;
+	/* TXRDY is not selected because the output buffer is initially empty anyway */
+	REG_UART_IER = REG_UART_IER_RXRDY_MASK | REG_UART_IER_OVRE_MASK | REG_UART_IER_FRAME_MASK | REG_UART_IER_TXRDY_MASK;
 
 	arch_irq_enable(IRQNO_UART);
 
-	/* enable transmitter and receiver */
+	/* enable receiver and transmitter */
 	REG_UART_CR = REG_UART_CR_RXEN_MASK | REG_UART_CR_TXEN_MASK;
 
 	return 0;
@@ -49,42 +61,54 @@ void arch_serial_exit(struct serial_interface *interface)
 	if (interface->id != 0)
 		return;
 
+	/* disable receiver and transmitter */
 	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_TXDIS_MASK;
 
 	arch_irq_disable(IRQNO_UART);
 
-	/* disable I/O line */
-	REG_PIO_WPMR(PIOA) = REG_PIO_WPMR_WPEN_VAL(1);
-	REG_PIO_PER(PIOA) = (1 << 8) | (1 << 9);
-	REG_PIO_WPMR(PIOA) = REG_PIO_WPMR_WPEN_VAL(0);
-
-	/* disable peripheral clock for UART */
+	/* disable peripheral clock for UART (PID is taken from Atmel Datasheet, Section 9.1 */
 	REG_PMC_PCDR0 = REG_PMC_PCDR0_PID(8);
+
+	interface->id = -1;
 }
 
-int arch_serial_op_begin(struct serial_interface *interface)
+void arch_serial_notify(struct serial_interface *interface)
 {
-	/* TODO */
-	return -1;
+	/* unmask the TXRDY interrupt */
+	REG_UART_IER = REG_UART_IER_TXRDY_MASK;
 }
 
-ssize_t arch_serial_op_read(struct serial_interface *interface)
+void irq_uart(void)
 {
-	/* TODO */
-	return 0;
-}
+	uint8_t tmp;
+	size_t len;
+	uint32_t state = REG_UART_SR;
 
-ssize_t arch_serial_op_write(struct serial_interface *interface)
-{
-	/* TODO */
-	return 0;
-}
+	/* RX has received a byte, store it into the ring buffer */
+	if (state & REG_UART_SR_RXRDY_MASK) {
+		tmp = REG_UART_RHR;
+		ringbuf_write(serial_default_interface->rx, &tmp, sizeof(tmp));
+	}
 
-struct serial_operations arch_serial_operations = {
-	.begin = &arch_serial_op_begin,
-	.read = &arch_serial_op_read,
-	.write = &arch_serial_op_write,
-};
+	/* TX is ready to transmit the next byte */
+	if (state & REG_UART_SR_TXRDY_MASK) {
+		len = ringbuf_read(&tmp, serial_default_interface->tx, sizeof(tmp));
+
+		if (len) {
+			/* there is data in the queue, so write it to TX holding register */
+			REG_UART_THR = tmp;
+		} else {
+			/* TX queue is empty, mask the TXRDY event */
+			REG_UART_IDR = REG_UART_IDR_TXRDY_MASK;
+		}
+	}
+
+	/* check for error conditions */
+	if ((state & REG_UART_SR_OVRE_MASK) || (state & REG_UART_SR_FRAME_MASK)) {
+		/* TODO: write some proper error handling routines ffs */
+		REG_UART_CR = REG_UART_CR_RSTSTA_MASK;
+	}
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

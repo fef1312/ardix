@@ -12,24 +12,11 @@
 #define SERIAL_BUFSZ 64
 #endif
 
-struct serial_interface;
-
-/** Low-level hardware operations implemented by the serial driver. */
-struct serial_operations {
-	/** Do any hardware setup required to transmit data. */
-	int (*begin)(struct serial_interface *serial);
-	/** Read from the hardware input buffer and store it into the rx ring buffer */
-	ssize_t (*read)(struct serial_interface *serial);
-	/** Read from the tx ring buffer and store it into the hardware output buffer */
-	ssize_t (*write)(struct serial_interface *serial);
-};
-
 struct serial_interface {
 	struct ringbuf *rx;
 	struct ringbuf *tx;
 	long int baud;
 	int id;
-	struct serial_operations operations;
 };
 
 /** The default serial console (this is where printk outputs to) */
@@ -59,7 +46,7 @@ void serial_exit(struct serial_interface *interface);
  * @param len: The maximum amount of bytes to read.
  * @returns The actual amount of bytes read.
  */
-ssize_t serial_read(uint8_t *dest, struct serial_interface *interface, size_t len);
+ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
 
 /**
  * Write data to the serial buffer.
@@ -69,7 +56,7 @@ ssize_t serial_read(uint8_t *dest, struct serial_interface *interface, size_t le
  * @param len: The length of `data`.
  * @returns The actual amount of bytes written.
  */
-ssize_t serial_write(struct serial_interface *interface, const uint8_t *data, size_t len);
+ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

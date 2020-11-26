@@ -44,16 +44,17 @@ void serial_exit(struct serial_interface *interface)
 	interface->id = -1;
 }
 
-/* TODO: tell the scheduler to run the I/O thread next after these calls */
-
-ssize_t serial_read(uint8_t *dest, struct serial_interface *interface, size_t len)
+ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 {
 	return (ssize_t)ringbuf_read(dest, interface->rx, len);
 }
 
-ssize_t serial_write(struct serial_interface *interface, const uint8_t *data, size_t len)
+ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
 {
-	return (ssize_t)ringbuf_write(interface->tx, data, len);
+	ssize_t ret = (ssize_t)ringbuf_write(interface->tx, data, len);
+	if (ret > 0)
+		arch_serial_notify(interface);
+	return ret;
 }
 
 /*

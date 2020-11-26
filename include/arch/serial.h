@@ -5,10 +5,17 @@
 
 #include <ardix/serial.h>
 
-extern struct serial_operations arch_serial_operations;
-
 int arch_serial_init(struct serial_interface *interface);
 void arch_serial_exit(struct serial_interface *interface);
+
+/**
+ * Notify the serial interface about new data in the TX buffer.
+ * This is required because if the transmitter is sleeping due to the TX queue being empty,
+ * we need some way to tell it to turn on and fire interrupts again.
+ *
+ * @param interface: The serial interface to notify about new data.
+ */
+void arch_serial_notify(struct serial_interface *interface);
 
 #ifdef ARCH_AT91SAM3X8E
 #include <arch/at91sam3x8e/serial.h>
