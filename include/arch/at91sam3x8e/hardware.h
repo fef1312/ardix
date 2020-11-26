@@ -339,7 +339,37 @@ struct reg_snapshot {
 /** UART Receiver Holding Register */
 #define REG_UART_THR			(*(uint8_t *)0x400E081CU)
 
+/** UART Baud Rate Generator Register */
 #define REG_UART_BRGR			(*(uint16_t *)0x400E0820U)
+
+/* UART PDC Area */
+
+/** UART PDC Receive Pointer Register */
+#define REG_UART_PDC_RPR		(*(uint32_t *)0x400E0900U)
+/** UART PDC Receive Counter Register */
+#define REG_UART_PDC_RCR		(*(uint32_t *)0x400E0904U)
+/** UART PDC Transmit Pointer Register */
+#define REG_UART_PDC_TPR		(*(uint32_t *)0x400E0908U)
+/** UART PDC Transmit Counter Register */
+#define REG_UART_PDC_TCR		(*(uint32_t *)0x400E090CU)
+/** UART PDC Receive Next Pointer Register */
+#define REG_UART_PDC_RNPR		(*(uint32_t *)0x400E0910U)
+/** UART PDC Receive Next Counter Register */
+#define REG_UART_PDC_RNCR		(*(uint32_t *)0x400E0914U)
+/** UART PDC Transmit Next Pointer Register */
+#define REG_UART_PDC_TNPR		(*(uint32_t *)0x400E0918U)
+/** UART PDC Transmit Next Counter Register */
+#define REG_UART_PDC_TNCR		(*(uint32_t *)0x400E091CU)
+
+/** UART PDC Transfer Control Register */
+#define REG_UART_PDC_PTCR		(*(uint32_t *)0x400E0920U)
+#define REG_UART_PDC_PTCR_TXTDIS_MASK	((uint32_t)1 << 9)
+#define REG_UART_PDC_PTCR_TXTEN_MASK	((uint32_t)1 << 8)
+#define REG_UART_PDC_PTCR_RXTDIS_MASK	((uint32_t)1 << 1)
+#define REG_UART_PDC_PTCR_RXTEN_MASK	((uint32_t)1 << 0)
+
+/** UART PDC Transfer Status Register */
+#define REG_UART_PDC_PTSR		(*(uint32_t *)(0x400E0800U + 0x124C))
 
 /*
  * Nested Vectored Interrupt Controller
@@ -655,13 +685,8 @@ struct reg_snapshot {
 
 /** PMC Write Protect Mode Register */
 #define REG_PMC_WPMR			(*(uint32_t *)0x400E06E4U)
-/** PMC Write Protect Key bitmask (<< 8, 24 bits, needs to be `0x504D43` ("PMC")) */
-#define REG_PMC_WPMR_WPKEY_MASK		((uint32_t)0xFFFFFF << 8)
-#define REG_PMC_WPMR_WPKEY_VAL(x) \
-	( ((uint32_t)(x) << 8) & REG_PMC_WPMR_WPKEY_MASK )
-#define REG_PMC_WPMR_WPKEY_MAGIC	(0x504D43) /* "PMC" in ASCII */
-/** PMC Write Protect Enable bitmask */
-#define REG_PMC_WPMR_WPEN_BIT		((uint32_t)1)
+#define REG_PMC_WPMR_WPKEY_MAGIC	(0x504D43 << 8) /* "PMC" in ASCII */
+#define REG_PMC_WPMR_WPEN_VAL(x)	((uint32_t)(x) | REG_PMC_WPMR_WPKEY_MAGIC)
 
 /** PMC Write Protect Status Register */
 #define REG_PMC_WPSR			(*(uint32_t *)0x400E06E8U)

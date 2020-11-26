@@ -21,10 +21,6 @@ int sys_init(void)
 	REG_EEFC0_FMR = REG_EEFC_FWS_VAL(4);
 	REG_EEFC1_FMR = REG_EEFC_FWS_VAL(4);
 
-	/* disable osc write protection */
-	REG_PMC_WPMR = REG_PMC_WPMR_WPKEY_VAL(REG_PMC_WPMR_WPKEY_MAGIC)
-		     & ~REG_PMC_WPMR_WPEN_BIT;
-
 	/*
 	 * 1. Enabling the Main Oscillator
 	 */
@@ -44,7 +40,7 @@ int sys_init(void)
 		     | REG_CKGR_MOR_MOSCRCEN_BIT
 		     | REG_CKGR_MOR_MOSCXTEN_BIT
 		     | REG_CKGR_MOR_MOSCSEL_BIT;
-	mom_are_we_there_yet(REG_PMC_SR & REG_PMC_SR_MOSCXTS_BIT);
+	mom_are_we_there_yet(REG_PMC_SR & REG_PMC_SR_MOSCSELS_BIT);
 
 	REG_PMC_MCKR = (REG_PMC_MCKR & ~REG_PMC_MCKR_CSS_MASK)
 		     | REG_PMC_MCKR_CSS_VAL(1 /* = main clock */);
@@ -78,9 +74,6 @@ int sys_init(void)
 	REG_PMC_MCKR = REG_PMC_MCKR_PRES_VAL(1 /* = as fast as it gets */)
 		     | REG_PMC_MCKR_CSS_VAL(2 /* = PLLA clock */);
 	mom_are_we_there_yet(REG_PMC_SR & REG_PMC_SR_MCKRDY_BIT);
-
-	/* turn osc write protection on again */
-	REG_PMC_WPMR |= REG_PMC_WPMR_WPEN_BIT;
 
 	sys_core_clock = 84000000UL;
 	return 0;
