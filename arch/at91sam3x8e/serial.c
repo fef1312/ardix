@@ -74,8 +74,11 @@ void arch_serial_exit(struct serial_interface *interface)
 
 void arch_serial_notify(struct serial_interface *interface)
 {
-	/* unmask the TXRDY interrupt */
-	REG_UART_IER = REG_UART_IER_TXRDY_MASK;
+	/* if the TXRDY event is masked ... */
+	if ((REG_UART_IMR & REG_UART_IMR_TXRDY_MASK) == 0) {
+		/* ... unmask it */
+		REG_UART_IER = REG_UART_IER_TXRDY_MASK;
+	}
 }
 
 void irq_uart(void)
