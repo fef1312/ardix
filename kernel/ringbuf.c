@@ -35,9 +35,8 @@ size_t ringbuf_read(void *dest, struct ringbuf *buf, size_t len)
 		*tmp++ = buf->data[buf->rpos++];
 		buf->len--;
 
-		/* wrap around */
-		if (buf->rpos == buf->capacity)
-			buf->rpos = 0;
+		/* wrap around if required */
+		buf->rpos %= buf->capacity;
 	}
 
 	return (size_t)tmp - (size_t)dest;
@@ -51,9 +50,8 @@ size_t ringbuf_write(struct ringbuf *buf, const void *src, size_t len)
 		buf->data[buf->wpos++] = *tmp++;
 		buf->len++;
 
-		/* wrap around */
-		if (buf->wpos == buf->capacity)
-			buf->wpos = 0;
+		/* wrap around if required */
+		buf->wpos %= buf->capacity;
 	}
 
 	return (size_t)tmp - (size_t)src;
