@@ -1,12 +1,55 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <errno.h>
 /* Using GCC's stdarg.h is recommended even with -nodefaultlibs and -fno-builtin */
 #include <stdarg.h>
+#include <stddef.h>
 
+#include <ardix/malloc.h>
 #include <ardix/printk.h>
 #include <ardix/serial.h>
 #include <ardix/string.h>
+
+#define PRINTK_BUFSZ 24
+
+static int handle_uint(unsigned int u)
+{
+	int ret = 0;
+	char *buf = malloc(PRINTK_BUFSZ);
+	char *pos = buf + PRINTK_BUFSZ - 1;
+
+	if (buf == NULL)
+		return -ENOMEM;
+
+	do {
+		/* stupid big endian humans, forcing us to do the whole thing in reverse */
+		*pos-- = (char)(u % 10) + '0'; /* convert to ASCII */
+		u /= 10;
+	} while (u != 0);
+	pos++;
+
+	ret = serial_write(serial_default_interface, pos,
+			   PRINTK_BUFSZ - ( (size_t)pos - (size_t)buf ));
+
+	free(buf);
+	return ret;
+}
+
+static inline int handle_int(int i)
+{
+	int ret = 0;
+	char minus = '-';
+
+	if (i < 0) {
+		ret = serial_write(serial_default_interface, &minus, sizeof(minus));
+		i = -i;
+	}
+
+	ret += handle_uint((unsigned int)i);
+
+	return ret;
+}
 
 /**
  * Parse a formatting escape sequence, fetch the parameter from the `va_arg`
@@ -18,27 +61,37 @@
  * @param args: A pointer to the varargs list.  Will be manipulated.
  * @returns The amount of bytes written, or a negative POSIX error code.
  */
-static inline int handle_fmt(const char **pos, va_list *args)
+static inline int handle_fmt(const char **pos, va_list args)
 {
 	int ret = 0;
-	int c;
+	int i;
+	unsigned int u;
 	char *tmp;
 
 	switch (**pos) {
 	case '%': /* literal percent sign */
-		serial_write(serial_default_interface, *pos, sizeof(**pos));
-		ret = sizeof(**pos);
+		ret = serial_write(serial_default_interface, *pos, sizeof(**pos));
 		break;
 
 	case 'c': /* single char */
-		c = va_arg(*args, int);
-		serial_write(serial_default_interface, &c, sizeof(char));
+		i = va_arg(args, int);
+		ret = serial_write(serial_default_interface, &i, sizeof(char));
+		break;
+
+	case 'd': /* int */
+		i = va_arg(args, int);
+		ret = handle_int(i);
 		break;
 
 	case 's': /* string */
-		tmp = va_arg(*args, char *);
+		tmp = va_arg(args, char *);
 		ret = (int)strlen(tmp);
-		serial_write(serial_default_interface, tmp, (size_t)ret);
+		ret = serial_write(serial_default_interface, tmp, (size_t)ret);
+		break;
+
+	case 'u': /* unsigned int */
+		u = va_arg(args, unsigned int);
+		ret = handle_uint(u);
 		break;
 	}
 
@@ -57,28 +110,25 @@ int printk(const char *fmt, ...)
 	va_start(args, fmt);
 
 	while (*tmp != '\0') {
-		ret++;
-
 		if (*tmp++ == '%') {
 			/* flush out everything we have so far (minus one char for %) */
-			serial_write(serial_default_interface, fmt, (size_t)tmp - (size_t)fmt - 1);
+			ret += (int)serial_write(serial_default_interface, fmt,
+						 (size_t)tmp - (size_t)fmt - 1);
 
-			tmpret = handle_fmt(&tmp, &args);
-			if (tmpret < 0) {
-				fmt = tmp;
-				break;
-			}
-
+			tmpret = handle_fmt(&tmp, args);
 			/*
 			 * act as if the current position were the beginning in
 			 * order to make the first step of this if block easier
 			 */
-			ret += tmpret;
 			fmt = tmp;
+
+			if (tmpret < 0)
+				break;
+			ret += tmpret;
 		}
 	}
 
-	if (tmp != fmt && ret > 0)
+	if (tmp != fmt && ret >= 0)
 		ret += serial_write(serial_default_interface, fmt, (size_t)tmp - (size_t)fmt);
 
 	va_end(args);
