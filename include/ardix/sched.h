@@ -34,6 +34,8 @@ enum proc_state {
 	PROC_QUEUE,
 	/** Process is sleeping, `sleep_until` specifies when to wake it up. */
 	PROC_SLEEP,
+	/** Process is waiting for I/O to flush buffers. */
+	PROC_IOWAIT,
 };
 
 /** Stores an entire process image. */
@@ -90,6 +92,15 @@ void *sched_process_switch(void *curr_sp);
  * TODO: make something like errno to tell what *exactly* went wrong
  */
 struct process *sched_process_create(void (*entry)(void));
+
+/**
+ * Request the scheduler be invoked early, resulting in the current process to
+ * be suspended.
+ *
+ * @param state The state the process should enter.
+ *	Allowed values are `PROC_SLEEP` and `PROC_IOWAIT`.
+ */
+void sched_switch_early(enum proc_state state);
 
 /**
  * Suspend the current process for the specified amount of milliseconds.
