@@ -17,6 +17,14 @@ void arch_serial_exit(struct serial_interface *interface);
  */
 void arch_serial_notify(struct serial_interface *interface);
 
+/**
+ * Copy the current TX ring buffer content to a new hardware buffer.
+ *
+ * @param interface: The serial interface to rotate the hardware buffer of.
+ * @returns 0 on success, or a negative number on failure.
+ */
+int arch_serial_txbuf_rotate(struct serial_interface *interface);
+
 #ifdef ARCH_AT91SAM3X8E
 #include <arch/at91sam3x8e/serial.h>
 #else

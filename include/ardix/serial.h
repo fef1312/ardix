@@ -9,7 +9,7 @@
 
 #ifndef SERIAL_BUFSZ
 /** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 64
+#define SERIAL_BUFSZ 256
 #endif
 
 struct serial_interface {

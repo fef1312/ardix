@@ -4,6 +4,44 @@
 #pragma once
 
 #include <ardix/serial.h>
+#include <ardix/types.h>
+#include <ardix/util.h>
+
+#include <stdbool.h>
+
+#ifndef CONFIG_ARCH_SERIAL_BUFSZ
+#define CONFIG_ARCH_SERIAL_BUFSZ 32
+#endif /* CONFIG_ARCH_SERIAL_BUFSZ */
+
+/** Architecture-specific extension of `struct serial_interface` */
+struct arch_serial_interface {
+	struct serial_interface interface;
+
+	/*
+	 * two hardware buffers; one is for being written to while the other one can be read from
+	 * by the hardware w/out interfering with each other.  `arch_serial_hwbuf_rotate()` is
+	 * responsible for writing this to the respective hardware register and swapping them out.
+	 * The platform's buffer length registers only allow 16-byte numbers, so we can save some
+	 * memory by not using `size_t`
+	 */
+	uint16_t current_len; /* buffer length registers are only 16 bytes */
+	uint8_t tx1[CONFIG_ARCH_SERIAL_BUFSZ];
+	uint8_t tx2[CONFIG_ARCH_SERIAL_BUFSZ];
+	/** hardware has finished sending the current buffer and ready for a swap */
+	bool hw_txrdy;
+	/** which hardware buffer is currently being written to (use `ARCH_SERIAL_BUF*`) */
+	bool current_txbuf;
+};
+#define ARCH_SERIAL_BUF1 false
+#define ARCH_SERIAL_BUF2 true
+
+/**
+ * Cast a `struct serial_interface` out to a `struct arch_serial_interface`.
+ *
+ * @param ptr: The `struct serial_interface *` to cast out from.
+ * @returns The containing `struct arch_serial_interface *`.
+ */
+#define to_arch_serial_interface(ptr) container_of(ptr, struct arch_serial_interface, interface)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
