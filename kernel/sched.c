@@ -18,31 +18,7 @@ struct process *_current_process;
  * The `pid` not only identifies each process, it is also the index of the
  * struct in this array.  Unused slots have a `pid` of `-1`, however.
  */
-static struct process procs[CONFIG_SCHED_MAXPROC + 1];
-
-/**
- * Find an unused process slot in the `procs` array, insert that process into
- * the scheduler's ring queue and return it.  Must run in atomic context.
- *
- * @returns A pointer to the new process slot, or `NULL` if none are available.
- */
-static struct process *sched_find_free_slot_and_link(void)
-{
-	pid_t i;
-	struct process *newproc = NULL;
-
-	for (i = 1; i < CONFIG_SCHED_MAXPROC + 1; i++) {
-		if (procs[i].pid == -1 && procs[i].state == PROC_DEAD) {
-			newproc = &procs[i];
-			newproc->next = procs[i - 1].next;
-			procs[i - 1].next = newproc;
-			newproc->pid = i;
-			break;
-		}
-	}
-
-	return newproc;
-}
+static struct process procs[CONFIG_SCHED_MAXPROC];
 
 int sched_init(void)
 {
@@ -55,15 +31,15 @@ int sched_init(void)
 	_current_process->pid = 0;
 	_current_process->state = PROC_READY;
 
-	for (i = 1; i < CONFIG_SCHED_MAXPROC + 1; i++) {
+	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++) {
 		procs[i].next = NULL;
 		procs[i].sp = NULL;
-		procs[i].stack_bottom = NULL;
+		procs[i].stack_bottom = &_estack - (CONFIG_STACKSZ * (unsigned int)i);
 		procs[i].pid = -1;
 		procs[i].state = PROC_DEAD;
 	}
 
-	i = sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
+	i = arch_sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
 
 	return i;
 }
@@ -104,6 +80,52 @@ void *sched_process_switch(void *curr_sp)
 	}
 
 	return _current_process->sp;
+}
+
+/**
+ * Find an unused process slot in the `procs` array, insert that process into
+ * the scheduler's ring queue and return it.  Must run in atomic context.
+ *
+ * @returns A pointer to the new process slot, or `NULL` if none are available.
+ */
+static struct process *proclist_find_free_slot_and_link(void)
+{
+	pid_t i;
+	struct process *newproc = NULL;
+
+	/* PID 0 is always reserved for the Kernel process, so start counting from 1 */
+	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++) {
+		if (procs[i].pid == -1 && procs[i].state == PROC_DEAD) {
+			newproc = &procs[i];
+			newproc->next = procs[i - 1].next;
+			procs[i - 1].next = newproc;
+			newproc->pid = i;
+			break;
+		}
+	}
+
+	return newproc;
+}
+
+struct process *sched_process_create(void (*entry)(void))
+{
+	struct process *proc;
+
+	sched_atomic_enter();
+
+	proc = proclist_find_free_slot_and_link();
+	if (proc != NULL) {
+		proc->sp = proc->stack_bottom;
+		proc->lastexec = 0;
+		proc->sleep_usecs = 0;
+		proc->state = PROC_QUEUE;
+
+		arch_sched_process_init(proc, entry);
+	}
+
+	sched_atomic_leave();
+
+	return proc;
 }
 
 /*

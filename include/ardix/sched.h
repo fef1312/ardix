@@ -8,7 +8,7 @@
 
 #ifndef CONFIG_SCHED_MAXPROC
 /** The maximum number of processes. */
-#define CONFIG_SCHED_MAXPROC 16
+#define CONFIG_SCHED_MAXPROC 8
 #endif /* SCHED_MAXPROC */
 
 #if CONFIG_SCHED_MAXPROC > 64
@@ -19,6 +19,11 @@
 /** Frequency (in Hertz) at which a scheduling interrupt should be fired */
 #define CONFIG_SCHED_INTR_FREQ 10000U
 #endif
+
+#ifndef CONFIG_STACKSZ
+/** Per-process stack size in bytes */
+#define CONFIG_STACKSZ 4096U
+#endif /* CONFIG_STACKSZ */
 
 enum proc_state {
 	/** Process is dead / doesn't exist */
@@ -79,12 +84,12 @@ void *sched_process_switch(void *curr_sp);
 /**
  * Create a new process.
  *
- * @param exec: The process executor.
+ * @param entry: The process entry point.
  * @returns A pointer to the new process, or `NULL` if something went wrong.
  *
  * TODO: make something like errno to tell what *exactly* went wrong
  */
-struct process *sched_process_create(void (*exec)(void));
+struct process *sched_process_create(void (*entry)(void));
 
 /**
  * Suspend the current process for the specified amount of milliseconds.
