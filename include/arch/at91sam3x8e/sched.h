@@ -3,35 +3,21 @@
 
 #pragma once
 
-#include <arch/hardware.h>
-
-#include <stdbool.h>
+#include <arch/at91sam3x8e/interrupt.h>
+#include <ardix/sched.h>
 #include <toolchain.h>
 
-struct process; /* see include/ardix/sched.h */
+/** Enter atomic context, i.e. disable preemption */
+__always_inline void sched_atomic_enter(void)
+{
+	arch_irq_disable(IRQNO_PEND_SV);
+}
 
-/**
- * Initialize a hardware timer for schduling.
- *
- * @param freq: The timer frequency in Hertz.
- */
-int arch_sched_hwtimer_init(unsigned int freq);
-
-/**
- * Initialize a new process.
- * This requires the process' `stack_base` field to be initialized as the
- * initial register values are written to the stack.
- *
- * @param process: The process.
- * @param entry: The process entry point.
- */
-void arch_sched_process_init(struct process *process, void (*entry)(void));
-
-#ifdef ARCH_AT91SAM3X8E
-#include <arch/at91sam3x8e/sched.h>
-#else
-#error "Unsupported architecture"
-#endif
+/** Leave atomic context, i.e. re-enable preemption */
+__always_inline void sched_atomic_leave(void)
+{
+	arch_irq_enable(IRQNO_PEND_SV);
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

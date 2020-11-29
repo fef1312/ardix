@@ -20,7 +20,7 @@ void irq_svc(void);
 /** Debug handler (reserved) */
 void irq_debug_mon(void);
 /** Pending SV interrupt handler */
-extern void irq_pend_sv(void);
+void irq_pend_sv(void);
 /** SysTick interrupt handler */
 void irq_sys_tick(void);
 
