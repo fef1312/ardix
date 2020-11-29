@@ -4,7 +4,6 @@
 #pragma once
 
 #include <arch/at91sam3x8e/interrupt.h>
-#include <ardix/sched.h>
 #include <toolchain.h>
 
 /** Enter atomic context, i.e. disable preemption */

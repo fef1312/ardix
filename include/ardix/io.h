@@ -5,14 +5,23 @@
 
 #include <ardix/serial.h>
 
-int arch_serial_init(struct serial_interface *interface);
-void arch_serial_exit(struct serial_interface *interface);
+/**
+ * Initialize the I/O thread and subsystems.
+ * Must be called after all I/O components have been initialized.
+ *
+ * @returns 0 on success, or a negative number on failure.
+ */
+int io_init(void);
 
-#ifdef ARCH_AT91SAM3X8E
-#include <arch/at91sam3x8e/serial.h>
-#else
-#error "Unsupported architecture"
-#endif
+void io_thread_entry(void);
+
+/**
+ * Update the hardware serial buffers if necessary.
+ * This includes copying to and from the main ring buffers.
+ *
+ * @param interface: The serial interface.
+ */
+void io_serial_buf_update(struct serial_interface *interface);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

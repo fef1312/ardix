@@ -1,15 +1,18 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/io.h>
+#include <ardix/ringbuf.h>
 #include <ardix/serial.h>
 #include <ardix/string.h>
 #include <ardix/types.h>
-#include <ardix/ringbuf.h>
 
 #include <arch/at91sam3x8e/hardware.h>
 #include <arch/at91sam3x8e/interrupt.h>
+#include <arch/at91sam3x8e/sched.h>
 #include <arch/serial.h>
 
+#include <errno.h>
 #include <stddef.h>
 
 struct arch_serial_interface arch_serial_default_interface = {
@@ -86,33 +89,47 @@ void arch_serial_exit(struct serial_interface *interface)
 	interface->id = -1;
 }
 
-int arch_serial_txbuf_rotate(struct serial_interface *interface)
+int arch_serial_txbuf_rotate(struct arch_serial_interface *interface)
 {
-	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
-
-	if (!arch_iface->hw_txrdy)
+	if (!interface->hw_txrdy)
 		return -EBUSY;
-	arch_iface->hw_txrdy = false;
+	interface->hw_txrdy = false;
 
-	if (arch_iface->current_txbuf == ARCH_SERIAL_BUF1) {
+	if (interface->current_txbuf == ARCH_SERIAL_BUF1) {
 		/* buf1 has been written to, DMA has been reading from buf2 */
-		arch_iface->current_txbuf = ARCH_SERIAL_BUF2;
+		interface->current_txbuf = ARCH_SERIAL_BUF2;
 		/* pass buf1 to the DMA controller */
-		REG_UART_PDC_TPR = (uint32_t)&arch_iface->tx1[0];
+		REG_UART_PDC_TPR = (uint32_t)&interface->tx1[0];
 	} else {
 		/* buf2 has been written to, DMA has been reading from buf1 */
-		arch_iface->current_txbuf = ARCH_SERIAL_BUF1;
+		interface->current_txbuf = ARCH_SERIAL_BUF1;
 		/* pass buf2 to the DMA controller */
-		REG_UART_PDC_TPR = (uint32_t)&arch_iface->tx2[0];
+		REG_UART_PDC_TPR = (uint32_t)&interface->tx2[0];
 	}
 
-	REG_UART_PDC_TCR = arch_iface->current_len;
-	arch_iface->current_len = 0;
-
-	/* re-enable the transmitter DMA controller */
-	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_TXTEN_MASK;
+	REG_UART_PDC_TCR = interface->current_len;
+	interface->current_len = 0;
 
 	return 0;
+}
+
+void io_serial_buf_update(struct serial_interface *interface)
+{
+	void *buf;
+	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
+
+	if (arch_iface->current_len)
+		arch_serial_txbuf_rotate(arch_iface);
+	if (!arch_iface->current_len) {
+		if (arch_iface->current_txbuf == ARCH_SERIAL_BUF1)
+			buf = &arch_iface->tx1[0];
+		else
+			buf = &arch_iface->tx2[0];
+
+		sched_atomic_enter();
+		arch_iface->current_len = (uint16_t)ringbuf_read(buf, interface->tx, SERIAL_BUFSZ);
+		sched_atomic_leave();
+	}
 }
 
 void irq_uart(void)
@@ -123,7 +140,7 @@ void irq_uart(void)
 	/* RX has received a byte, store it into the ring buffer */
 	if (state & REG_UART_SR_RXRDY_MASK) {
 		tmp = REG_UART_RHR;
-		ringbuf_write(serial_default_interface->rx, &tmp, sizeof(tmp));
+		ringbuf_write(arch_serial_default_interface.interface.rx, &tmp, sizeof(tmp));
 	}
 
 	/* TX buffer has been sent */
