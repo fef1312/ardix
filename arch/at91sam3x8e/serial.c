@@ -2,6 +2,7 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <ardix/serial.h>
+#include <ardix/string.h>
 #include <ardix/types.h>
 #include <ardix/ringbuf.h>
 
@@ -11,18 +12,28 @@
 
 #include <stddef.h>
 
-struct serial_interface arch_serial_default_interface = {
-	.tx = NULL,
-	.rx = NULL,
-	.id = 0,
-	.baud = 0,
+struct arch_serial_interface arch_serial_default_interface = {
+	.interface = {
+		.tx = NULL,
+		.rx = NULL,
+		.id = 0,
+		.baud = 0,
+	},
+	.current_len = 0,
+	.hw_txrdy = false,
+	.current_txbuf = ARCH_SERIAL_BUF1,
 };
-struct serial_interface *serial_default_interface = &arch_serial_default_interface;
+struct serial_interface *serial_default_interface = &arch_serial_default_interface.interface;
 
 int arch_serial_init(struct serial_interface *interface)
 {
+	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
+
 	if (interface->baud <= 0 || interface->id != 0)
 		return -1;
+
+	memset(&arch_iface->tx1[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
+	memset(&arch_iface->tx2[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
 	REG_PMC_PCER0 |= REG_PMC_PCER0_PID(8);
@@ -30,8 +41,9 @@ int arch_serial_init(struct serial_interface *interface)
 	/* ensure the PIO controller is turned off on the serial pins */
 	REG_PIO_PDR(PIOA) = (1 << 8) | (1 << 9);
 
-	/* turn off PDC channel (we are manually writing byte-by-byte here) */
-	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTDIS_MASK;
+	/* turn on peripheral DMA controller */
+	/* TODO: only enabled on TX for debugging purposes right now */
+	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTEN_MASK;
 
 	/* reset & disable rx and tx */
 	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_RSTRX_MASK
@@ -45,8 +57,10 @@ int arch_serial_init(struct serial_interface *interface)
 
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
-	/* TXRDY is not selected because the output buffer is initially empty anyway */
-	REG_UART_IER = REG_UART_IER_RXRDY_MASK | REG_UART_IER_OVRE_MASK | REG_UART_IER_FRAME_MASK | REG_UART_IER_TXRDY_MASK;
+	REG_UART_IER = REG_UART_IER_RXRDY_MASK /* TODO: RX still works byte-by-byte w/out DMA */
+		     | REG_UART_IER_TXBUFE_MASK /* TX uses DMA though */
+		     | REG_UART_IER_OVRE_MASK
+		     | REG_UART_IER_FRAME_MASK;
 
 	arch_irq_enable(IRQNO_UART);
 
@@ -72,19 +86,38 @@ void arch_serial_exit(struct serial_interface *interface)
 	interface->id = -1;
 }
 
-void arch_serial_notify(struct serial_interface *interface)
+int arch_serial_txbuf_rotate(struct serial_interface *interface)
 {
-	/* if the TXRDY event is masked ... */
-	if ((REG_UART_IMR & REG_UART_IMR_TXRDY_MASK) == 0) {
-		/* ... unmask it */
-		REG_UART_IER = REG_UART_IER_TXRDY_MASK;
+	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
+
+	if (!arch_iface->hw_txrdy)
+		return -EBUSY;
+	arch_iface->hw_txrdy = false;
+
+	if (arch_iface->current_txbuf == ARCH_SERIAL_BUF1) {
+		/* buf1 has been written to, DMA has been reading from buf2 */
+		arch_iface->current_txbuf = ARCH_SERIAL_BUF2;
+		/* pass buf1 to the DMA controller */
+		REG_UART_PDC_TPR = (uint32_t)&arch_iface->tx1[0];
+	} else {
+		/* buf2 has been written to, DMA has been reading from buf1 */
+		arch_iface->current_txbuf = ARCH_SERIAL_BUF1;
+		/* pass buf2 to the DMA controller */
+		REG_UART_PDC_TPR = (uint32_t)&arch_iface->tx2[0];
 	}
+
+	REG_UART_PDC_TCR = arch_iface->current_len;
+	arch_iface->current_len = 0;
+
+	/* re-enable the transmitter DMA controller */
+	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_TXTEN_MASK;
+
+	return 0;
 }
 
 void irq_uart(void)
 {
 	uint8_t tmp;
-	size_t len;
 	uint32_t state = REG_UART_SR;
 
 	/* RX has received a byte, store it into the ring buffer */
@@ -93,17 +126,13 @@ void irq_uart(void)
 		ringbuf_write(serial_default_interface->rx, &tmp, sizeof(tmp));
 	}
 
-	/* TX is ready to transmit the next byte */
-	if (state & REG_UART_SR_TXRDY_MASK) {
-		len = ringbuf_read(&tmp, serial_default_interface->tx, sizeof(tmp));
-
-		if (len) {
-			/* there is data in the queue, so write it to TX holding register */
-			REG_UART_THR = tmp;
-		} else {
-			/* TX queue is empty, mask the TXRDY event */
-			REG_UART_IDR = REG_UART_IDR_TXRDY_MASK;
-		}
+	/* TX buffer has been sent */
+	if (state & REG_UART_SR_TXBUFE_MASK) {
+		/*
+		 * this is picked up by the I/O thread, which will then switch
+		 * the current hardware buffer that is being copied to
+		 */
+		arch_serial_default_interface.hw_txrdy = true;
 	}
 
 	/* check for error conditions */

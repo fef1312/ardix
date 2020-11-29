@@ -347,11 +347,11 @@ struct reg_snapshot {
 /** UART PDC Receive Pointer Register */
 #define REG_UART_PDC_RPR		(*(uint32_t *)0x400E0900U)
 /** UART PDC Receive Counter Register */
-#define REG_UART_PDC_RCR		(*(uint32_t *)0x400E0904U)
+#define REG_UART_PDC_RCR		(*(uint16_t *)0x400E0904U)
 /** UART PDC Transmit Pointer Register */
 #define REG_UART_PDC_TPR		(*(uint32_t *)0x400E0908U)
 /** UART PDC Transmit Counter Register */
-#define REG_UART_PDC_TCR		(*(uint32_t *)0x400E090CU)
+#define REG_UART_PDC_TCR		(*(uint16_t *)0x400E090CU)
 /** UART PDC Receive Next Pointer Register */
 #define REG_UART_PDC_RNPR		(*(uint32_t *)0x400E0910U)
 /** UART PDC Receive Next Counter Register */
