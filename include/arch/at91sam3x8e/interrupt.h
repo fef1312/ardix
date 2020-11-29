@@ -167,6 +167,8 @@ void arch_irq_enable(enum irqno irqno);
 
 void arch_irq_disable(enum irqno irqno);
 
+void arch_irq_invoke(enum irqno irqno);
+
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *

@@ -11,30 +11,13 @@
 #include <stdbool.h>
 #include <toolchain.h>
 
-/**
- * Set the PENDSV bit in the system control block.
- */
-static __always_inline void sched_pendsv_req(void)
-{
-	REG_SCB_ICSR |= REG_SCB_ICSR_PENDSVSET_BIT;
-}
-
 void irq_sys_tick(void)
 {
 	/*
 	 * fire a PendSV interrupt and do the actual context switching there
 	 * because it is faster that way (according to the docs, at least)
 	 */
-	sched_pendsv_req();
-}
-
-void sched_init_process_regs(struct reg_snapshot *reg_snap, int (*entry)(void))
-{
-	memset(reg_snap, 0, sizeof(*reg_snap));
-
-	reg_snap->hw.lr = (void *)0xFFFFFFF9U;
-	reg_snap->hw.pc = entry;
-	reg_snap->hw.psr = 0x01000000U;
+	arch_irq_invoke(IRQNO_PEND_SV);
 }
 
 /**
@@ -79,13 +62,14 @@ void arch_sched_process_init(struct process *process, void (*entry)(void))
 	process->sp = regs;
 
 	memset(regs, 0, sizeof(*regs));
-	regs->hw.pc = (void *)((uint32_t)entry | 1U); /* thumb instruction set flag */
+	regs->hw.pc = entry;
 }
 
-void sched_exec_early(void)
+void sched_switch_early(enum proc_state state)
 {
 	REG_SYSTICK_VAL = 0U; /* Reset timer */
-	sched_pendsv_req();
+	_current_process->state = state;
+	arch_irq_invoke(IRQNO_PEND_SV);
 }
 
 /*
