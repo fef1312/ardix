@@ -5,6 +5,7 @@
 #include <ardix/serial.h>
 
 #include <arch/serial.h>
+#include <arch/sched.h>
 
 #include <stddef.h>
 
@@ -46,14 +47,23 @@ void serial_exit(struct serial_interface *interface)
 
 ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 {
-	return (ssize_t)ringbuf_read(dest, interface->rx, len);
+	ssize_t ret;
+
+	sched_atomic_enter();
+	ret = (ssize_t)ringbuf_read(dest, interface->rx, len);
+	sched_atomic_leave();
+
+	return ret;
 }
 
 ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
 {
-	ssize_t ret = (ssize_t)ringbuf_write(interface->tx, data, len);
-	if (ret > 0)
-		arch_serial_notify(interface);
+	ssize_t ret;
+
+	sched_atomic_enter();
+	ret = (ssize_t)ringbuf_write(interface->tx, data, len);
+	sched_atomic_leave();
+
 	return ret;
 }
 
