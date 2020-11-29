@@ -3,9 +3,10 @@
 
 #include <ardix/ringbuf.h>
 #include <ardix/serial.h>
+#include <ardix/sched.h>
 
-#include <arch/serial.h>
 #include <arch/sched.h>
+#include <arch/serial.h>
 
 #include <stddef.h>
 
@@ -58,13 +59,25 @@ ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 
 ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
 {
-	ssize_t ret;
+	size_t ret = 0;
+	size_t tmp;
 
-	sched_atomic_enter();
-	ret = (ssize_t)ringbuf_write(interface->tx, data, len);
-	sched_atomic_leave();
+	while (1) {
+		sched_atomic_enter();
+		tmp = ringbuf_write(interface->tx, data, len);
+		sched_atomic_leave();
+		ret += tmp;
 
-	return ret;
+		if (ret != len) { /* buffer full, suspend until I/O is ready */
+			len -= tmp;
+			data += tmp;
+			sched_switch_early(PROC_IOWAIT);
+		} else {
+			break;
+		}
+	}
+
+	return (ssize_t)ret;
 }
 
 /*

@@ -1,67 +1,38 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <arch/serial.h>
 
-#include <ardix/types.h>
-#include <ardix/ringbuf.h>
+#include <ardix/io.h>
+#include <ardix/sched.h>
+#include <ardix/serial.h>
+
 #include <toolchain.h>
 
-#ifndef CONFIG_SERIAL_BAUD
-/** serial baud rate */
-#define CONFIG_SERIAL_BAUD 115200
-#endif
+__naked void io_thread_entry(void)
+{
+	while (1) {
+		io_serial_buf_update(serial_default_interface);
 
-#ifndef SERIAL_BUFSZ
-/** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 256
-#endif
+		sched_switch_early(PROC_QUEUE);
+	}
+}
 
-struct serial_interface {
-	struct ringbuf *rx;
-	struct ringbuf *tx;
-	long int baud;
-	int id;
-};
+int io_init(void)
+{
+	int ret;
+	struct process *proc;
 
-/** The default serial console (this is where printk outputs to) */
-extern struct serial_interface *serial_default_interface;
+	ret = serial_init(serial_default_interface, CONFIG_SERIAL_BAUD);
+	if (ret)
+		return ret;
 
-/**
- * Initialize a serial interface.
- *
- * @param interface: The serial interface.
- * @param baud: The baud rate (bits/second).
- * @returns 0 on success, a negative number otherwise.
- */
-int serial_init(struct serial_interface *interface, long int baud);
+	proc = sched_process_create(&io_thread_entry);
+	if (proc == NULL)
+		ret = -1;
 
-/**
- * Flush all buffers (if possible) and close the serial interface.
- *
- * @param interface: The serial interface.
- */
-void serial_exit(struct serial_interface *interface);
-
-/**
- * Read from the serial buffer.
- *
- * @param dest: Where to store the received data.
- * @param interface: The serial interface to read data from.
- * @param len: The maximum amount of bytes to read.
- * @returns The actual amount of bytes read.
- */
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
-
-/**
- * Write data to the serial buffer.
- *
- * @param interface: The serial interface to write data to.
- * @param data: The data to write.
- * @param len: The length of `data`.
- * @returns The actual amount of bytes written.
- */
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
+	return ret;
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
