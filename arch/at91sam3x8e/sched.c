@@ -18,7 +18,7 @@ void irq_sys_tick(void)
 	 * because it is faster that way (according to the docs, at least)
 	 */
 	if (!_is_atomic_context)
-	arch_irq_invoke(IRQNO_PEND_SV);
+		arch_irq_invoke(IRQNO_PEND_SV);
 }
 
 /**
@@ -64,6 +64,8 @@ void arch_sched_process_init(struct process *process, void (*entry)(void))
 
 	memset(regs, 0, sizeof(*regs));
 	regs->hw.pc = entry;
+	regs->hw.psr = 0x01000000;
+	regs->sw.lr = 0xFFFFFFF9;
 }
 
 void sched_switch_early(enum proc_state state)
