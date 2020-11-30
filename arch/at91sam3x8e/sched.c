@@ -64,8 +64,8 @@ void arch_sched_process_init(struct process *process, void (*entry)(void))
 
 	memset(regs, 0, sizeof(*regs));
 	regs->hw.pc = entry;
-	regs->hw.psr = 0x01000000;
-	regs->sw.lr = 0xFFFFFFF9;
+	regs->hw.psr = 0x01000000U;
+	regs->sw.lr = (void *)0xFFFFFFF9U;
 }
 
 void sched_switch_early(enum proc_state state)

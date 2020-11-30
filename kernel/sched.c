@@ -102,7 +102,7 @@ struct process *sched_process_create(void (*entry)(void))
 	}
 
 	proc->pid = pid;
-	proc->stack_bottom = &_estack - (pid * CONFIG_STACKSZ);
+	proc->stack_bottom = &_estack - (pid * (signed)CONFIG_STACKSZ);
 	proc->lastexec = 0;
 	proc->sleep_usecs = 0;
 	proc->state = PROC_QUEUE;
