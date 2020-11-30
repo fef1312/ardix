@@ -3,45 +3,42 @@
 
 #include <arch/hardware.h>
 #include <arch/sched.h>
+
+#include <ardix/list.h>
+#include <ardix/malloc.h>
 #include <ardix/sched.h>
 #include <ardix/string.h>
 #include <ardix/types.h>
+
+#include <errno.h>
 #include <stddef.h>
 
 extern uint32_t _sstack;
 extern uint32_t _estack;
 
+struct process *proc_table[CONFIG_SCHED_MAXPROC];
 struct process *_current_process;
 
-/**
- * An array of all processes.
- * The `pid` not only identifies each process, it is also the index of the
- * struct in this array.  Unused slots have a `pid` of `-1`, however.
- */
-static struct process procs[CONFIG_SCHED_MAXPROC];
+bool _is_atomic_context = false;
 
 int sched_init(void)
 {
 	int i;
 
-	_current_process = &procs[0];
-	_current_process->next = _current_process;
+	_current_process = malloc(sizeof(*_current_process));
+	if (_current_process == NULL)
+		return -ENOMEM;
+
 	_current_process->sp = &_sstack;
 	_current_process->stack_bottom = &_estack;
 	_current_process->pid = 0;
 	_current_process->state = PROC_READY;
+	proc_table[0] = _current_process;
 
-	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++) {
-		procs[i].next = NULL;
-		procs[i].sp = NULL;
-		procs[i].stack_bottom = &_estack - (CONFIG_STACKSZ * (unsigned int)i);
-		procs[i].pid = -1;
-		procs[i].state = PROC_DEAD;
-	}
+	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++)
+		proc_table[i] = NULL;
 
-	i = arch_sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
-
-	return i;
+	return arch_sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
 }
 
 /**
@@ -62,66 +59,57 @@ static inline bool sched_proc_should_run(const struct process *proc)
 
 void *sched_process_switch(void *curr_sp)
 {
-	struct process *nextproc = _current_process;
+	pid_t nextpid = _current_process->pid;
 	_current_process->sp = curr_sp;
 
-	if (_current_process->state != PROC_SLEEP)
+	if (_current_process->state != PROC_SLEEP && _current_process->state != PROC_IOWAIT)
 		_current_process->state = PROC_QUEUE;
 
-	while (true) {
-		nextproc = nextproc->next;
-		if (sched_proc_should_run(nextproc)) {
-			nextproc->state = PROC_READY;
-			_current_process = nextproc;
+	while (1) {
+		nextpid++;
+		nextpid %= CONFIG_SCHED_MAXPROC;
+		if (proc_table[nextpid] != NULL && proc_table[nextpid]->state == PROC_QUEUE) {
+			_current_process = proc_table[nextpid];
 			break;
 		}
-
-		/* TODO: Let the CPU sleep if there is nothing to do */
+		/* TODO: Add idle thread */
 	}
 
+	_current_process = proc_table[nextpid];
+	_current_process->state = PROC_READY;
 	return _current_process->sp;
-}
-
-/**
- * Find an unused process slot in the `procs` array, insert that process into
- * the scheduler's ring queue and return it.  Must run in atomic context.
- *
- * @returns A pointer to the new process slot, or `NULL` if none are available.
- */
-static struct process *proclist_find_free_slot_and_link(void)
-{
-	pid_t i;
-	struct process *newproc = NULL;
-
-	/* PID 0 is always reserved for the Kernel process, so start counting from 1 */
-	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++) {
-		if (procs[i].pid == -1 && procs[i].state == PROC_DEAD) {
-			newproc = &procs[i];
-			newproc->next = procs[i - 1].next;
-			procs[i - 1].next = newproc;
-			newproc->pid = i;
-			break;
-		}
-	}
-
-	return newproc;
 }
 
 struct process *sched_process_create(void (*entry)(void))
 {
-	struct process *proc;
+	pid_t pid;
+	struct process *proc = malloc(sizeof(*proc));
+	if (proc == NULL)
+		return NULL;
 
 	sched_atomic_enter();
 
-	proc = proclist_find_free_slot_and_link();
-	if (proc != NULL) {
-		proc->sp = proc->stack_bottom;
-		proc->lastexec = 0;
-		proc->sleep_usecs = 0;
-		proc->state = PROC_QUEUE;
-
-		arch_sched_process_init(proc, entry);
+	for (pid = 1; pid < CONFIG_SCHED_MAXPROC; pid++) {
+		if (proc_table[pid] == NULL)
+			break;
 	}
+
+	if (pid == CONFIG_SCHED_MAXPROC) {
+		/* max number of processess exceeded */
+		free(proc);
+		sched_atomic_leave();
+		return NULL;
+	}
+
+	proc->pid = pid;
+	proc->stack_bottom = &_estack - (pid * CONFIG_STACKSZ);
+	proc->lastexec = 0;
+	proc->sleep_usecs = 0;
+	proc->state = PROC_QUEUE;
+
+	arch_sched_process_init(proc, entry);
+
+	proc_table[pid] = proc;
 
 	sched_atomic_leave();
 

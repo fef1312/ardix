@@ -3,19 +3,22 @@
 
 #pragma once
 
+#include <ardix/sched.h>
 #include <arch/at91sam3x8e/interrupt.h>
+
+#include <stdbool.h>
 #include <toolchain.h>
 
 /** Enter atomic context, i.e. disable preemption */
 __always_inline void sched_atomic_enter(void)
 {
-	arch_irq_disable(IRQNO_PEND_SV);
+	_is_atomic_context = true;
 }
 
 /** Leave atomic context, i.e. re-enable preemption */
 __always_inline void sched_atomic_leave(void)
 {
-	arch_irq_enable(IRQNO_PEND_SV);
+	_is_atomic_context = false;
 }
 
 /*

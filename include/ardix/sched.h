@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <ardix/list.h>
 #include <ardix/types.h>
 #include <arch/hardware.h>
+
+#include <stdbool.h>
 
 #ifndef CONFIG_SCHED_MAXPROC
 /** The maximum number of processes. */
@@ -40,8 +43,6 @@ enum proc_state {
 
 /** Stores an entire process image. */
 struct process {
-	/** Next process in the (circular) list. */
-	struct process *next;
 	/** Stack pointer. */
 	void *sp;
 	/** Bottom of the stack (i.e. the highest address). */
@@ -58,6 +59,8 @@ struct process {
 
 /** The currently executing process. */
 extern struct process *_current_process;
+
+extern bool _is_atomic_context;
 
 /**
  * Initialize the scheduler subsystem.
@@ -101,38 +104,6 @@ struct process *sched_process_create(void (*entry)(void));
  *	Allowed values are `PROC_SLEEP` and `PROC_IOWAIT`.
  */
 void sched_switch_early(enum proc_state state);
-
-/**
- * Suspend the current process for the specified amount of milliseconds.
- * Note that there are slight deviations from this time interval because of the
- * round-robin scheduling algorithm.
- * If the sleep time is required to be exactly accurate, use `atomic_udelay()`.
- * Note, however, that this will block *all* other processes, even including
- * I/O, for the entire time period.
- *
- * @param msecs: The amount of milliseconds to (approximately) sleep for.
- */
-void msleep(unsigned long int msecs);
-
-/**
- * Block the entire CPU from execution for the specified amount of microseconds.
- * Note that this will temporarily disable the scheduler, meaning that *nothing*
- * (not even I/O) will be executed.  The only reason you would ever want to use
- * this is for mission-critical, very short (<= 100 us) periods of time.
- *
- * @param usecs: The amount of microseconds to halt the CPU for.
- */
-void atomic_udelay(unsigned long int usecs);
-
-/**
- * Attempt to acquire an atomic lock.
- *
- * @param mutex: The pointer to the mutex.
- * @returns `0` if the lock could be acquired, and `-EAGAIN` if not.
- */
-int atomic_lock(atomic_t *mutex);
-
-void atomic_unlock(atomic_t *mutex);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
