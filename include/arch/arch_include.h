@@ -3,14 +3,11 @@
 
 #pragma once
 
-#include <arch/arch_include.h>
-
-#include <ardix/serial.h>
-
-int arch_serial_init(struct serial_interface *interface);
-void arch_serial_exit(struct serial_interface *interface);
-
-#include ARCH_INCLUDE(serial.h)
+#ifdef ARCH_AT91SAM3X8E
+#define ARCH_INCLUDE(file) <arch/at91sam3x8e/file>
+#else
+#error "Unsupported architecture"
+#endif
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

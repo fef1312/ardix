@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <arch/arch_include.h>
+
 /**
  * Block the CPU by continuously checking the same expression in an
  * infinite loop, until the condition is true.  Useful for polling.
@@ -38,13 +40,7 @@ int sys_init(void);
 #define STACK_SIZE 2048U
 #endif
 
-#if defined(ARCH_ATMEGA328P)
-#error "ATmega328p is not implemented (yet?)"
-#elif defined(ARCH_AT91SAM3X8E)
-#include <arch/at91sam3x8e/hardware.h>
-#else
-#error "Unsupported architecture"
-#endif
+#include ARCH_INCLUDE(hardware.h)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

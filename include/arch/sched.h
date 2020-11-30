@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <arch/arch_include.h>
 #include <arch/hardware.h>
 
 #include <stdbool.h>
@@ -27,11 +28,7 @@ int arch_sched_hwtimer_init(unsigned int freq);
  */
 void arch_sched_process_init(struct process *process, void (*entry)(void));
 
-#ifdef ARCH_AT91SAM3X8E
-#include <arch/at91sam3x8e/sched.h>
-#else
-#error "Unsupported architecture"
-#endif
+#include ARCH_INCLUDE(sched.h)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
