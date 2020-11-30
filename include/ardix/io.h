@@ -13,8 +13,6 @@
  */
 int io_init(void);
 
-void io_thread_entry(void);
-
 /**
  * Update the hardware serial buffers if necessary.
  * This includes copying to and from the main ring buffers.

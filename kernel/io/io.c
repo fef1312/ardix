@@ -9,7 +9,7 @@
 
 #include <toolchain.h>
 
-__naked void io_thread_entry(void)
+static __naked void io_thread_entry(void)
 {
 	while (1) {
 		io_serial_buf_update(serial_default_interface);

@@ -22,9 +22,7 @@ struct arch_serial_interface arch_serial_default_interface = {
 		.id = 0,
 		.baud = 0,
 	},
-	.current_len = 0,
 	.hw_txrdy = false,
-	.current_txbuf = ARCH_SERIAL_BUF1,
 };
 struct serial_interface *serial_default_interface = &arch_serial_default_interface.interface;
 
@@ -35,8 +33,7 @@ int arch_serial_init(struct serial_interface *interface)
 	if (interface->baud <= 0 || interface->id != 0)
 		return -1;
 
-	memset(&arch_iface->tx1[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
-	memset(&arch_iface->tx2[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
+	memset(&arch_iface->txbuf[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
 	REG_PMC_PCER0 |= REG_PMC_PCER0_PID(8);
@@ -44,8 +41,7 @@ int arch_serial_init(struct serial_interface *interface)
 	/* ensure the PIO controller is turned off on the serial pins */
 	REG_PIO_PDR(PIOA) = (1 << 8) | (1 << 9);
 
-	/* turn on peripheral DMA controller */
-	/* TODO: only enabled on TX for debugging purposes right now */
+	/* configure peripheral DMA controller */
 	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTEN_MASK;
 
 	/* reset & disable rx and tx */
@@ -60,8 +56,8 @@ int arch_serial_init(struct serial_interface *interface)
 
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
-	REG_UART_IER = REG_UART_IER_RXRDY_MASK /* TODO: RX still works byte-by-byte w/out DMA */
-		     | REG_UART_IER_TXBUFE_MASK /* TX uses DMA though */
+	REG_UART_IER = REG_UART_IER_RXRDY_MASK
+		     | REG_UART_IER_TXBUFE_MASK
 		     | REG_UART_IER_OVRE_MASK
 		     | REG_UART_IER_FRAME_MASK;
 
@@ -89,46 +85,23 @@ void arch_serial_exit(struct serial_interface *interface)
 	interface->id = -1;
 }
 
-int arch_serial_txbuf_rotate(struct arch_serial_interface *interface)
-{
-	if (!interface->hw_txrdy)
-		return -EBUSY;
-	interface->hw_txrdy = false;
-
-	if (interface->current_txbuf == ARCH_SERIAL_BUF1) {
-		/* buf1 has been written to, DMA has been reading from buf2 */
-		interface->current_txbuf = ARCH_SERIAL_BUF2;
-		/* pass buf1 to the DMA controller */
-		REG_UART_PDC_TPR = (uint32_t)&interface->tx1[0];
-	} else {
-		/* buf2 has been written to, DMA has been reading from buf1 */
-		interface->current_txbuf = ARCH_SERIAL_BUF1;
-		/* pass buf2 to the DMA controller */
-		REG_UART_PDC_TPR = (uint32_t)&interface->tx2[0];
-	}
-
-	REG_UART_PDC_TCR = interface->current_len;
-	interface->current_len = 0;
-
-	return 0;
-}
-
 void io_serial_buf_update(struct serial_interface *interface)
 {
-	void *buf;
+	uint16_t len;
 	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
 
-	if (arch_iface->current_len)
-		arch_serial_txbuf_rotate(arch_iface);
-	if (!arch_iface->current_len) {
-		if (arch_iface->current_txbuf == ARCH_SERIAL_BUF1)
-			buf = &arch_iface->tx1[0];
-		else
-			buf = &arch_iface->tx2[0];
-
+	if (arch_iface->hw_txrdy) {
 		sched_atomic_enter();
-		arch_iface->current_len = (uint16_t)ringbuf_read(buf, interface->tx, SERIAL_BUFSZ);
+		len = (uint16_t)ringbuf_read(&arch_iface->txbuf[0], interface->tx,
+					     CONFIG_ARCH_SERIAL_BUFSZ);
 		sched_atomic_leave();
+
+		if (len) {
+			arch_iface->hw_txrdy = false;
+			REG_UART_PDC_TPR = (uint32_t)&arch_iface->txbuf[0];
+			REG_UART_PDC_TCR = len;
+			REG_UART_IER = REG_UART_IER_TXBUFE_MASK;
+		}
 	}
 }
 
@@ -146,10 +119,12 @@ void irq_uart(void)
 	/* TX buffer has been sent */
 	if (state & REG_UART_SR_TXBUFE_MASK) {
 		/*
-		 * this is picked up by the I/O thread, which will then switch
-		 * the current hardware buffer that is being copied to
+		 * this is picked up by the I/O thread, which will copy the next
+		 * chunk of data from the ring buffer to the hardware buffer and
+		 * resume transmission
 		 */
 		arch_serial_default_interface.hw_txrdy = true;
+		REG_UART_IDR = REG_UART_IDR_TXBUFE_MASK;
 	}
 
 	/* check for error conditions */

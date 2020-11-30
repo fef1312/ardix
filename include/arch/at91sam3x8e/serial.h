@@ -24,16 +24,10 @@ struct arch_serial_interface {
 	 * The platform's buffer length registers only allow 16-byte numbers, so we can save some
 	 * memory by not using `size_t`
 	 */
-	uint16_t current_len; /* buffer length registers are only 16 bytes */
-	uint8_t tx1[CONFIG_ARCH_SERIAL_BUFSZ];
-	uint8_t tx2[CONFIG_ARCH_SERIAL_BUFSZ];
+	uint8_t txbuf[CONFIG_ARCH_SERIAL_BUFSZ];
 	/** hardware has finished sending the current buffer and ready for a swap */
 	bool hw_txrdy;
-	/** which hardware buffer is currently being written to (use `ARCH_SERIAL_BUF*`) */
-	bool current_txbuf;
 };
-#define ARCH_SERIAL_BUF1 false
-#define ARCH_SERIAL_BUF2 true
 
 /**
  * Cast a `struct serial_interface` out to a `struct arch_serial_interface`.
