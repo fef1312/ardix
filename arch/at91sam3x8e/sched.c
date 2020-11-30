@@ -11,13 +11,15 @@
 #include <stdbool.h>
 #include <toolchain.h>
 
+#include <ardix/spinlock.h>
+
 void irq_sys_tick(void)
 {
 	/*
 	 * fire a PendSV interrupt and do the actual context switching there
 	 * because it is faster that way (according to the docs, at least)
 	 */
-	if (!_is_atomic_context)
+	if (!spinlock_count(&_in_atomic_context))
 		arch_irq_invoke(IRQNO_PEND_SV);
 }
 

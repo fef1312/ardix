@@ -51,7 +51,7 @@ static inline bool sched_proc_should_run(const struct process *proc)
 {
 	enum proc_state state = proc->state;
 
-	if (state == PROC_QUEUE || state == PROC_READY)
+	if (state == PROC_QUEUE || state == PROC_READY || state == PROC_IOWAIT)
 		return true;
 
 	return false;
@@ -68,14 +68,13 @@ void *sched_process_switch(void *curr_sp)
 	while (1) {
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXPROC;
-		if (proc_table[nextpid] != NULL && proc_table[nextpid]->state == PROC_QUEUE) {
+		if (proc_table[nextpid] != NULL && sched_proc_should_run(proc_table[nextpid])) {
 			_current_process = proc_table[nextpid];
 			break;
 		}
 		/* TODO: Add idle thread */
 	}
 
-	_current_process = proc_table[nextpid];
 	_current_process->state = PROC_READY;
 	return _current_process->sp;
 }
