@@ -1,25 +1,73 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+/*
+ * An over-simplified approach of implementing locks on a system that
+ * doesn't even support SMP.  Describing the realization as "unfortunate"
+ * is pretty much an understatement, it is straight up horrible because it
+ * can lead to two threads failing to acquire a lock at the same time
+ * (but it is platform-agnostic thanks to C11, yay!).
+ */
+
 #pragma once
 
-#include <ardix/sched.h>
-#include <arch/at91sam3x8e/interrupt.h>
-#include <arch/at91sam3x8e/spinlock.h>
-
-#include <stdbool.h>
+#include <errno.h>
+#include <stdatomic.h>
 #include <toolchain.h>
 
-/** Enter atomic context, i.e. disable preemption */
-__always_inline void sched_atomic_enter(void)
+struct atom {
+	atomic_int lock;
+};
+
+/** Initialize an atom to be used as a lock. */
+__always_inline void atom_init(struct atom *atom)
 {
-	arch_spin_lock(&_in_atomic_context);
+	atom->lock = 0;
 }
 
-/** Leave atomic context, i.e. re-enable preemption */
-__always_inline void sched_atomic_leave(void)
+/**
+ * Destroy this atom or fail if it is currently locked.
+ * If successful, this will make any subsequent locking attempts fail.
+ *
+ * @param atom: The atom to be destroyed.
+ * @returns 0 on success, and `-EAGAIN` if the atom is currently locked.
+ */
+__always_inline int atom_destroy(struct atom *atom)
 {
-	arch_spin_unlock(&_in_atomic_context);
+	if (atom->lock != 0)
+		return -EAGAIN;
+	atom->lock = -1;
+	return 0;
+}
+
+/**
+ * Attempt to aquire a lock on an atom.
+ *
+ * @param atom: The atom to get the the lock on.
+ * @returns 0 on success, and `-EAGAIN` if the atom was already locked by
+ *	another process.
+ */
+__always_inline int atom_lock(struct atom *atom)
+{
+	atom->lock++;
+	if (atom->lock != 1) {
+		atom->lock--;
+		return -EAGAIN;
+	} else {
+		return 0;
+	}
+}
+
+/**
+ * Release the lock on an atom.
+ * Even though it is possible with the current implementation, releasing a
+ * lock that isn't yours is a bad idea for obvious reasons.
+ *
+ * @param atom: The atom the release the lock from.
+ */
+__always_inline void atom_unlock(struct atom *atom)
+{
+	atom->lock--;
 }
 
 /*

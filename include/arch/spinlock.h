@@ -3,24 +3,9 @@
 
 #pragma once
 
-#include <ardix/sched.h>
-#include <arch/at91sam3x8e/interrupt.h>
-#include <arch/at91sam3x8e/spinlock.h>
+#include <arch/arch_include.h>
 
-#include <stdbool.h>
-#include <toolchain.h>
-
-/** Enter atomic context, i.e. disable preemption */
-__always_inline void sched_atomic_enter(void)
-{
-	arch_spin_lock(&_in_atomic_context);
-}
-
-/** Leave atomic context, i.e. re-enable preemption */
-__always_inline void sched_atomic_leave(void)
-{
-	arch_spin_unlock(&_in_atomic_context);
-}
+#include ARCH_INCLUDE(spinlock.h)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

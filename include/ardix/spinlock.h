@@ -3,23 +3,57 @@
 
 #pragma once
 
-#include <ardix/sched.h>
-#include <arch/at91sam3x8e/interrupt.h>
-#include <arch/at91sam3x8e/spinlock.h>
+#include <arch/spinlock.h>
 
-#include <stdbool.h>
-#include <toolchain.h>
+/*
+ * Spinlocks in Ardix work pretty much the same as they do on Linux
+ * (this is basically just a ripoff).  See The Linux Kernel documentation
+ * for details.
+ */
 
-/** Enter atomic context, i.e. disable preemption */
-__always_inline void sched_atomic_enter(void)
+/**
+ * Initialize a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ */
+__always_inline void spinlock_init(spinlock_t *lock)
 {
-	arch_spin_lock(&_in_atomic_context);
+	arch_spinlock_init(lock);
 }
 
-/** Leave atomic context, i.e. re-enable preemption */
-__always_inline void sched_atomic_leave(void)
+/**
+ * Increment the lock count on a spinlock.
+ * If required, block until we have exclusive access to the memory.
+ *
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
+ */
+__always_inline int spin_lock(spinlock_t *lock)
 {
-	arch_spin_unlock(&_in_atomic_context);
+	return arch_spin_lock(lock);
+}
+
+/**
+ * Decrement the lock count on a spinlock.
+ * If required, block until we have exclusive access to the memory.
+ *
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
+ */
+__always_inline int spin_unlock(spinlock_t *lock)
+{
+	return arch_spin_unlock(lock);
+}
+
+/**
+ * Get the lock count of a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ * @returns The current lock count.
+ */
+__always_inline int spinlock_count(spinlock_t *lock)
+{
+	return arch_spinlock_count(lock);
 }
 
 /*

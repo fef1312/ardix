@@ -3,23 +3,85 @@
 
 #pragma once
 
-#include <ardix/sched.h>
-#include <arch/at91sam3x8e/interrupt.h>
-#include <arch/at91sam3x8e/spinlock.h>
-
-#include <stdbool.h>
+#include <stdint.h>
 #include <toolchain.h>
 
-/** Enter atomic context, i.e. disable preemption */
-__always_inline void sched_atomic_enter(void)
+typedef struct spinlock {
+	int lock;
+} spinlock_t;
+
+/* This code is basically stolen from arch/arm/include/asm/spinlock.h in Linux 5.9 */
+
+/**
+ * Initialize a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ */
+inline void arch_spinlock_init(spinlock_t *lock)
 {
-	arch_spin_lock(&_in_atomic_context);
+	lock->lock = 0;
 }
 
-/** Leave atomic context, i.e. re-enable preemption */
-__always_inline void sched_atomic_leave(void)
+/**
+ * Increment the lock count on a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
+ */
+inline int arch_spin_lock(spinlock_t *lock)
 {
-	arch_spin_unlock(&_in_atomic_context);
+	int tmp;
+	int newval;
+	spinlock_t lockval;
+
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"	/* lockval = *lock */
+"	add	%1,	%0,	#1	\n"	/* newval = lockval.lock + 1 */
+"	strex	%2,	%1,	[%3]	\n"	/* *lock = newval */
+"	teq	%2,	#0		\n"	/* store successful? */
+"	bne	1b			\n"	/*  -> goto 1 if not */
+"	dmb				"	/* memory barrier */
+	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+	: "r" (lock)
+	: "cc");
+
+	return newval;
+}
+
+/**
+ * Decrement the lock count on a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
+ */
+inline int arch_spin_unlock(spinlock_t *lock)
+{
+	int tmp;
+	int newval;
+	spinlock_t lockval;
+
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"
+"	sub	%1,	%0,	#1	\n"
+"	strex	%2,	%1,	[%3]	\n"
+"	teq	%2,	#0		\n"
+"	bne	1b			\n"
+"	dmb				"
+	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+	: "r" (lock)
+	: "cc");
+
+	return newval;
+}
+
+/**
+ * Get the lock count on a spinlock.
+ *
+ * @param lock: Pointer to the spinlock.
+ */
+__always_inline int arch_spinlock_count(spinlock_t *lock)
+{
+	return lock->lock;
 }
 
 /*

@@ -60,7 +60,7 @@ struct process {
 /** The currently executing process. */
 extern struct process *_current_process;
 
-extern bool _is_atomic_context;
+extern spinlock_t _in_atomic_context;
 
 /**
  * Initialize the scheduler subsystem.
