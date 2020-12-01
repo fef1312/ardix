@@ -23,9 +23,13 @@ extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
 void do_bootstrap(void);
+/* implementation in sys.c */
+void sys_init();
 
-void irq_reset(void)
+__naked void irq_reset(void)
 {
+	sys_init();
+
 	memmove(
 		&_srelocate,
 		&_etext,
