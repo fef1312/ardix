@@ -156,13 +156,17 @@ void *malloc(size_t size)
 	size = (size / MIN_BLKSZ) * MIN_BLKSZ;
 	size += MIN_BLKSZ;
 
+	atomic_enter();
+
 	list_for_each_entry(&memblk_free_list, blk, list) {
 		/* blocks are sorted by size */
 		if (blk->size >= size)
 			break;
 	}
-	if (blk->size < size)
+	if (blk->size < size) {
+		atomic_leave();
 		return NULL; /* TODO: set errno to ENOMEM once we have it */
+	}
 
 	/*
 	 * If we've made it to here, we have found a sufficiently big block,
@@ -178,6 +182,8 @@ void *malloc(size_t size)
 		memblk_set_size(blk, blk->size | 0x1u /* allocated bit */);
 
 	list_delete(&blk->list);
+
+	atomic_leave();
 
 	/* Keep the size field intact */
 	return ((void *)blk) + MEMBLK_SIZE_LENGTH;
@@ -214,6 +220,8 @@ void free(void *ptr)
 	if ((blk->size & 0x1u) == 0)
 		return; /* TODO: Raise exception on double-free */
 
+	atomic_enter();
+
 	memblk_set_size(blk, without_lsb(blk->size));
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
@@ -238,6 +246,8 @@ void free(void *ptr)
 			break;
 	}
 	list_insert_before(&tmp->list, &blk->list);
+
+	atomic_leave();
 }
 
 /*
