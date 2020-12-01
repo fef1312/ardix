@@ -8,7 +8,16 @@
 #include <ardix/string.h>
 #include <toolchain.h>
 
-uint32_t sys_core_clock = 4000000UL; /* default internal 4MHz RC oscillator */
+/*
+ * The initial sys_core_clock on system boot would actually be 4000000 because
+ * the 4 MHz RC oscillator is used by default.  However, for performance
+ * reasons, the system core clock is configured to use the 84 MHz PLLA clock
+ * even before the memory area for global variables (like this one) is copied
+ * from flash to RAM, which in turn would overwrite any updates to the clock.
+ * So, since we trust the clock to be configured correctly before this global
+ * variable is accessed anywhere, we initialize it to the 84 MHz clock.
+ */
+uint32_t sys_core_clock = 84000000UL;
 
 int sys_init(void)
 {
@@ -75,7 +84,6 @@ int sys_init(void)
 		     | REG_PMC_MCKR_CSS_VAL(2 /* = PLLA clock */);
 	mom_are_we_there_yet(REG_PMC_SR & REG_PMC_SR_MCKRDY_BIT);
 
-	sys_core_clock = 84000000UL;
 	return 0;
 }
 
