@@ -6,12 +6,35 @@
 
 void arch_irq_enable(enum irqno irqno)
 {
-	REG_NVIC_ISER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+	if (irqno >= 0)
+		REG_NVIC_ISER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
 }
 
 void arch_irq_disable(enum irqno irqno)
 {
-	REG_NVIC_ICER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+	if (irqno >= 0)
+		REG_NVIC_ICER((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+}
+
+void arch_irq_invoke(enum irqno irqno)
+{
+	if (irqno < 0) {
+		switch (irqno) {
+		case IRQNO_PEND_SV:
+			REG_SCB_ICSR = REG_SCB_ICSR_PENDSVSET_BIT;
+			break;
+
+		case IRQNO_SYS_TICK:
+			REG_SCB_ICSR = REG_SCB_ICSR_PENDSTSET_BIT;
+			break;
+
+		default:
+			/* TODO: Implement the rest of interrupts < 0 */
+			break;
+		}
+	} else {
+		REG_NVIC_ISPR((uint32_t)irqno >> 5) = 1 << ( ((uint32_t)irqno) & 0x1F );
+	}
 }
 
 /*

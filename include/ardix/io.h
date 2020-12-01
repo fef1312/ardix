@@ -3,65 +3,23 @@
 
 #pragma once
 
-#include <ardix/types.h>
-#include <ardix/ringbuf.h>
-#include <toolchain.h>
-
-#ifndef CONFIG_SERIAL_BAUD
-/** serial baud rate */
-#define CONFIG_SERIAL_BAUD 115200
-#endif
-
-#ifndef SERIAL_BUFSZ
-/** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 256
-#endif
-
-struct serial_interface {
-	struct ringbuf *rx;
-	struct ringbuf *tx;
-	long int baud;
-	int id;
-};
-
-/** The default serial console (this is where printk outputs to) */
-extern struct serial_interface *serial_default_interface;
+#include <ardix/serial.h>
 
 /**
- * Initialize a serial interface.
+ * Initialize the I/O thread and subsystems.
+ * Must be called after all I/O components have been initialized.
  *
- * @param interface: The serial interface.
- * @param baud: The baud rate (bits/second).
- * @returns 0 on success, a negative number otherwise.
+ * @returns 0 on success, or a negative number on failure.
  */
-int serial_init(struct serial_interface *interface, long int baud);
+int io_init(void);
 
 /**
- * Flush all buffers (if possible) and close the serial interface.
+ * Update the hardware serial buffers if necessary.
+ * This includes copying to and from the main ring buffers.
  *
  * @param interface: The serial interface.
  */
-void serial_exit(struct serial_interface *interface);
-
-/**
- * Read from the serial buffer.
- *
- * @param dest: Where to store the received data.
- * @param interface: The serial interface to read data from.
- * @param len: The maximum amount of bytes to read.
- * @returns The actual amount of bytes read.
- */
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
-
-/**
- * Write data to the serial buffer.
- *
- * @param interface: The serial interface to write data to.
- * @param data: The data to write.
- * @param len: The length of `data`.
- * @returns The actual amount of bytes written.
- */
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
+void io_serial_buf_update(struct serial_interface *interface);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

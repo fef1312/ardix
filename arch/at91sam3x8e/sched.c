@@ -3,23 +3,16 @@
 
 #include <arch/sched.h>
 #include <arch/at91sam3x8e/hardware.h>
+#include <arch/at91sam3x8e/interrupt.h>
+
+#include <ardix/atomic.h>
 #include <ardix/string.h>
 #include <ardix/sched.h>
+
 #include <stdbool.h>
 #include <toolchain.h>
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
-/**
- * Set the PENDSV bit in the system control block.
- */
-static __always_inline void sched_pendsv_req(void)
-{
-	REG_SCB_ICSR |= REG_SCB_ICSR_PENDSVSET_BIT;
-}
+#include <ardix/spinlock.h>
 
 void irq_sys_tick(void)
 {
@@ -27,16 +20,8 @@ void irq_sys_tick(void)
 	 * fire a PendSV interrupt and do the actual context switching there
 	 * because it is faster that way (according to the docs, at least)
 	 */
-	sched_pendsv_req();
-}
-
-void sched_init_process_regs(struct reg_snapshot *reg_snap, void (*entry)(void))
-{
-	memset(reg_snap, 0, sizeof(*reg_snap));
-
-	reg_snap->hw.lr = (void *)0xFFFFFFF9U;
-	reg_snap->hw.pc = entry;
-	reg_snap->hw.psr = 0x01000000U;
+	if (!is_atomic_context())
+		arch_irq_invoke(IRQNO_PEND_SV);
 }
 
 /**
@@ -57,7 +42,7 @@ static inline void sched_nvic_set_prio_group(uint32_t prio_group)
 	REG_SCB_AIRCR = reg_val;
 }
 
-int sched_hwtimer_init(unsigned int freq)
+int arch_sched_hwtimer_init(unsigned int freq)
 {
 	uint32_t ticks = sys_core_clock / freq;
 	if (ticks > REG_SYSTICK_LOAD_RELOAD_MASK)
@@ -75,25 +60,23 @@ int sched_hwtimer_init(unsigned int freq)
 	return 0;
 }
 
-inline void sched_atomic_enter(void)
+void arch_sched_process_init(struct process *process, void (*entry)(void))
 {
-	REG_SYSTICK_CTRL &= ~REG_SYSTICK_CTRL_ENABLE_BIT;
+	struct reg_snapshot *regs = process->stack_bottom - sizeof(*regs);
+	process->sp = regs;
+
+	memset(regs, 0, sizeof(*regs));
+	regs->hw.pc = entry;
+	regs->hw.psr = 0x01000000U;
+	regs->sw.lr = (void *)0xFFFFFFF9U;
 }
 
-inline void sched_atomic_leave(bool resched)
-{
-	REG_SYSTICK_CTRL |= REG_SYSTICK_CTRL_ENABLE_BIT;
-}
-
-void sched_exec_early(void)
+void sched_yield(enum proc_state state)
 {
 	REG_SYSTICK_VAL = 0U; /* Reset timer */
-	sched_pendsv_req();
+	_current_process->state = state;
+	arch_irq_invoke(IRQNO_PEND_SV);
 }
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif /* __cplusplus */
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

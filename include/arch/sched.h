@@ -4,43 +4,28 @@
 #pragma once
 
 #include <arch/hardware.h>
+
 #include <stdbool.h>
+#include <toolchain.h>
+
+struct process; /* see include/ardix/sched.h */
 
 /**
  * Initialize a hardware timer for schduling.
  *
  * @param freq: The timer frequency in Hertz.
  */
-int sched_hwtimer_init(unsigned int freq);
+int arch_sched_hwtimer_init(unsigned int freq);
 
 /**
- * Disable all scheduling interrupts in order to enter atomic context.
- */
-void sched_atomic_enter(void);
-
-/**
- * Re-enable scheduling interrupts, i.e. leave atomic context.
+ * Initialize a new process.
+ * This requires the process' `stack_base` field to be initialized as the
+ * initial register values are written to the stack.
  *
- * @param resched: If `true`, request the scheduler to proceed to the next
- *	process ASAP.  Until then, put the CPU to sleep if required.
- */
-void sched_atomic_leave(bool resched);
-
-/**
- * Infinite loop of sleep instructions.
- */
-void sched_idle_process_loop(void);
-
-/**
- * Initialize the register values of a newly allocated process image.
- * Called by the scheduling subsystem when a process is being created.
- *
- * @param reg_snap: The stack memory location where the initial register values
- *	are to be loaded from.
+ * @param process: The process.
  * @param entry: The process entry point.
  */
-void sched_init_process_regs(struct reg_snapshot *reg_snap,
-			     void (*entry)(void));
+void arch_sched_process_init(struct process *process, void (*entry)(void));
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

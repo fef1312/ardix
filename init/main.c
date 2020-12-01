@@ -2,7 +2,13 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <arch/hardware.h>
+
+#include <ardix/spinlock.h>
+#include <ardix/io.h>
+#include <ardix/printk.h>
 #include <ardix/sched.h>
+#include <ardix/serial.h>
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -21,30 +27,28 @@
  */
 void do_bootstrap(void)
 {
-	bool on = true;
-	uint32_t state = (1 << 27);
 	uint32_t count = 0;
+	unsigned int print_count = 0;
 
-	sys_init();
+	REG_PIOB_OER = 1 << 27;
+	REG_PIOB_PER = 1 << 27;
+	REG_PIOB_CODR = 1 << 27;
 
 	sched_init();
+	io_init();
 
-	REG_PIOB_OER |= state;
-	REG_PIOB_PER |= state;
-
-	/* we'll only let the LED flash for now */
+	printk("hello, world\n");
 
 	while (true) {
-		if (count++ != 100000)
+		if (count++ != 1000000)
 			continue;
 
-		if (on) {
-			REG_PIOB_SODR |= state;
-			on = false;
-		} else {
-			REG_PIOB_CODR |= state;
-			on = true;
-		}
+		print_count++;
+		if (print_count % 2)
+			REG_PIOB_CODR = 1 << 27;
+		else
+			REG_PIOB_SODR = 1 << 27;
+		printk("endless loop iteration #%u\n", print_count);
 
 		count = 0;
 	}

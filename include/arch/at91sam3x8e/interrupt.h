@@ -20,7 +20,7 @@ void irq_svc(void);
 /** Debug handler (reserved) */
 void irq_debug_mon(void);
 /** Pending SV interrupt handler */
-extern void irq_pend_sv(void);
+void irq_pend_sv(void);
 /** SysTick interrupt handler */
 void irq_sys_tick(void);
 
@@ -166,6 +166,8 @@ enum irqno {
 void arch_irq_enable(enum irqno irqno);
 
 void arch_irq_disable(enum irqno irqno);
+
+void arch_irq_invoke(enum irqno irqno);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

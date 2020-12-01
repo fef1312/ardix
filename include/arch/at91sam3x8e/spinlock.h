@@ -3,65 +3,43 @@
 
 #pragma once
 
-#include <ardix/types.h>
-#include <ardix/ringbuf.h>
+#include <arch/at91sam3x8e/spinlock_type.h>
+
 #include <toolchain.h>
 
-#ifndef CONFIG_SERIAL_BAUD
-/** serial baud rate */
-#define CONFIG_SERIAL_BAUD 115200
-#endif
+/* This code is basically stolen from arch/arm/include/asm/spinlock.h in Linux 5.9 */
 
-#ifndef SERIAL_BUFSZ
-/** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 256
-#endif
-
-struct serial_interface {
-	struct ringbuf *rx;
-	struct ringbuf *tx;
-	long int baud;
-	int id;
-};
-
-/** The default serial console (this is where printk outputs to) */
-extern struct serial_interface *serial_default_interface;
+#define SPINLOCK_DEFINE(name) spinlock_t name = { .lock = 0 }
 
 /**
- * Initialize a serial interface.
+ * Initialize a spinlock.
  *
- * @param interface: The serial interface.
- * @param baud: The baud rate (bits/second).
- * @returns 0 on success, a negative number otherwise.
+ * @param lock: Pointer to the spinlock.
  */
-int serial_init(struct serial_interface *interface, long int baud);
+void arch_spinlock_init(spinlock_t *lock);
 
 /**
- * Flush all buffers (if possible) and close the serial interface.
+ * Increment the lock count on a spinlock.
  *
- * @param interface: The serial interface.
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
  */
-void serial_exit(struct serial_interface *interface);
+int arch_spin_lock(spinlock_t *lock);
 
 /**
- * Read from the serial buffer.
+ * Decrement the lock count on a spinlock.
  *
- * @param dest: Where to store the received data.
- * @param interface: The serial interface to read data from.
- * @param len: The maximum amount of bytes to read.
- * @returns The actual amount of bytes read.
+ * @param lock: Pointer to the spinlock.
+ * @returns The new lock count.
  */
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
+int arch_spin_unlock(spinlock_t *lock);
 
 /**
- * Write data to the serial buffer.
+ * Get the lock count on a spinlock.
  *
- * @param interface: The serial interface to write data to.
- * @param data: The data to write.
- * @param len: The length of `data`.
- * @returns The actual amount of bytes written.
+ * @param lock: Pointer to the spinlock.
  */
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
+int arch_spinlock_count(spinlock_t *lock);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

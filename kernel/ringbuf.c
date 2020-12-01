@@ -31,7 +31,7 @@ size_t ringbuf_read(void *dest, struct ringbuf *buf, size_t len)
 {
 	uint8_t *tmp = dest;
 
-	while (len-- > 0 && buf->len > 0) {
+	while (len-- && buf->len) {
 		*tmp++ = buf->data[buf->rpos++];
 		buf->len--;
 
@@ -46,7 +46,7 @@ size_t ringbuf_write(struct ringbuf *buf, const void *src, size_t len)
 {
 	const uint8_t *tmp = src;
 
-	while (len-- > 0 && buf->len < buf->capacity) {
+	while (len-- && buf->len != buf->capacity) {
 		buf->data[buf->wpos++] = *tmp++;
 		buf->len++;
 

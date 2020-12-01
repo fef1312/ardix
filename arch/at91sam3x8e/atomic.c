@@ -1,67 +1,25 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <arch/at91sam3x8e/spinlock.h>
+#include <ardix/atomic.h>
 
-#include <ardix/types.h>
-#include <ardix/ringbuf.h>
-#include <toolchain.h>
+static SPINLOCK_DEFINE(atomic_context);
 
-#ifndef CONFIG_SERIAL_BAUD
-/** serial baud rate */
-#define CONFIG_SERIAL_BAUD 115200
-#endif
+void atomic_enter(void)
+{
+	arch_spin_lock(&atomic_context);
+}
 
-#ifndef SERIAL_BUFSZ
-/** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 256
-#endif
+void atomic_leave(void)
+{
+	arch_spin_unlock(&atomic_context);
+}
 
-struct serial_interface {
-	struct ringbuf *rx;
-	struct ringbuf *tx;
-	long int baud;
-	int id;
-};
-
-/** The default serial console (this is where printk outputs to) */
-extern struct serial_interface *serial_default_interface;
-
-/**
- * Initialize a serial interface.
- *
- * @param interface: The serial interface.
- * @param baud: The baud rate (bits/second).
- * @returns 0 on success, a negative number otherwise.
- */
-int serial_init(struct serial_interface *interface, long int baud);
-
-/**
- * Flush all buffers (if possible) and close the serial interface.
- *
- * @param interface: The serial interface.
- */
-void serial_exit(struct serial_interface *interface);
-
-/**
- * Read from the serial buffer.
- *
- * @param dest: Where to store the received data.
- * @param interface: The serial interface to read data from.
- * @param len: The maximum amount of bytes to read.
- * @returns The actual amount of bytes read.
- */
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
-
-/**
- * Write data to the serial buffer.
- *
- * @param interface: The serial interface to write data to.
- * @param data: The data to write.
- * @param len: The length of `data`.
- * @returns The actual amount of bytes written.
- */
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
+int is_atomic_context(void)
+{
+	return arch_spinlock_count(&atomic_context);
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

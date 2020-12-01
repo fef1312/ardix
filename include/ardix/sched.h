@@ -3,12 +3,16 @@
 
 #pragma once
 
+#include <ardix/list.h>
+#include <ardix/spinlock.h>
 #include <ardix/types.h>
 #include <arch/hardware.h>
 
+#include <stdbool.h>
+
 #ifndef CONFIG_SCHED_MAXPROC
 /** The maximum number of processes. */
-#define CONFIG_SCHED_MAXPROC 16
+#define CONFIG_SCHED_MAXPROC 8
 #endif /* SCHED_MAXPROC */
 
 #if CONFIG_SCHED_MAXPROC > 64
@@ -20,6 +24,11 @@
 #define CONFIG_SCHED_INTR_FREQ 10000U
 #endif
 
+#ifndef CONFIG_STACKSZ
+/** Per-process stack size in bytes */
+#define CONFIG_STACKSZ 4096U
+#endif /* CONFIG_STACKSZ */
+
 enum proc_state {
 	/** Process is dead / doesn't exist */
 	PROC_DEAD,
@@ -29,12 +38,12 @@ enum proc_state {
 	PROC_QUEUE,
 	/** Process is sleeping, `sleep_until` specifies when to wake it up. */
 	PROC_SLEEP,
+	/** Process is waiting for I/O to flush buffers. */
+	PROC_IOWAIT,
 };
 
 /** Stores an entire process image. */
 struct process {
-	/** Next process in the (circular) list. */
-	struct process *next;
 	/** Stack pointer. */
 	void *sp;
 	/** Bottom of the stack (i.e. the highest address). */
@@ -79,44 +88,21 @@ void *sched_process_switch(void *curr_sp);
 /**
  * Create a new process.
  *
- * @param exec: The process executor.
+ * @param entry: The process entry point.
  * @returns A pointer to the new process, or `NULL` if something went wrong.
  *
  * TODO: make something like errno to tell what *exactly* went wrong
  */
-struct process *sched_process_create(void (*exec)(void));
+struct process *sched_process_create(void (*entry)(void));
 
 /**
- * Suspend the current process for the specified amount of milliseconds.
- * Note that there are slight deviations from this time interval because of the
- * round-robin scheduling algorithm.
- * If the sleep time is required to be exactly accurate, use `atomic_udelay()`.
- * Note, however, that this will block *all* other processes, even including
- * I/O, for the entire time period.
+ * Request the scheduler be invoked early, resulting in the current process to
+ * be suspended.
  *
- * @param msecs: The amount of milliseconds to (approximately) sleep for.
+ * @param state The state the process should enter.
+ *	Allowed values are `PROC_SLEEP` and `PROC_IOWAIT`.
  */
-void msleep(unsigned long int msecs);
-
-/**
- * Block the entire CPU from execution for the specified amount of microseconds.
- * Note that this will temporarily disable the scheduler, meaning that *nothing*
- * (not even I/O) will be executed.  The only reason you would ever want to use
- * this is for mission-critical, very short (<= 100 us) periods of time.
- *
- * @param usecs: The amount of microseconds to halt the CPU for.
- */
-void atomic_udelay(unsigned long int usecs);
-
-/**
- * Attempt to acquire an atomic lock.
- *
- * @param mutex: The pointer to the mutex.
- * @returns `0` if the lock could be acquired, and `-EAGAIN` if not.
- */
-int atomic_lock(atomic_t *mutex);
-
-void atomic_unlock(atomic_t *mutex);
+void sched_yield(enum proc_state state);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
