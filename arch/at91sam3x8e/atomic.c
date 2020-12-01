@@ -1,25 +1,24 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
-
-#include <ardix/sched.h>
-#include <arch/at91sam3x8e/interrupt.h>
 #include <arch/at91sam3x8e/spinlock.h>
+#include <ardix/atomic.h>
 
-#include <stdbool.h>
-#include <toolchain.h>
+static SPINLOCK_DEFINE(atomic_context);
 
-/** Enter atomic context, i.e. disable preemption */
-__always_inline void sched_atomic_enter(void)
+void atomic_enter(void)
 {
-	arch_spin_lock(&_in_atomic_context);
+	arch_spin_lock(&atomic_context);
 }
 
-/** Leave atomic context, i.e. re-enable preemption */
-__always_inline void sched_atomic_leave(void)
+void atomic_leave(void)
 {
-	arch_spin_unlock(&_in_atomic_context);
+	arch_spin_unlock(&atomic_context);
+}
+
+int is_atomic_context(void)
+{
+	return arch_spinlock_count(&atomic_context);
 }
 
 /*

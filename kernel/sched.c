@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#include <arch/hardware.h>
 #include <arch/sched.h>
 
-#include <ardix/list.h>
+#include <ardix/atomic.h>
 #include <ardix/malloc.h>
 #include <ardix/sched.h>
 #include <ardix/string.h>
@@ -18,8 +17,6 @@ extern uint32_t _estack;
 
 struct process *proc_table[CONFIG_SCHED_MAXPROC];
 struct process *_current_process;
-
-bool _is_atomic_context = false;
 
 int sched_init(void)
 {
@@ -86,7 +83,7 @@ struct process *sched_process_create(void (*entry)(void))
 	if (proc == NULL)
 		return NULL;
 
-	sched_atomic_enter();
+	atomic_enter();
 
 	for (pid = 1; pid < CONFIG_SCHED_MAXPROC; pid++) {
 		if (proc_table[pid] == NULL)
@@ -96,7 +93,7 @@ struct process *sched_process_create(void (*entry)(void))
 	if (pid == CONFIG_SCHED_MAXPROC) {
 		/* max number of processess exceeded */
 		free(proc);
-		sched_atomic_leave();
+		atomic_leave();
 		return NULL;
 	}
 
@@ -110,7 +107,7 @@ struct process *sched_process_create(void (*entry)(void))
 
 	proc_table[pid] = proc;
 
-	sched_atomic_leave();
+	atomic_leave();
 
 	return proc;
 }

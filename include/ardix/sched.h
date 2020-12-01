@@ -4,6 +4,7 @@
 #pragma once
 
 #include <ardix/list.h>
+#include <ardix/spinlock.h>
 #include <ardix/types.h>
 #include <arch/hardware.h>
 
@@ -60,8 +61,6 @@ struct process {
 /** The currently executing process. */
 extern struct process *_current_process;
 
-extern spinlock_t _in_atomic_context;
-
 /**
  * Initialize the scheduler subsystem.
  * This sets up a hardware interrupt timer (SysTick for Cortex-M3).
@@ -103,7 +102,7 @@ struct process *sched_process_create(void (*entry)(void));
  * @param state The state the process should enter.
  *	Allowed values are `PROC_SLEEP` and `PROC_IOWAIT`.
  */
-void sched_switch_early(enum proc_state state);
+void sched_yield(enum proc_state state);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

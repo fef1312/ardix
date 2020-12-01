@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/atomic.h>
 #include <ardix/ringbuf.h>
-#include <ardix/serial.h>
 #include <ardix/sched.h>
+#include <ardix/serial.h>
 
-#include <arch/sched.h>
 #include <arch/serial.h>
 
 #include <stddef.h>
@@ -50,9 +50,9 @@ ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 {
 	ssize_t ret;
 
-	sched_atomic_enter();
+	atomic_enter();
 	ret = (ssize_t)ringbuf_read(dest, interface->rx, len);
-	sched_atomic_leave();
+	atomic_leave();
 
 	return ret;
 }
@@ -63,15 +63,15 @@ ssize_t serial_write(struct serial_interface *interface, const void *data, size_
 	size_t tmp;
 
 	while (1) {
-		sched_atomic_enter();
+		atomic_enter();
 		tmp = ringbuf_write(interface->tx, data, len);
-		sched_atomic_leave();
+		atomic_leave();
 		ret += tmp;
 
 		if (ret != len) { /* buffer full, suspend until I/O is ready */
 			len -= tmp;
 			data += tmp;
-			sched_switch_early(PROC_IOWAIT);
+			sched_yield(PROC_IOWAIT);
 		} else {
 			break;
 		}

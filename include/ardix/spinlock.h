@@ -3,13 +3,14 @@
 
 #pragma once
 
-#include <arch/spinlock.h>
-
 /*
  * Spinlocks in Ardix work pretty much the same as they do on Linux
  * (this is basically just a ripoff).  See The Linux Kernel documentation
  * for details.
  */
+
+#include <arch/spinlock.h>
+#include <toolchain.h>
 
 /**
  * Initialize a spinlock.

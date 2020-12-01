@@ -1,38 +1,11 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#include <arch/serial.h>
+#pragma once
 
-#include <ardix/io.h>
-#include <ardix/sched.h>
-#include <ardix/serial.h>
-
-#include <toolchain.h>
-
-static __naked void io_thread_entry(void)
-{
-	while (1) {
-		io_serial_buf_update(serial_default_interface);
-
-		sched_yield(PROC_QUEUE);
-	}
-}
-
-int io_init(void)
-{
-	int ret;
-	struct process *proc;
-
-	ret = serial_init(serial_default_interface, CONFIG_SERIAL_BAUD);
-	if (ret)
-		return ret;
-
-	proc = sched_process_create(&io_thread_entry);
-	if (proc == NULL)
-		ret = -1;
-
-	return ret;
-}
+typedef struct spinlock {
+	int lock;
+} spinlock_t;
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

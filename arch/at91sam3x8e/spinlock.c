@@ -1,37 +1,58 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#include <arch/serial.h>
+#include <arch/at91sam3x8e/spinlock.h>
 
-#include <ardix/io.h>
-#include <ardix/sched.h>
-#include <ardix/serial.h>
+/* This code is basically stolen from arch/arm/include/asm/spinlock.h in Linux 5.9 */
 
-#include <toolchain.h>
-
-static __naked void io_thread_entry(void)
+void arch_spinlock_init(spinlock_t *lock)
 {
-	while (1) {
-		io_serial_buf_update(serial_default_interface);
-
-		sched_yield(PROC_QUEUE);
-	}
+	lock->lock = 0;
 }
 
-int io_init(void)
+int arch_spin_lock(spinlock_t *lock)
 {
-	int ret;
-	struct process *proc;
+	int tmp;
+	int newval;
+	spinlock_t lockval;
 
-	ret = serial_init(serial_default_interface, CONFIG_SERIAL_BAUD);
-	if (ret)
-		return ret;
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"	/* lockval = *lock */
+"	add	%1,	%0,	#1	\n"	/* newval = lockval.lock + 1 */
+"	strex	%2,	%1,	[%3]	\n"	/* *lock = newval */
+"	teq	%2,	#0		\n"	/* store successful? */
+"	bne	1b			\n"	/*  -> goto 1 if not */
+"	dmb				"	/* memory barrier */
+	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+	: "r" (lock)
+	: "cc");
 
-	proc = sched_process_create(&io_thread_entry);
-	if (proc == NULL)
-		ret = -1;
+	return newval;
+}
 
-	return ret;
+int arch_spin_unlock(spinlock_t *lock)
+{
+	int tmp;
+	int newval;
+	spinlock_t lockval;
+
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"
+"	sub	%1,	%0,	#1	\n"
+"	strex	%2,	%1,	[%3]	\n"
+"	teq	%2,	#0		\n"
+"	bne	1b			\n"
+"	dmb				"
+	: "=&r" (lockval), "=&r" (newval), "=&r" (tmp)
+	: "r" (lock)
+	: "cc");
+
+	return newval;
+}
+
+int arch_spinlock_count(spinlock_t *lock)
+{
+	return lock->lock;
 }
 
 /*

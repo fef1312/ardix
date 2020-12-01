@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <arch/arch_include.h>
 #include <arch/hardware.h>
 
 #include <stdbool.h>
@@ -27,8 +26,6 @@ int arch_sched_hwtimer_init(unsigned int freq);
  * @param entry: The process entry point.
  */
 void arch_sched_process_init(struct process *process, void (*entry)(void));
-
-#include ARCH_INCLUDE(sched.h)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

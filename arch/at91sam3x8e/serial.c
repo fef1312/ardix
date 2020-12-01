@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/atomic.h>
 #include <ardix/io.h>
 #include <ardix/ringbuf.h>
 #include <ardix/serial.h>
@@ -9,7 +10,6 @@
 
 #include <arch/at91sam3x8e/hardware.h>
 #include <arch/at91sam3x8e/interrupt.h>
-#include <arch/at91sam3x8e/sched.h>
 #include <arch/serial.h>
 
 #include <errno.h>
@@ -91,16 +91,16 @@ void io_serial_buf_update(struct serial_interface *interface)
 	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
 
 	if (arch_iface->hw_txrdy) {
-		sched_atomic_enter();
+		atomic_enter();
 		len = (uint16_t)ringbuf_read(&arch_iface->txbuf[0], interface->tx,
 					     CONFIG_ARCH_SERIAL_BUFSZ);
-		sched_atomic_leave();
+		atomic_leave();
 
 		if (len) {
 			arch_iface->hw_txrdy = false;
+			REG_UART_IER = REG_UART_IER_TXBUFE_MASK;
 			REG_UART_PDC_TPR = (uint32_t)&arch_iface->txbuf[0];
 			REG_UART_PDC_TCR = len;
-			REG_UART_IER = REG_UART_IER_TXBUFE_MASK;
 		}
 	}
 }

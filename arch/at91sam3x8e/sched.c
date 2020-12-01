@@ -5,6 +5,7 @@
 #include <arch/at91sam3x8e/hardware.h>
 #include <arch/at91sam3x8e/interrupt.h>
 
+#include <ardix/atomic.h>
 #include <ardix/string.h>
 #include <ardix/sched.h>
 
@@ -19,7 +20,7 @@ void irq_sys_tick(void)
 	 * fire a PendSV interrupt and do the actual context switching there
 	 * because it is faster that way (according to the docs, at least)
 	 */
-	if (!spinlock_count(&_in_atomic_context))
+	if (!is_atomic_context())
 		arch_irq_invoke(IRQNO_PEND_SV);
 }
 
@@ -70,7 +71,7 @@ void arch_sched_process_init(struct process *process, void (*entry)(void))
 	regs->sw.lr = (void *)0xFFFFFFF9U;
 }
 
-void sched_switch_early(enum proc_state state)
+void sched_yield(enum proc_state state)
 {
 	REG_SYSTICK_VAL = 0U; /* Reset timer */
 	_current_process->state = state;
