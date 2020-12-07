@@ -32,7 +32,8 @@ ARDIX_SOURCES += \
 	$(ARDIX_ARCH_PWD)/serial.c \
 	$(ARDIX_ARCH_PWD)/spinlock.c \
 	$(ARDIX_ARCH_PWD)/startup.c \
-	$(ARDIX_ARCH_PWD)/sys.c
+	$(ARDIX_ARCH_PWD)/sys.c \
+	$(ARDIX_ARCH_PWD)/watchdog.c
 
 ARDIX_ASM_SOURCES += \
 	$(ARDIX_ARCH_PWD)/irq_pend_sv.S

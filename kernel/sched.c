@@ -2,6 +2,7 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <arch/sched.h>
+#include <arch/watchdog.h>
 
 #include <ardix/atomic.h>
 #include <ardix/malloc.h>
@@ -35,7 +36,12 @@ int sched_init(void)
 	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++)
 		proc_table[i] = NULL;
 
-	return arch_sched_hwtimer_init(CONFIG_SCHED_INTR_FREQ);
+	i = arch_watchdog_init();
+
+	if (i == 0)
+		i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXPROC);
+
+	return i;
 }
 
 /**

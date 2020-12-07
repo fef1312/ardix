@@ -450,6 +450,47 @@ struct reg_snapshot {
 #define REG_EEFC_FRDY_BIT	((uint32_t)1)
 
 /*
+ * Watchdog Timer (WDT)
+ */
+
+/** Watchdog Timer Control Register */
+#define REG_WDT_CR			(*(uint32_t *)0x400E1A50U)
+/** Watchdog Timer magic */
+#define REG_WDT_CR_KEY			((uint32_t)0xA5U << 24)
+/** Watchdog Restart bit */
+#define REG_WDT_CR_WDRSTT_BIT		((uint32_t)1)
+
+/** Watchdog Timer Mode Register */
+#define REG_WDT_MR			(*(uint32_t *)0x400E1A54U)
+/** Watchdog Idle Halt bit */
+#define REG_WDT_MR_WDIDLEHLT_BIT	((uint32_t)1 << 29)
+/** Watchdog Debug Halt bit */
+#define REG_WDT_MR_WDDBGHLT_BIT		((uint32_t)1 << 28)
+/** Watchdog Delta Value bitmask */
+#define REG_WDT_MR_WDD_MASK		((uint32_t)0xFFF << 16)
+/** Set the Watchdog Delta Value */
+#define REG_WDT_MR_WDD_VAL(x)		( ((uint32_t)(x) << 16) & REG_WDT_MR_WDD_MASK )
+/** Watchdog Disable bit */
+#define REG_WDT_MR_WDDIS_BIT		((uint32_t)1 << 15)
+/** Watchdog Reset Processor bit */
+#define REG_WDT_MR_WDRPROC_BIT		((uint32_t)1 << 14)
+/** Watchdog Reset Enable bit */
+#define REG_WDT_MR_WDRSTEN_BIT		((uint32_t)1 << 13)
+/** Watchdog Fault Interrupt Enable bit */
+#define REG_WDT_MR_WDFIEN_BIT		((uint32_t)1 << 12)
+/** Watchdog Counter Value bitmask */
+#define REG_WDT_MR_WDV_MASK		((uint32_t)0xFFF)
+/** Get or set the Watchdog counter value */
+#define REG_WDT_MR_WDV_VAL(x)		( ((uint32_t)(x)) & REG_WDT_MR_WDV_MASK )
+
+/** Watchdog Timer Status Register */
+#define REG_WDT_SR			(*(uint32_t *)0x400E1A58U)
+/** Watchdog Error bit */
+#define REG_WDT_SR_WDERR_BIT		((uint32_t)1 << 1)
+/** Watchdog Underflow bit */
+#define REG_WDT_SR_WDUNF_BIT		((uint32_t)1)
+
+/*
  * Power Management Controller (PMC)
  */
 
