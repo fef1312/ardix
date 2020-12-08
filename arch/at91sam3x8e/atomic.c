@@ -1,24 +1,24 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#include <arch/at91sam3x8e/spinlock.h>
 #include <ardix/atomic.h>
+#include <ardix/atom.h>
 
-static SPINLOCK_DEFINE(atomic_context);
+static ATOM_DEFINE(atomic_context);
 
 void atomic_enter(void)
 {
-	arch_spin_lock(&atomic_context);
+	atom_get(&atomic_context);
 }
 
 void atomic_leave(void)
 {
-	arch_spin_unlock(&atomic_context);
+	atom_put(&atomic_context);
 }
 
 int is_atomic_context(void)
 {
-	return arch_spinlock_count(&atomic_context);
+	return atom_count(&atomic_context);
 }
 
 /*

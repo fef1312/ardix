@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/atomic.h>
 #include <ardix/list.h>
 #include <ardix/malloc.h>
 #include <ardix/string.h>

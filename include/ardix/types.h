@@ -30,9 +30,10 @@ typedef _PID_TYPE_		pid_t;
 #define __SIG_ATOMIC_TYPE__ int
 #endif /* __SIG_ATOMIC_TYPE__ */
 
+/** Simple atomic reference counter */
 typedef struct {
-	_Atomic __SIG_ATOMIC_TYPE__ lock;
-} atomic_t;
+	int count;
+} atom_t;
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

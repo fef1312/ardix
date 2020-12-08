@@ -9,11 +9,6 @@
 #include <ardix/string.h>
 #include <ardix/sched.h>
 
-#include <stdbool.h>
-#include <toolchain.h>
-
-#include <ardix/spinlock.h>
-
 void irq_sys_tick(void)
 {
 	/*

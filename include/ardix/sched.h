@@ -3,12 +3,10 @@
 
 #pragma once
 
-#include <ardix/list.h>
-#include <ardix/spinlock.h>
-#include <ardix/types.h>
 #include <arch/hardware.h>
 
-#include <stdbool.h>
+#include <ardix/list.h>
+#include <ardix/types.h>
 
 #ifndef CONFIG_SCHED_MAXPROC
 /** The maximum number of processes. */

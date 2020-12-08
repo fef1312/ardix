@@ -1,45 +1,57 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <ardix/atom.h>
 
-#include <arch/at91sam3x8e/spinlock_type.h>
+void atom_init(atom_t *atom)
+{
+	atom->count = 0;
+}
 
-#include <toolchain.h>
+int atom_get(atom_t *atom)
+{
+	int tmp;
+	int newval;
+	atom_t atom_val;
 
-/* This code is basically stolen from arch/arm/include/asm/spinlock.h in Linux 5.9 */
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"	/* atom_val = *atom */
+"	add	%1,	%0,	#1	\n"	/* newval = atom_val.count + 1 */
+"	strex	%2,	%1,	[%3]	\n"	/* *atom = newval */
+"	teq	%2,	#0		\n"	/* store successful? */
+"	bne	1b			\n"	/*  -> goto 1 if not */
+"	dmb				"	/* memory barrier */
+	: "=&r" (atom_val), "=&r" (newval), "=&r" (tmp)
+	: "r" (atom)
+	: "cc");
 
-#define SPINLOCK_DEFINE(name) spinlock_t name = { .lock = 0 }
+	return newval;
+}
 
-/**
- * Initialize a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- */
-void arch_spinlock_init(spinlock_t *lock);
+int atom_put(atom_t *atom)
+{
+	int tmp;
+	int newval;
+	atom_t atom_val;
 
-/**
- * Increment the lock count on a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- * @returns The new lock count.
- */
-int arch_spin_lock(spinlock_t *lock);
+	__asm__ volatile(
+"1:	ldrex	%0,	[%3]		\n"	/* atom_val = *atom */
+"	sub	%1,	%0,	#1	\n"	/* newval = atom_val.count - 1 */
+"	strex	%2,	%1,	[%3]	\n"	/* *atom = newval */
+"	teq	%2,	#0		\n"	/* store successful? */
+"	bne	1b			\n"	/*   -> goto 1 if not */
+"	dmb				"	/* memory barrier */
+	: "=&r" (atom_val), "=&r" (newval), "=&r" (tmp)
+	: "r" (atom)
+	: "cc");
 
-/**
- * Decrement the lock count on a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- * @returns The new lock count.
- */
-int arch_spin_unlock(spinlock_t *lock);
+	return newval;
+}
 
-/**
- * Get the lock count on a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- */
-int arch_spinlock_count(spinlock_t *lock);
+int atom_count(atom_t *atom)
+{
+	return atom->count;
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

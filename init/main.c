@@ -3,7 +3,6 @@
 
 #include <arch/hardware.h>
 
-#include <ardix/spinlock.h>
 #include <ardix/io.h>
 #include <ardix/printk.h>
 #include <ardix/sched.h>

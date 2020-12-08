@@ -3,59 +3,15 @@
 
 #pragma once
 
-/*
- * Spinlocks in Ardix work pretty much the same as they do on Linux
- * (this is basically just a ripoff).  See The Linux Kernel documentation
- * for details.
- */
+#include <ardix/types.h>
 
-#include <arch/spinlock.h>
-#include <toolchain.h>
+#define ATOM_DEFINE(name) atom_t name = { .count = 0, }
 
-/**
- * Initialize a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- */
-__always_inline void spinlock_init(spinlock_t *lock)
-{
-	arch_spinlock_init(lock);
-}
+int atom_get(atom_t *atom);
 
-/**
- * Increment the lock count on a spinlock.
- * If required, block until we have exclusive access to the memory.
- *
- * @param lock: Pointer to the spinlock.
- * @returns The new lock count.
- */
-__always_inline int spin_lock(spinlock_t *lock)
-{
-	return arch_spin_lock(lock);
-}
+int atom_put(atom_t *atom);
 
-/**
- * Decrement the lock count on a spinlock.
- * If required, block until we have exclusive access to the memory.
- *
- * @param lock: Pointer to the spinlock.
- * @returns The new lock count.
- */
-__always_inline int spin_unlock(spinlock_t *lock)
-{
-	return arch_spin_unlock(lock);
-}
-
-/**
- * Get the lock count of a spinlock.
- *
- * @param lock: Pointer to the spinlock.
- * @returns The current lock count.
- */
-__always_inline int spinlock_count(spinlock_t *lock)
-{
-	return arch_spinlock_count(lock);
-}
+int atom_count(atom_t *atom);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
