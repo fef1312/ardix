@@ -28,6 +28,7 @@ ARDIX_KERNEL_PWD = $(PWD)/kernel
 include $(ARDIX_KERNEL_PWD)/io/Makefile
 
 ARDIX_SOURCES += \
+	$(ARDIX_KERNEL_PWD)/kent.c \
 	$(ARDIX_KERNEL_PWD)/printk.c \
 	$(ARDIX_KERNEL_PWD)/ringbuf.c \
 	$(ARDIX_KERNEL_PWD)/sched.c \

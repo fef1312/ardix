@@ -1,19 +1,53 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <ardix/atom.h>
+#include <ardix/kent.h>
+#include <ardix/list.h>
 
-#include <ardix/types.h>
+#include <errno.h>
+#include <stddef.h>
 
-#define ATOM_DEFINE(name) atom_t name = { .count = 0, }
+int kent_init(struct kent *parent, struct kent *kent)
+{
+	int ret = 0;
 
-void atom_init(atom_t *atom);
+	if (kent->operations == NULL)
+		return -EFAULT;
+	if (kent->operations->destroy == NULL)
+		return -EFAULT;
 
-int atom_get(atom_t *atom);
+	atom_init(&kent->refcount);
+	kent_get(kent);
 
-int atom_put(atom_t *atom);
+	if (parent == NULL)
+		parent = kent_root;
 
-int atom_count(atom_t *atom);
+	kent_get(parent);
+	kent->parent = parent;
+
+	return ret;
+}
+
+void kent_get(struct kent *kent)
+{
+	atom_get(&kent->refcount);
+}
+
+void kent_put(struct kent *kent)
+{
+	struct kent *parent;
+
+	while (kent != NULL) {
+		parent = kent->parent;
+
+		if (atom_put(&kent->refcount) != 0)
+			break;
+
+		kent->operations->destroy(kent);
+		kent = parent;
+	}
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
