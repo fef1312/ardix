@@ -5,16 +5,6 @@
 
 #include <stdint.h>
 
-#ifndef __SIZE_TYPE__
-#define __SIZE_TYPE__ unsigned long int
-#endif /* __SIZE_TYPE__ */
-
-/** Unsigned size specifier. */
-typedef __SIZE_TYPE__		size_t;
-/** Signed size specifier (negative sizes mean error codes). */
-typedef __PTRDIFF_TYPE__	ssize_t;
-typedef __PTRDIFF_TYPE__	ptrdiff_t;
-
 #if CONFIG_SCHED_MAXPROC < 128
 #define _PID_TYPE_ int8_t
 #elif CONFIG_SCHED_MAXPROC < 32767

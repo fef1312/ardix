@@ -3,55 +3,32 @@
 
 #pragma once
 
-/*
- * signed integer types
- */
-
-#ifdef __INT8_TYPE__
 typedef __INT8_TYPE__		int8_t;
-#else
-/** Signed 8-bit integer. */
-typedef signed char		int8_t;
-#endif /* __INT8_TYPE__ */
-
-#ifdef __INT16_TYPE__
 typedef __INT16_TYPE__		int16_t;
-#else
-/** Signed 16-bit integer. */
-typedef signed int		int16_t;
-#endif /* __INT16_TYPE__ */
-
-#ifdef __INT32_TYPE__
 typedef __INT32_TYPE__		int32_t;
-#else
-/** Signed 32-bit integer. */
-typedef signed long int		int32_t;
-#endif /* __INT32_TYPE__ */
 
-/*
- * unsigned integer types
- */
+#ifdef __INT64_TYPE__
+typedef __INT64_TYPE__		int64_t;
+#endif
 
-#ifdef __UINT8_TYPE__
 typedef __UINT8_TYPE__		uint8_t;
-#else
-/** Unsigned 8-bit integer. */
-typedef unsigned char		uint8_t;
-#endif /* __UINT8_TYPE__ */
-
-#ifdef __UINT16_TYPE__
 typedef __UINT16_TYPE__		uint16_t;
-#else
-/** Unsigned 16-bit integer. */
-typedef unsigned int		uint16_t;
-#endif /* __UINT16_TYPE__ */
-
-#ifdef __UINT32_TYPE__
 typedef __UINT32_TYPE__		uint32_t;
-#else
-/** Unsigned 32-bit integer. */
-typedef unsigned long int	uint32_t;
-#endif /* __UINT32_TYPE__ */
+
+#ifdef __UINT64_TYPE__
+typedef __UINT64_TYPE__		uint64_t;
+#endif
+
+#ifndef __SIZE_TYPE__
+#define __SIZE_TYPE__ unsigned long int
+#endif /* __SIZE_TYPE__ */
+
+/** Unsigned size specifier. */
+typedef __SIZE_TYPE__		size_t;
+/** Signed size specifier (negative sizes mean error codes). */
+typedef __PTRDIFF_TYPE__	ssize_t;
+typedef __PTRDIFF_TYPE__	ptrdiff_t;
+typedef __PTRDIFF_TYPE__	loff_t;
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
