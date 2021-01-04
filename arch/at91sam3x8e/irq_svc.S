@@ -6,30 +6,31 @@
 
 .text
 
-.extern sched_process_switch
+.extern arch_syscall
 
 .thumb_func
-.global irq_pend_sv
-.type irq_pend_sv, %function
+.global irq_svc
+.type irq_svc, %function
 
-/* void irq_pend_sv(void); */
-irq_pend_sv:
+/* void irq_svc(void); */
+irq_svc:
 	/*
-	 * There seems to be a limitation in Thumb which prohibits popping to
-	 * any register > r7.  Hence, we need to split the PUSHes and POPs into
-	 * multiple operations and MOV register values around.
-	 */
-
-	/*
-	 * Some registers have already been saved by hardware at this point,
-	 * we only need to take care of r4-r11 and lr (the latter of which is
-	 * required because lr is overwritten when entering the irq).
-	 * The stuff we push onto the stack manually looks about like this:
+	 * Syscalls on Cortex-M use the following parameter calling convention:
 	 *
-	 * <<< stack grow direction (decreasing addresses) <<<
-	 * r8 r9 r10 r11 lr r4 r5 r6 r7
+	 * arg1: r0
+	 * arg2: r1
+	 * arg3: r2
+	 * arg4: r3
+	 * rval: r0
+	 *
+	 * The syscall number is passed as part of the SVC instruction and read
+	 * from the program counter in arch_syscall().
 	 */
 
+	/*
+	 * like in irq_pend_sv, we save everything on the stack to make early
+	 * process switching possible in case the syscall is blocking.
+	 */
 	push	{r4-r7}			/* r4-r7 */
 
 	mov	r3,	r8
@@ -39,21 +40,8 @@ irq_pend_sv:
 	mov	r7,	lr
 	push	{r3-r7}			/* r8-r11, lr */
 
-	/*
-	 * Now that our stack is completely saved, we can proceed to call the
-	 * Kernel's scheduler.  This updates `_current_process` to the process
-	 * we want to execute next.
-	 */
-	/* TODO: Implement banked stack pointer */
 	mov	r0,	sp
-	bl	sched_process_switch	/* sp = sched_process_switch(sp); */
-	mov	sp,	r0
-
-	/*
-	 * The new stack pointer contains the state of the new process, so we
-	 * load it into our registers using the same procedure as above,
-	 * just in reverse order.
-	 */
+	bl	arch_syscall		/* arch_syscall(sp); */
 
 	pop	{r3-r7}			/* r8-r11, lr */
 	mov	lr,	r7
@@ -64,14 +52,9 @@ irq_pend_sv:
 
 	pop	{r4-r7}			/* r4-r7 */
 
-	/*
-	 * ... and now get the fuck outta here, hoping I never need to touch
-	 * this again, even though deep inside I know I will return here at some
-	 * point because something broke (or I feel the need to micro-optimize).
-	 */
 	bx	lr
 
-.size irq_pend_sv, .-irq_pend_sv
+.size irq_svc, .-irq_svc
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

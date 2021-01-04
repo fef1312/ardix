@@ -1,42 +1,40 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <arch/entry.h>
+#include <arch/hardware.h>
 
-#include <arch/arch_include.h>
+#include <ardix/syscall.h>
+#include <ardix/types.h>
 
-/**
- * Block the CPU by continuously checking the same expression in an
- * infinite loop, until the condition is true.  Useful for polling.
- *
- * @param expr The expression.
- */
-#define mom_are_we_there_yet(expr) ({ while (!(expr)); })
+#include <errno.h>
+#include <stddef.h>
 
-/**
- * Initialize the system hardware.
- * This function is responsible for putting the entire system to a state that
- * allows the Kernel to perform its bootstrap procedure and is therefore the
- * first thing to be called by `do_bootstrap`.  Possible tasks to be dealt with
- * here include:
- *
- * - Performing sanity checks to see if there are any major hardware faults
- * - Setting up the CPU frequency and other oscillators
- * - Communicating that frequency change to any hardware component that needs
- *   to know about it (especially the flash controller)
- * - Enabling interrupts that are vital for stable operation
- *
- * If any of this fails, an on-chip LED should be used to "morse" some kind of
- * diagnostic message, if the system has one (kind of like BIOS beep codes).
- */
-void sys_init(void);
+void arch_syscall(void *sp)
+{
+	struct reg_snapshot *regs = sp;
+	enum syscall sc_num = arch_syscall_num(regs);
+	int (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+		       sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
+	int sc_ret;
 
-#ifndef STACK_SIZE
-/** stack size per process in bytes */
-#define STACK_SIZE 2048U
-#endif
+	if (sc_num > NSYSCALLS) {
+		arch_syscall_set_rval(regs, -EINVAL);
+		return;
+	}
 
-#include ARCH_INCLUDE(hardware.h)
+	handler = syscall_table[sc_num];
+	if (handler == NULL) {
+		arch_syscall_set_rval(regs, -EINVAL);
+		return;
+	}
+
+	/* TODO: not every syscall uses the max amount of parameters (duh) */
+	sc_ret = handler(arch_syscall_arg1(regs), arch_syscall_arg2(regs), arch_syscall_arg3(regs),
+			 arch_syscall_arg4(regs), arch_syscall_arg5(regs), arch_syscall_arg6(regs));
+
+	arch_syscall_set_rval(regs, sc_ret);
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

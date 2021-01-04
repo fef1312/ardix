@@ -28,6 +28,7 @@ ARDIX_ARCH_PWD = $(PWD)/arch/at91sam3x8e
 ARDIX_SOURCES += \
 	$(ARDIX_ARCH_PWD)/atom.c \
 	$(ARDIX_ARCH_PWD)/atomic.c \
+	$(ARDIX_ARCH_PWD)/entry.c \
 	$(ARDIX_ARCH_PWD)/interrupt.c \
 	$(ARDIX_ARCH_PWD)/sched.c \
 	$(ARDIX_ARCH_PWD)/serial.c \
@@ -36,7 +37,8 @@ ARDIX_SOURCES += \
 	$(ARDIX_ARCH_PWD)/watchdog.c
 
 ARDIX_ASM_SOURCES += \
-	$(ARDIX_ARCH_PWD)/irq_pend_sv.S
+	$(ARDIX_ARCH_PWD)/irq_pend_sv.S \
+	$(ARDIX_ARCH_PWD)/irq_svc.S
 
 CFLAGS += \
 	-DARCH_AT91SAM3X8E

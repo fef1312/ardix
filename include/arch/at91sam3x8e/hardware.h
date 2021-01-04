@@ -3,7 +3,9 @@
 
 #pragma once
 
-#include <ardix/types.h>
+#include <stdint.h>
+
+typedef uint32_t word_t;
 
 /** Current (volatile) system frequency in Hertz. */
 extern uint32_t sys_core_clock;
@@ -16,19 +18,19 @@ extern uint32_t sys_core_clock;
  * hardware routines on IRQ entry.  Required for scheduling / context switching.
  */
 struct reg_sw_snapshot {
-	uint32_t r8;
-	uint32_t r9;
-	uint32_t r10;
-	uint32_t r11;
+	word_t r8;
+	word_t r9;
+	word_t r10;
+	word_t r11;
 	/*
 	 * lr is saved by hardware, but we need to store it twice
 	 * because the IRQ entry overwrites it
 	 */
 	void *lr;	/* alias r14 */
-	uint32_t r4;
-	uint32_t r5;
-	uint32_t r6;
-	uint32_t r7;
+	word_t r4;
+	word_t r5;
+	word_t r6;
+	word_t r7;
 };
 
 /**
@@ -36,14 +38,14 @@ struct reg_sw_snapshot {
  * an IRQ, in the correct order.
  */
 struct reg_hw_snapshot {
-	uint32_t r0;
-	uint32_t r1;
-	uint32_t r2;
-	uint32_t r3;
-	uint32_t r12;
+	word_t r0;
+	word_t r1;
+	word_t r2;
+	word_t r3;
+	word_t r12;
 	void *lr;	/* alias r14 */
 	void *pc;	/* alias r15 */
-	uint32_t psr;
+	word_t psr;
 };
 
 /** Combination of `struct reg_sw_snapshot` and `struct reg_hw_snapshot`. */
@@ -51,6 +53,16 @@ struct reg_snapshot {
 	struct reg_sw_snapshot sw;
 	struct reg_hw_snapshot hw;
 };
+
+#define arch_syscall_num(reg_snap) ( ((uint8_t *)((reg_snap)->hw.lr))[1] )
+#define arch_syscall_arg1(reg_snap) ((reg_snap)->hw.r0)
+#define arch_syscall_arg2(reg_snap) ((reg_snap)->hw.r1)
+#define arch_syscall_arg3(reg_snap) ((reg_snap)->hw.r2)
+#define arch_syscall_arg4(reg_snap) ((reg_snap)->hw.r3)
+#define arch_syscall_arg5(reg_snap) ((reg_snap)->sw.r8)
+#define arch_syscall_arg6(reg_snap) ((reg_snap)->sw.r9)
+
+#define arch_syscall_set_rval(reg_snap, val) ((reg_snap)->hw.r0 = (uint32_t)(val));
 
 /*
  * Real-time Timer (RTT)

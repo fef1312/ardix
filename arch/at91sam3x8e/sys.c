@@ -19,7 +19,7 @@
  */
 uint32_t sys_core_clock = 84000000UL;
 
-int sys_init(void)
+void sys_init(void)
 {
 	/*
 	 * This method is basically an implementation of chapter 28.12 in the
@@ -83,8 +83,6 @@ int sys_init(void)
 	REG_PMC_MCKR = REG_PMC_MCKR_PRES_VAL(1 /* = as fast as it gets */)
 		     | REG_PMC_MCKR_CSS_VAL(2 /* = PLLA clock */);
 	mom_are_we_there_yet(REG_PMC_SR & REG_PMC_SR_MCKRDY_BIT);
-
-	return 0;
 }
 
 /*

@@ -3,40 +3,26 @@
 
 #pragma once
 
-#include <arch/arch_include.h>
+#include <ardix/types.h>
 
-/**
- * Block the CPU by continuously checking the same expression in an
- * infinite loop, until the condition is true.  Useful for polling.
- *
- * @param expr The expression.
- */
-#define mom_are_we_there_yet(expr) ({ while (!(expr)); })
+#include <errno.h>
+#include <toolchain.h>
 
-/**
- * Initialize the system hardware.
- * This function is responsible for putting the entire system to a state that
- * allows the Kernel to perform its bootstrap procedure and is therefore the
- * first thing to be called by `do_bootstrap`.  Possible tasks to be dealt with
- * here include:
- *
- * - Performing sanity checks to see if there are any major hardware faults
- * - Setting up the CPU frequency and other oscillators
- * - Communicating that frequency change to any hardware component that needs
- *   to know about it (especially the flash controller)
- * - Enabling interrupts that are vital for stable operation
- *
- * If any of this fails, an on-chip LED should be used to "morse" some kind of
- * diagnostic message, if the system has one (kind of like BIOS beep codes).
- */
-void sys_init(void);
+enum syscall {
+	SYSCALL_READ		= 0,
+	SYSCALL_WRITE		= 1,
+	NSYSCALLS
+};
 
-#ifndef STACK_SIZE
-/** stack size per process in bytes */
-#define STACK_SIZE 2048U
-#endif
+/** The table of system call handlers, indexed by syscall number. */
+extern const int (*syscall_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+					     sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
 
-#include ARCH_INCLUDE(hardware.h)
+/* catchall handler that returns -ENOSYS */
+int sys_stub(void);
+
+int sys_read(int fd, void *buf, size_t len, size_t off);
+int sys_write(int fd, const void *buf, size_t len, size_t off);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
