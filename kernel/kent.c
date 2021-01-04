@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <stddef.h>
 
+struct kent *kent_root;
+
 int kent_init(struct kent *parent, struct kent *kent)
 {
 	int ret = 0;
