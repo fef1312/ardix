@@ -5,22 +5,52 @@
 /* Using GCC's stdarg.h is recommended even with -nodefaultlibs and -fno-builtin */
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#include <ardix/malloc.h>
 #include <ardix/printk.h>
 #include <ardix/serial.h>
 #include <ardix/string.h>
 
-#define PRINTK_BUFSZ 24
+#include <toolchain.h>
 
-static int handle_uint(unsigned int u)
+/*
+ * TODO: THIS CAUSES A STACK BUFFER OVERFLOW ON SYSTEMS WHERE INT IS 64 BITS
+ */
+
+/* 10 decimal digits (2 ** 32 - 1) + ASCII NUL */
+#define PRINTK_UINT_BUFSZ 11
+
+__rodata static const char fmt_hex_table[] = {
+	'0', '1', '2', '3',
+	'4', '5', '6', '7',
+	'8', '9', 'a', 'b',
+	'c', 'd', 'e', 'f',
+};
+
+static int fmt_handle_ptr(uintptr_t ptr)
 {
-	int ret = 0;
-	char *buf = malloc(PRINTK_BUFSZ);
-	char *pos = buf + PRINTK_BUFSZ - 1;
+	int ret;
+	/* 2 chars per byte, plus 2 for the "0x" hex prefix */
+	char buf[2 * sizeof(uintptr_t) + 2];
+	char *pos = &buf[2 * sizeof(uintptr_t) + 1];
 
-	if (buf == NULL)
-		return -ENOMEM;
+	buf[0] = '0';
+	buf[1] = 'x';
+
+	do {
+		*pos-- = fmt_hex_table[ptr & 0xf];
+		ptr >>= 4;
+	} while (pos != &buf[2]);
+
+	ret = serial_write(serial_default_interface, &buf[0], 2 * sizeof(uintptr_t) + 2);
+	return ret;
+}
+
+static int fmt_handle_uint(unsigned int u)
+{
+	int ret;
+	char buf[PRINTK_UINT_BUFSZ];
+	char *pos = &buf[PRINTK_UINT_BUFSZ - 1];
 
 	do {
 		/* stupid big endian humans, forcing us to do the whole thing in reverse */
@@ -30,13 +60,11 @@ static int handle_uint(unsigned int u)
 	pos++;
 
 	ret = serial_write(serial_default_interface, pos,
-			   PRINTK_BUFSZ - ( (size_t)pos - (size_t)buf ));
-
-	free(buf);
+			   PRINTK_UINT_BUFSZ - ( (size_t)pos - (size_t)&buf[0] ));
 	return ret;
 }
 
-static inline int handle_int(int i)
+static inline int fmt_handle_int(int i)
 {
 	int ret = 0;
 	char minus = '-';
@@ -46,7 +74,7 @@ static inline int handle_int(int i)
 		i = -i;
 	}
 
-	ret += handle_uint((unsigned int)i);
+	ret += fmt_handle_uint((unsigned int)i);
 
 	return ret;
 }
@@ -61,37 +89,46 @@ static inline int handle_int(int i)
  * @param args: A pointer to the varargs list.  Will be manipulated.
  * @returns The amount of bytes written, or a negative POSIX error code.
  */
-static inline int handle_fmt(const char **pos, va_list args)
+static inline int fmt_handle(const char **pos, va_list args)
 {
 	int ret = 0;
-	int i;
-	unsigned int u;
-	char *tmp;
+	union {
+		int c;
+		int d;
+		uintptr_t p;
+		char *s;
+		unsigned int u;
+	} val;
 
 	switch (**pos) {
 	case '%': /* literal percent sign */
 		ret = serial_write(serial_default_interface, *pos, sizeof(**pos));
 		break;
 
-	case 'c': /* single char */
-		i = va_arg(args, int);
-		ret = serial_write(serial_default_interface, &i, sizeof(char));
+	case 'c': /* char */
+		val.c = va_arg(args, typeof(val.c));
+		ret = serial_write(serial_default_interface, &val.c, sizeof(val.c));
 		break;
 
 	case 'd': /* int */
-		i = va_arg(args, int);
-		ret = handle_int(i);
+		val.d = va_arg(args, typeof(val.d));
+		ret = fmt_handle_int(val.d);
+		break;
+
+	case 'p': /* ptr */
+		val.p = va_arg(args, typeof(val.p));
+		ret = fmt_handle_ptr(val.p);
 		break;
 
 	case 's': /* string */
-		tmp = va_arg(args, char *);
-		ret = (int)strlen(tmp);
-		ret = serial_write(serial_default_interface, tmp, (size_t)ret);
+		val.s = va_arg(args, typeof(val.s));
+		ret = (int)strlen(val.s);
+		ret = serial_write(serial_default_interface, val.s, (size_t)ret);
 		break;
 
 	case 'u': /* unsigned int */
-		u = va_arg(args, unsigned int);
-		ret = handle_uint(u);
+		val.u = va_arg(args, typeof(val.u));
+		ret = fmt_handle_uint(val.u);
 		break;
 	}
 
@@ -115,7 +152,7 @@ int printk(const char *fmt, ...)
 			ret += (int)serial_write(serial_default_interface, fmt,
 						 (size_t)tmp - (size_t)fmt - 1);
 
-			tmpret = handle_fmt(&tmp, args);
+			tmpret = fmt_handle(&tmp, args);
 			/*
 			 * act as if the current position were the beginning in
 			 * order to make the first step of this if block easier
