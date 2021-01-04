@@ -46,6 +46,9 @@
 #define __section(name) __attribute__((section(#name)))
 #endif /* __section */
 
+/** Place a variable in program memory rather than into RAM. */
+#define __rodata __section(.rodata#)
+
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
  *

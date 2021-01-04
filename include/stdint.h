@@ -25,6 +25,7 @@ typedef __UINT64_TYPE__		uint64_t;
 
 /** Unsigned size specifier. */
 typedef __SIZE_TYPE__		size_t;
+typedef __SIZE_TYPE__		uintptr_t;
 /** Signed size specifier (negative sizes mean error codes). */
 typedef __PTRDIFF_TYPE__	ssize_t;
 typedef __PTRDIFF_TYPE__	ptrdiff_t;
