@@ -17,14 +17,14 @@ irq_svc:
 	/*
 	 * Syscalls on Cortex-M use the following parameter calling convention:
 	 *
+	 * number: r7
+	 * rval: r0
 	 * arg1: r0
 	 * arg2: r1
 	 * arg3: r2
 	 * arg4: r3
-	 * rval: r0
-	 *
-	 * The syscall number is passed as part of the SVC instruction and read
-	 * from the program counter in arch_syscall().
+	 * arg5: r4
+	 * arg6: r5
 	 */
 
 	/*

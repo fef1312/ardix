@@ -54,11 +54,13 @@ struct reg_snapshot {
 	struct reg_hw_snapshot hw;
 };
 
-#define arch_syscall_num(reg_snap) ((reg_snap)->hw.r0)
-#define arch_syscall_arg1(reg_snap) ((reg_snap)->hw.r1)
-#define arch_syscall_arg2(reg_snap) ((reg_snap)->hw.r2)
-#define arch_syscall_arg3(reg_snap) ((reg_snap)->hw.r3)
-#define arch_syscall_arg4(reg_snap) ((reg_snap)->hw.r12)
+#define arch_syscall_num(reg_snap) ((reg_snap)->sw.r7)
+#define arch_syscall_arg1(reg_snap) ((reg_snap)->hw.r0)
+#define arch_syscall_arg2(reg_snap) ((reg_snap)->hw.r1)
+#define arch_syscall_arg3(reg_snap) ((reg_snap)->hw.r2)
+#define arch_syscall_arg4(reg_snap) ((reg_snap)->hw.r3)
+#define arch_syscall_arg5(reg_snap) ((reg_snap)->sw.r4)
+#define arch_syscall_arg6(reg_snap) ((reg_snap)->sw.r5)
 
 #define arch_syscall_set_rval(reg_snap, val) ((reg_snap)->hw.r0 = (val));
 

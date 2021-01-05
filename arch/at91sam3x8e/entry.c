@@ -15,11 +15,9 @@ void arch_enter(void *sp)
 {
 	struct reg_snapshot *regs = sp;
 	enum syscall sc_num = arch_syscall_num(regs);
-	int (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3, sysarg_t arg4);
+	int (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+		       sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
 	int sc_ret;
-
-	if (sc_num == SYSCALL_WRITE)
-		*(uint32_t *)0x400E1030U = 1 << 27;
 
 	if (sc_num > NSYSCALLS) {
 		arch_syscall_set_rval(regs, -EINVAL);
@@ -33,8 +31,8 @@ void arch_enter(void *sp)
 	}
 
 	/* TODO: not every syscall uses the max amount of parameters (duh) */
-	sc_ret = handler(arch_syscall_arg1(regs), arch_syscall_arg2(regs),
-			 arch_syscall_arg3(regs), arch_syscall_arg4(regs));
+	sc_ret = handler(arch_syscall_arg1(regs), arch_syscall_arg2(regs), arch_syscall_arg3(regs),
+			 arch_syscall_arg4(regs), arch_syscall_arg5(regs), arch_syscall_arg6(regs));
 
 	arch_syscall_set_rval(regs, sc_ret);
 }
