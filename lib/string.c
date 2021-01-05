@@ -4,8 +4,11 @@
 #include <ardix/string.h>
 #include <ardix/types.h>
 
+#include <toolchain.h>
+#include <stdbool.h>
+
 #ifndef __HAVE_ASM_MEMCMP
-int memcmp(const void *s1, const void *s2, size_t n)
+__shared int memcmp(const void *s1, const void *s2, size_t n)
 {
 	int delta = 0;
 
@@ -20,7 +23,7 @@ int memcmp(const void *s1, const void *s2, size_t n)
 #endif /* __HAVE_ASM_MEMCMP */
 
 #ifndef __HAVE_ASM_MEMCPY
-void *memcpy(void *dest, const void *src, size_t n)
+__shared void *memcpy(void *dest, const void *src, size_t n)
 {
 	uint8_t *tmp = (uint8_t *)dest;
 
@@ -32,7 +35,7 @@ void *memcpy(void *dest, const void *src, size_t n)
 #endif /* __HAVE_ASM_MEMCPY */
 
 #ifndef __HAVE_ASM_MEMSET
-void *memset(void *ptr, int c, size_t n)
+__shared void *memset(void *ptr, int c, size_t n)
 {
 	char *tmp = (char *)ptr;
 
@@ -44,7 +47,7 @@ void *memset(void *ptr, int c, size_t n)
 #endif /* __HAVE_ASM_MEMSET */
 
 #ifndef __HAVE_ASM_MEMMOVE
-void *memmove(void *dest, const void *src, size_t n)
+__shared void *memmove(void *dest, const void *src, size_t n)
 {
 	char *tmp = (char *)dest;
 	const char *s = (const char *)src;
@@ -67,7 +70,7 @@ void *memmove(void *dest, const void *src, size_t n)
 #endif /* __HAVE_ASM_MEMMOVE */
 
 #ifndef __HAVE_ASM_STRCMP
-int strcmp(const char *s1, const char *s2)
+__shared int strcmp(const char *s1, const char *s2)
 {
 	while (*s1++ == *s2++) {
 		if (*s1 == '\0' || *s2 == '\0')
@@ -79,7 +82,7 @@ int strcmp(const char *s1, const char *s2)
 #endif /* __HAVE_ASM_STRCMP */
 
 #ifndef __HAVE_ASM_STRCPY
-char *strcpy(char *dest, const char *src)
+__shared char *strcpy(char *dest, const char *src)
 {
 	char *tmp = dest;
 
@@ -91,7 +94,7 @@ char *strcpy(char *dest, const char *src)
 #endif /* __HAVE_ASM_STRCPY */
 
 #ifndef __HAVE_ASM_STRNCPY
-char *strncpy(char *dest, const char *src, size_t n)
+__shared char *strncpy(char *dest, const char *src, size_t n)
 {
 	char *tmp = dest;
 
@@ -105,7 +108,7 @@ char *strncpy(char *dest, const char *src, size_t n)
 #endif /* __HAVE_ASM_STRNCPY */
 
 #ifndef __HAVE_ASM_STRLEN
-size_t strlen(const char *s)
+__shared size_t strlen(const char *s)
 {
 	const char *tmp = s;
 

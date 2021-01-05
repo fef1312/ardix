@@ -33,4 +33,5 @@ ARDIX_SOURCES += \
 	$(ARDIX_KERNEL_PWD)/ringbuf.c \
 	$(ARDIX_KERNEL_PWD)/sched.c \
 	$(ARDIX_KERNEL_PWD)/serial.c \
-	$(ARDIX_KERNEL_PWD)/syscall.c
+	$(ARDIX_KERNEL_PWD)/syscall.c \
+	$(ARDIX_KERNEL_PWD)/userspace.c

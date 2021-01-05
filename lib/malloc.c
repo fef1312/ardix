@@ -7,6 +7,8 @@
 #include <ardix/string.h>
 #include <ardix/types.h>
 
+#include <toolchain.h>
+
 /*
  * Stupid memory allocator implementation.
  *
@@ -141,7 +143,7 @@ void malloc_init(void *heap, size_t size)
 	}
 }
 
-__attribute__((malloc))
+__shared __attribute__((malloc))
 void *malloc(size_t size)
 {
 	struct memblk *blk;
@@ -190,7 +192,7 @@ void *malloc(size_t size)
 	return ((void *)blk) + MEMBLK_SIZE_LENGTH;
 }
 
-__attribute__((malloc))
+__shared __attribute__((malloc))
 void *calloc(size_t nmemb, size_t size)
 {
 	void *ptr = malloc(nmemb * size);
@@ -209,6 +211,7 @@ static void memblk_merge(struct memblk *lblk, struct memblk *hblk)
 	*endsz = lblk->size;
 }
 
+__shared
 void free(void *ptr)
 {
 	struct memblk *tmp;
