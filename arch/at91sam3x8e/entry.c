@@ -9,7 +9,6 @@
 
 #include <errno.h>
 #include <stddef.h>
-#include <unistd.h>
 
 void arch_enter(void *sp)
 {
@@ -20,13 +19,13 @@ void arch_enter(void *sp)
 	int sc_ret;
 
 	if (sc_num > NSYSCALLS) {
-		arch_syscall_set_rval(regs, -EINVAL);
+		arch_syscall_set_rval(regs, -ENOSYS);
 		return;
 	}
 
 	handler = sys_table[sc_num];
 	if (handler == NULL) {
-		arch_syscall_set_rval(regs, -EINVAL);
+		arch_syscall_set_rval(regs, -ENOSYS);
 		return;
 	}
 

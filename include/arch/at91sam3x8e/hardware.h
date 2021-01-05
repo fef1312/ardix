@@ -62,7 +62,7 @@ struct reg_snapshot {
 #define arch_syscall_arg5(reg_snap) ((reg_snap)->sw.r4)
 #define arch_syscall_arg6(reg_snap) ((reg_snap)->sw.r5)
 
-#define arch_syscall_set_rval(reg_snap, val) ((reg_snap)->hw.r0 = (val));
+#define arch_syscall_set_rval(reg_snap, val) ((reg_snap)->hw.r0 = (word_t)(val));
 
 /*
  * Real-time Timer (RTT)

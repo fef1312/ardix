@@ -50,13 +50,13 @@ ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 
 ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
 {
-	size_t ret;
+	ssize_t ret;
 
 	atomic_enter();
 	ret = arch_serial_write(interface, data, len);
 	atomic_leave();
 
-	return (ssize_t)ret;
+	return ret;
 }
 
 /*

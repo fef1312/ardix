@@ -10,9 +10,9 @@
 #include <stddef.h>
 #include <toolchain.h>
 
-int sys_write(int fd, __user const void *buf, size_t len, size_t off)
+ssize_t sys_write(int fd, __user const void *buf, size_t len, size_t off)
 {
-	int ret;
+	ssize_t ret;
 	void *copy;
 
 	if (fd != 1) /* we only support stdout (serial console) right now ... */
@@ -23,10 +23,10 @@ int sys_write(int fd, __user const void *buf, size_t len, size_t off)
 	copy = malloc(len);
 	if (copy == NULL)
 		return -ENOMEM;
-	ret = (int)copy_from_user(copy, buf, len);
+	ret = (ssize_t)copy_from_user(copy, buf, (size_t)len);
 
 	/* TODO: reschedule if blocking */
-	ret = serial_write(serial_default_interface, copy, ret);
+	ret = serial_write(serial_default_interface, copy, (size_t)ret);
 
 	return ret;
 }

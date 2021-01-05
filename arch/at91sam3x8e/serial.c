@@ -21,7 +21,6 @@ struct arch_serial_interface arch_serial_default_interface = {
 	.tx_current = NULL,
 	.tx_next = NULL,
 	.interface = {
-		.tx = NULL,
 		.rx = NULL,
 		.id = 0,
 		.baud = 0,
@@ -31,8 +30,6 @@ struct serial_interface *serial_default_interface = &arch_serial_default_interfa
 
 int arch_serial_init(struct serial_interface *interface)
 {
-	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
-
 	if (interface->baud <= 0 || interface->id != 0)
 		return -1;
 
