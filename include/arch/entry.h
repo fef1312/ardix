@@ -12,7 +12,7 @@
  *
  * @param sp: The current stack pointer.
  */
-void arch_syscall(void *sp);
+void arch_enter(void *sp);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

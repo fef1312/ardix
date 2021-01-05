@@ -16,9 +16,12 @@ enum syscall {
 	NSYSCALLS
 };
 
+/** Perform an indirect system call. */
+int syscall(enum syscall number, sysarg_t arg1, sysarg_t arg2, sysarg_t arg3, sysarg_t arg4);
+
 /** The table of system call handlers, indexed by syscall number. */
-extern const int (*syscall_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
-					     sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
+extern const int (*sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2,
+					 sysarg_t arg3, sysarg_t arg4);
 
 /* catchall handler that returns -ENOSYS */
 int sys_stub(void);

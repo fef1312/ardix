@@ -5,14 +5,13 @@
 
 #include <toolchain.h>
 
-#define syscall_entry(number, func) \
-	[number] (int (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
+#define sys_table_entry(number, func) \
+	[number] (int (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
 
 __rodata
-const int (*syscall_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
-				      sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
-	syscall_entry(SYSCALL_READ, &sys_stub),
-	syscall_entry(SYSCALL_WRITE, &sys_write),
+const int (*sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3, sysarg_t arg4) = {
+	sys_table_entry(SYSCALL_READ, &sys_stub),
+	sys_table_entry(SYSCALL_WRITE, &sys_write),
 };
 
 int sys_stub(void)

@@ -6,7 +6,7 @@
 
 .text
 
-.extern arch_syscall
+.extern arch_enter
 
 .thumb_func
 .global irq_svc
@@ -41,7 +41,7 @@ irq_svc:
 	push	{r3-r7}			/* r8-r11, lr */
 
 	mov	r0,	sp
-	bl	arch_syscall		/* arch_syscall(sp); */
+	bl	arch_enter		/* arch_enter(sp); */
 
 	pop	{r3-r7}			/* r8-r11, lr */
 	mov	lr,	r7

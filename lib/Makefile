@@ -29,4 +29,5 @@ ARDIX_SOURCES += \
 	$(ARDIX_LIB_PWD)/ctype.c \
 	$(ARDIX_LIB_PWD)/list.c \
 	$(ARDIX_LIB_PWD)/malloc.c \
-	$(ARDIX_LIB_PWD)/string.c
+	$(ARDIX_LIB_PWD)/string.c \
+	$(ARDIX_LIB_PWD)/unistd.c

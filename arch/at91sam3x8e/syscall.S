@@ -1,26 +1,20 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-/*
- * This is a collection of system calls that are exported to userspace.
- * The Ardix syscall ABI for parameter passing is aligned with the AAPCS, making
- * these wrappers extremely simple because all parameters are already in the
- * correct registers.
- */
-
 .syntax unified
 .thumb
 
-/* these syscalls are only there to be exported to userspace */
+/* this is only invoked from user space, obviously */
 .section .text.shared
 
 .thumb_func
-.global pwrite
-.type pwrite, %function
-pwrite:
+.global syscall
+.type syscall, %function
+/* int syscall(int number, int arg1, int arg2, int arg3, int arg4); */
+syscall:
 	svc	#1
 	bx	lr
-.size pwrite, .-pwrite
+.size syscall, .-syscall
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
