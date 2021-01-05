@@ -3,14 +3,16 @@
 
 #pragma once
 
+#include <arch/syscall.h>
+
 #include <ardix/types.h>
 
 #include <errno.h>
 #include <toolchain.h>
 
 enum syscall {
-	SYSCALL_READ		= 0,
-	SYSCALL_WRITE		= 1,
+	SYSCALL_READ		= ARCH_SYSCALL_READ,
+	SYSCALL_WRITE		= ARCH_SYSCALL_WRITE,
 	NSYSCALLS
 };
 

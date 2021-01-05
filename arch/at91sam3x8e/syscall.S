@@ -1,34 +1,26 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+/*
+ * This is a collection of system calls that are exported to userspace.
+ * The Ardix syscall ABI for parameter passing is aligned with the AAPCS, making
+ * these wrappers extremely simple because all parameters are already in the
+ * correct registers.
+ */
 
-#include <stdint.h>
+.syntax unified
+.thumb
 
-#if CONFIG_SCHED_MAXPROC < 128
-#define _PID_TYPE_ int8_t
-#elif CONFIG_SCHED_MAXPROC < 32767
-#define _PID_TYPE_ int16_t
-#else
-#define _PID_TYPE_ int32_t
-#endif /* SCHED_MAXPROC */
+/* these syscalls are only there to be exported to userspace */
+.section .text.shared
 
-/** Process identifier. */
-typedef _PID_TYPE_		pid_t;
-
-#ifndef __SIG_ATOMIC_TYPE__
-#define __SIG_ATOMIC_TYPE__ int
-#endif /* __SIG_ATOMIC_TYPE__ */
-
-/** Simple atomic reference counter */
-typedef struct {
-	int count;
-} atom_t;
-
-#include <arch/hardware.h>
-
-/* Syscall argument */
-typedef word_t	sysarg_t;
+.thumb_func
+.global pwrite
+.type pwrite, %function
+pwrite:
+	svc	#1
+	bx	lr
+.size pwrite, .-pwrite
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

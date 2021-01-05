@@ -1,34 +1,35 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
+#include <ardix/malloc.h>
+#include <ardix/serial.h>
+#include <ardix/syscall.h>
+#include <ardix/userspace.h>
 
-#include <stdint.h>
+#include <errno.h>
+#include <stddef.h>
+#include <toolchain.h>
 
-#if CONFIG_SCHED_MAXPROC < 128
-#define _PID_TYPE_ int8_t
-#elif CONFIG_SCHED_MAXPROC < 32767
-#define _PID_TYPE_ int16_t
-#else
-#define _PID_TYPE_ int32_t
-#endif /* SCHED_MAXPROC */
+int sys_write(int fd, __user const void *buf, size_t len, size_t off)
+{
+	int ret;
+	void *copy;
 
-/** Process identifier. */
-typedef _PID_TYPE_		pid_t;
+	if (fd != 1) /* we only support stdout (serial console) right now ... */
+		return -ENOTSUP;
+	if (off != 0) /* ... and the serial console doesn't support seeking */
+		return -ESPIPE;
 
-#ifndef __SIG_ATOMIC_TYPE__
-#define __SIG_ATOMIC_TYPE__ int
-#endif /* __SIG_ATOMIC_TYPE__ */
+	copy = malloc(len);
+	if (copy == NULL)
+		return -ENOMEM;
+	ret = (int)copy_from_user(copy, buf, len);
 
-/** Simple atomic reference counter */
-typedef struct {
-	int count;
-} atom_t;
+	/* TODO: reschedule if blocking */
+	ret = serial_write(serial_default_interface, copy, ret);
 
-#include <arch/hardware.h>
-
-/* Syscall argument */
-typedef word_t	sysarg_t;
+	return ret;
+}
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

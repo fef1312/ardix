@@ -3,32 +3,8 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#if CONFIG_SCHED_MAXPROC < 128
-#define _PID_TYPE_ int8_t
-#elif CONFIG_SCHED_MAXPROC < 32767
-#define _PID_TYPE_ int16_t
-#else
-#define _PID_TYPE_ int32_t
-#endif /* SCHED_MAXPROC */
-
-/** Process identifier. */
-typedef _PID_TYPE_		pid_t;
-
-#ifndef __SIG_ATOMIC_TYPE__
-#define __SIG_ATOMIC_TYPE__ int
-#endif /* __SIG_ATOMIC_TYPE__ */
-
-/** Simple atomic reference counter */
-typedef struct {
-	int count;
-} atom_t;
-
-#include <arch/hardware.h>
-
-/* Syscall argument */
-typedef word_t	sysarg_t;
+#define ARCH_SYSCALL_READ	0
+#define ARCH_SYSCALL_WRITE	1
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

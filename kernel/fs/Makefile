@@ -23,27 +23,7 @@
 # WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-ARDIX_ARCH_PWD = $(PWD)/arch/at91sam3x8e
+ARDIX_KERNEL_FS_PWD = $(ARDIX_KERNEL_PWD)/fs
 
 ARDIX_SOURCES += \
-	$(ARDIX_ARCH_PWD)/atom.c \
-	$(ARDIX_ARCH_PWD)/atomic.c \
-	$(ARDIX_ARCH_PWD)/entry.c \
-	$(ARDIX_ARCH_PWD)/interrupt.c \
-	$(ARDIX_ARCH_PWD)/sched.c \
-	$(ARDIX_ARCH_PWD)/serial.c \
-	$(ARDIX_ARCH_PWD)/startup.c \
-	$(ARDIX_ARCH_PWD)/sys.c \
-	$(ARDIX_ARCH_PWD)/watchdog.c
-
-ARDIX_ASM_SOURCES += \
-	$(ARDIX_ARCH_PWD)/irq_pend_sv.S \
-	$(ARDIX_ARCH_PWD)/irq_svc.S \
-	$(ARDIX_ARCH_PWD)/syscall.S
-
-CFLAGS += \
-	-DARCH_AT91SAM3X8E
-
-LDFLAGS += \
-	-T$(ARDIX_ARCH_PWD)/config.ld \
-	-T$(ARDIX_ARCH_PWD)/flash.ld
+	$(ARDIX_KERNEL_FS_PWD)/write.c
