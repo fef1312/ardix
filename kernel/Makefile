@@ -25,6 +25,7 @@
 
 ARDIX_KERNEL_PWD = $(PWD)/kernel
 
+include $(ARDIX_KERNEL_PWD)/fs/Makefile
 include $(ARDIX_KERNEL_PWD)/io/Makefile
 
 ARDIX_SOURCES += \

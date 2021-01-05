@@ -20,7 +20,6 @@
 
 struct serial_interface {
 	struct ringbuf *rx;
-	struct ringbuf *tx;
 	long int baud;
 	int id;
 };

@@ -23,17 +23,9 @@ int serial_init(struct serial_interface *interface, long int baud)
 	if (interface->rx == NULL)
 		return -1;
 
-	interface->tx = ringbuf_create(SERIAL_BUFSZ);
-	if (interface->tx == NULL) {
-		ringbuf_destroy(interface->rx);
-		return -1;
-	}
-
 	err = arch_serial_init(interface);
-	if (err) {
+	if (err)
 		ringbuf_destroy(interface->rx);
-		ringbuf_destroy(interface->tx);
-	}
 
 	return err;
 }
@@ -42,7 +34,6 @@ void serial_exit(struct serial_interface *interface)
 {
 	arch_serial_exit(interface);
 	ringbuf_destroy(interface->rx);
-	ringbuf_destroy(interface->tx);
 	interface->id = -1;
 }
 
@@ -59,23 +50,11 @@ ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
 
 ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
 {
-	size_t ret = 0;
-	size_t tmp;
+	size_t ret;
 
-	while (1) {
-		atomic_enter();
-		tmp = ringbuf_write(interface->tx, data, len);
-		atomic_leave();
-		ret += tmp;
-
-		if (ret != len) { /* buffer full, suspend until I/O is ready */
-			len -= tmp;
-			data += tmp;
-			sched_yield(PROC_IOWAIT);
-		} else {
-			break;
-		}
-	}
+	atomic_enter();
+	ret = arch_serial_write(interface, data, len);
+	atomic_leave();
 
 	return (ssize_t)ret;
 }

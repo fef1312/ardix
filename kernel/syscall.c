@@ -12,7 +12,7 @@ __rodata
 const int (*syscall_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
 				      sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
 	syscall_entry(SYSCALL_READ, &sys_stub),
-	syscall_entry(SYSCALL_WRITE, &sys_stub),
+	syscall_entry(SYSCALL_WRITE, &sys_write),
 };
 
 int sys_stub(void)
