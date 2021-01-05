@@ -3,63 +3,29 @@
 
 #pragma once
 
-#ifndef __GNUC__
-#error "Only GCC is supported"
-#endif /* __GNUC__ */
+#include <ardix/types.h>
 
-#ifndef __always_inline
+#include <toolchain.h>
+
 /**
- * Force a method to always be inlined by the compiler.
- * Do not use this for functions exceeding one or two lines.
- */
-#define __always_inline inline __attribute__((always_inline))
-#endif /* __always_inline */
-
-#ifndef __naked
-/** Function attribute for disabling register saving. */
-#define __naked __attribute__((naked))
-#endif
-
-#ifndef __weak
-/**
- * Add the `weak` attribute to a symbol.
- * This allows that identifier to be re-declared without any warnings.
- */
-#define __weak __attribute__((__weak__))
-#endif /* __weak */
-
-#ifndef __alias
-/**
- * Declare an identifier as an alias for some other identifier.
+ * Copy data from user space to kernel space.
  *
- * @param name: The identifier (w/out quotes) this should be an alias for.
+ * @param dest: where to copy to
+ * @param src: where to copy from
+ * @param len: amount of bytes to copy
+ * @returns amount of bytes copied
  */
-#define __alias(name) __attribute__((alias(#name)))
-#endif /* __alias */
+size_t copy_from_user(void *dest, __user const void *src, size_t len);
 
-#ifndef __section
 /**
- * Define the program section this symbol should live in.
+ * Copy data from kernel space to user space.
  *
- * @param name: The section name w/out quotes.
+ * @param dest: where to copy to
+ * @param src: where to copy from
+ * @param len: amount of bytes to copy
+ * @returns amount of bytes copied
  */
-#define __section(name) __attribute__((section(#name)))
-#endif /* __section */
-
-#ifndef __rodata
-/** Place a variable in program memory rather than into RAM. */
-#define __rodata __section(.rodata#)
-#endif
-
-#ifndef __user
-/** Denote a pointer to user space (this will be used for static code checks later) */
-#define __user
-#endif
-
-#ifndef __shared
-/** Storage attribute indicating the symbol will be shared with userspace. */
-#define __shared __section(.text.shared)
-#endif
+size_t copy_to_user(__user void *dest, __user const void *src, size_t len);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
