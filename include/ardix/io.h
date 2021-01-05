@@ -6,20 +6,12 @@
 #include <ardix/serial.h>
 
 /**
- * Initialize the I/O thread and subsystems.
- * Must be called after all I/O components have been initialized.
+ * Initialize all basic I/O subsystems.
+ * After a successful return, printk() will be available.
  *
  * @returns 0 on success, or a negative number on failure.
  */
 int io_init(void);
-
-/**
- * Update the hardware serial buffers if necessary.
- * This includes copying to and from the main ring buffers.
- *
- * @param interface: The serial interface.
- */
-void io_serial_buf_update(struct serial_interface *interface);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
