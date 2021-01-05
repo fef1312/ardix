@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#include <stddef.h>
-#include <stdint.h>
+#include <arch/at91sam3x8e/hardware.h>
 #include <arch/at91sam3x8e/interrupt.h>
+
 #include <ardix/malloc.h>
 #include <ardix/string.h>
+
+#include <stddef.h>
+#include <stdint.h>
 #include <toolchain.h>
 
 /* from flash.ld */
@@ -23,29 +26,16 @@ extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
 void do_bootstrap(void);
-/* implementation in sys.c */
-void sys_init(void);
 
 __naked void irq_reset(void)
 {
 	sys_init();
 
-	memmove(
-		&_srelocate,
-		&_etext,
-		(size_t)(&_erelocate) - (size_t)(&_srelocate)
-	);
-	memset(
-		&_szero,
-		0,
-		(size_t)(&_ezero) - (size_t)(&_szero)
-	);
+	memmove(&_srelocate, &_etext, (size_t)(&_erelocate) - (size_t)(&_srelocate));
+	memset(&_szero, 0, (size_t)(&_ezero) - (size_t)(&_szero));
 
 	/* There is no userspace yet, so the Kernel gets the entire heap for now */
-	malloc_init(
-		&_sheap,
-		(size_t)(&_eheap) - (size_t)(&_sheap)
-	);
+	malloc_init(&_sheap, (size_t)(&_eheap) - (size_t)(&_sheap));
 
 	/* start the Kernel */
 	do_bootstrap();
