@@ -38,7 +38,8 @@ ARDIX_SOURCES += \
 
 ARDIX_ASM_SOURCES += \
 	$(ARDIX_ARCH_PWD)/irq_pend_sv.S \
-	$(ARDIX_ARCH_PWD)/irq_svc.S
+	$(ARDIX_ARCH_PWD)/irq_svc.S \
+	$(ARDIX_ARCH_PWD)/syscall.S
 
 CFLAGS += \
 	-DARCH_AT91SAM3X8E

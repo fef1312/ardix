@@ -13,20 +13,19 @@
 #define CONFIG_ARCH_SERIAL_BUFSZ 32
 #endif /* CONFIG_ARCH_SERIAL_BUFSZ */
 
+struct arch_serial_buffer {
+	uint16_t len;
+	uint8_t data[];
+};
+
 /** Architecture-specific extension of `struct serial_interface` */
 struct arch_serial_interface {
-	struct serial_interface interface;
+	/** should always match REG_UART_PDC_TPR */
+	struct arch_serial_buffer *tx_current;
+	/** should always match REG_UART_PDC_TNPR */
+	struct arch_serial_buffer *tx_next;
 
-	/*
-	 * two hardware buffers; one is for being written to while the other one can be read from
-	 * by the hardware w/out interfering with each other.  `arch_serial_hwbuf_rotate()` is
-	 * responsible for writing this to the respective hardware register and swapping them out.
-	 * The platform's buffer length registers only allow 16-byte numbers, so we can save some
-	 * memory by not using `size_t`
-	 */
-	uint8_t txbuf[CONFIG_ARCH_SERIAL_BUFSZ];
-	/** hardware has finished sending the current buffer and ready for a swap */
-	bool hw_txrdy;
+	struct serial_interface interface;
 };
 
 /**

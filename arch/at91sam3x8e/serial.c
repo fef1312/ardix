@@ -3,6 +3,8 @@
 
 #include <ardix/atomic.h>
 #include <ardix/io.h>
+#include <ardix/list.h>
+#include <ardix/malloc.h>
 #include <ardix/ringbuf.h>
 #include <ardix/serial.h>
 #include <ardix/string.h>
@@ -16,13 +18,14 @@
 #include <stddef.h>
 
 struct arch_serial_interface arch_serial_default_interface = {
+	.tx_current = NULL,
+	.tx_next = NULL,
 	.interface = {
 		.tx = NULL,
 		.rx = NULL,
 		.id = 0,
 		.baud = 0,
 	},
-	.hw_txrdy = false,
 };
 struct serial_interface *serial_default_interface = &arch_serial_default_interface.interface;
 
@@ -32,8 +35,6 @@ int arch_serial_init(struct serial_interface *interface)
 
 	if (interface->baud <= 0 || interface->id != 0)
 		return -1;
-
-	memset(&arch_iface->txbuf[0], 0, CONFIG_ARCH_SERIAL_BUFSZ);
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
 	REG_PMC_PCER0 |= REG_PMC_PCER0_PID(8);
@@ -57,7 +58,7 @@ int arch_serial_init(struct serial_interface *interface)
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
 	REG_UART_IER = REG_UART_IER_RXRDY_MASK
-		     | REG_UART_IER_TXBUFE_MASK
+		     | REG_UART_IER_ENDTX_MASK
 		     | REG_UART_IER_OVRE_MASK
 		     | REG_UART_IER_FRAME_MASK;
 
@@ -85,24 +86,37 @@ void arch_serial_exit(struct serial_interface *interface)
 	interface->id = -1;
 }
 
-void io_serial_buf_update(struct serial_interface *interface)
+ssize_t arch_serial_write(struct serial_interface *interface, const void *buf, size_t len)
 {
-	uint16_t len;
+	struct arch_serial_buffer *arch_buf = NULL;
 	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
 
-	if (arch_iface->hw_txrdy) {
-		atomic_enter();
-		len = (uint16_t)ringbuf_read(&arch_iface->txbuf[0], interface->tx,
-					     CONFIG_ARCH_SERIAL_BUFSZ);
-		atomic_leave();
+	if (arch_iface->tx_next != NULL)
+		return -EBUSY;
 
-		if (len) {
-			arch_iface->hw_txrdy = false;
-			REG_UART_IER = REG_UART_IER_TXBUFE_MASK;
-			REG_UART_PDC_TPR = (uint32_t)&arch_iface->txbuf[0];
-			REG_UART_PDC_TCR = len;
-		}
+	if (len >= (1 << 16)) /* DMA uses 16-bit counters */
+		len = 0xffff;
+
+	arch_buf = malloc(sizeof(*arch_buf) + len);
+	if (arch_buf == NULL)
+		return -ENOMEM;
+
+	memcpy(&arch_buf->data[0], buf, len);
+	arch_buf->len = (uint16_t)len;
+
+	if (arch_iface->tx_current == NULL) {
+		arch_iface->tx_current = arch_buf;
+		REG_UART_PDC_TPR = (uint32_t)&arch_buf->data[0];
+		REG_UART_PDC_TCR = arch_buf->len;
+		/* we weren't transmitting, so the interrupt was masked */
+		REG_UART_IER = REG_UART_IER_ENDTX_MASK;
+	} else {
+		arch_iface->tx_next = arch_buf;
+		REG_UART_PDC_TNPR = (uint32_t)&arch_buf->data[0];
+		REG_UART_PDC_TNCR = arch_buf->len;
 	}
+
+	return (ssize_t)len;
 }
 
 void irq_uart(void)
@@ -116,15 +130,16 @@ void irq_uart(void)
 		ringbuf_write(arch_serial_default_interface.interface.rx, &tmp, sizeof(tmp));
 	}
 
-	/* TX buffer has been sent */
-	if (state & REG_UART_SR_TXBUFE_MASK) {
-		/*
-		 * this is picked up by the I/O thread, which will copy the next
-		 * chunk of data from the ring buffer to the hardware buffer and
-		 * resume transmission
-		 */
-		arch_serial_default_interface.hw_txrdy = true;
-		REG_UART_IDR = REG_UART_IDR_TXBUFE_MASK;
+	/* REG_UART_PDC_TCR has reached zero */
+	if (state & REG_UART_SR_ENDTX_MASK) {
+		free(arch_serial_default_interface.tx_current);
+
+		/* DMA automatically does this to the actual hardware registers */
+		arch_serial_default_interface.tx_current = arch_serial_default_interface.tx_next;
+		arch_serial_default_interface.tx_next = NULL;
+
+		if (arch_serial_default_interface.tx_current == NULL)
+			REG_UART_IDR = REG_UART_IDR_ENDTX_MASK;
 	}
 
 	/* check for error conditions */

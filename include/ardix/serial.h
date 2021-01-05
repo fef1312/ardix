@@ -5,6 +5,7 @@
 
 #include <ardix/types.h>
 #include <ardix/ringbuf.h>
+
 #include <toolchain.h>
 
 #ifndef CONFIG_SERIAL_BAUD
