@@ -39,8 +39,8 @@ syscall:
 	mov	r12,	r3		/* arg3 */
 	mov	r2,	r12
 
-	pop	{r3}
-	mov	r12,	r3
+	pop	{r4}
+	mov	r12,	r4
 
 	/* stack params begin at 12 bytes offset because we already pushed three registers */
 	ldr	r3,	[sp, #12]	/* arg4 */

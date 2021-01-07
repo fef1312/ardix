@@ -10,25 +10,25 @@
 #include <stddef.h>
 #include <toolchain.h>
 
-ssize_t sys_write(int fd, __user const void *buf, size_t len, size_t off)
+ssize_t sys_write(int fd, __user const void *buf, size_t len)
 {
 	ssize_t ret;
 	void *copy;
 
-	if (fd != 1) /* we only support stdout (serial console) right now ... */
-		return -ENOTSUP;
-	if (off != 0) /* ... and the serial console doesn't support seeking */
-		return -ESPIPE;
+	if (fd != 1) /* we only support stdout (serial console) right now */
+		return -EBADF;
 
 	copy = malloc(len);
 	if (copy == NULL)
 		return -ENOMEM;
-	ret = (ssize_t)copy_from_user(copy, buf, (size_t)len);
+	ret = (ssize_t)copy_from_user(copy, buf, len);
 
 	/* TODO: reschedule if blocking */
 	ret = serial_write(serial_default_interface, copy, (size_t)ret);
 
-	return ret;
+	free(copy);
+
+	return 0x42424242;
 }
 
 /*

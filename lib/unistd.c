@@ -8,10 +8,9 @@
 #include <toolchain.h>
 #include <unistd.h>
 
-__shared ssize_t pwrite(int fildes, const void *buf, size_t nbyte, off_t offset)
+__shared ssize_t read(int fildes, void *buf, size_t nbyte)
 {
-	return syscall(SYSCALL_WRITE, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte,
-		       (sysarg_t)offset, 0, 0);
+	return syscall(SYSCALL_READ, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte, 0, 0, 0);
 }
 
 __shared ssize_t write(int fildes, const void *buf, size_t nbyte)
