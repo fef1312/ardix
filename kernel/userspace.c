@@ -16,13 +16,13 @@
 size_t copy_from_user(void *dest, __user const void *src, size_t len)
 {
 	void *tmp = memcpy(dest, src, len);
-	return (size_t)tmp - (size_t)dest;
+	return len;
 }
 
 size_t copy_to_user(__user void *dest, const void *src, size_t len)
 {
 	void *tmp = memcpy(dest, src, len);
-	return (size_t)tmp - (size_t)dest;
+	return len;
 }
 
 /*
