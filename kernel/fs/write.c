@@ -28,7 +28,7 @@ ssize_t sys_write(int fd, __user const void *buf, size_t len)
 
 	free(copy);
 
-	return 0x42424242;
+	return ret;
 }
 
 /*
