@@ -1,23 +1,34 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/malloc.h>
+#include <ardix/serial.h>
 #include <ardix/syscall.h>
+#include <ardix/userspace.h>
 
+#include <errno.h>
+#include <stddef.h>
 #include <toolchain.h>
 
-#define sys_table_entry(number, func) \
-	[number] (int (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
-
-__rodata
-const int (*sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
-				  sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
-	sys_table_entry(SYSCALL_READ, &sys_read),
-	sys_table_entry(SYSCALL_WRITE, &sys_write),
-};
-
-int sys_stub(void)
+ssize_t sys_read(int fd, __user void *buf, size_t len)
 {
-	return -ENOSYS;
+	ssize_t ret;
+	void *copy;
+
+	if (fd != 0) /* we only support stdin (serial console) right now */
+		return -EBADF;
+
+	copy = malloc(len);
+	if (copy == NULL)
+		return -ENOMEM;
+
+	ret = serial_read(copy, serial_default_interface, len);
+	if (ret > 0)
+		copy_to_user(buf, copy, (size_t)ret);
+
+	free(copy);
+
+	return ret;
 }
 
 /*
