@@ -36,7 +36,7 @@ struct list_head {
 #define list_last_entry(head, type, member) \
 	container_of((head)->prev, type, member)
 
-#define list_is_empty(head) ((head)->next == head)
+#define list_is_empty(head) ((head)->next == (head))
 
 #define list_for_each(head, cursor)		\
 	for (cursor = (head)->next;		\

@@ -3,7 +3,6 @@
 
 #include <ardix/atomic.h>
 #include <ardix/io.h>
-#include <ardix/list.h>
 #include <ardix/malloc.h>
 #include <ardix/ringbuf.h>
 #include <ardix/serial.h>
@@ -55,7 +54,6 @@ int arch_serial_init(struct serial_interface *interface)
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
 	REG_UART_IER = REG_UART_IER_RXRDY_MASK
-		     | REG_UART_IER_ENDTX_MASK
 		     | REG_UART_IER_OVRE_MASK
 		     | REG_UART_IER_FRAME_MASK;
 
@@ -129,6 +127,7 @@ void irq_uart(void)
 
 	/* REG_UART_PDC_TCR has reached zero */
 	if (state & REG_UART_SR_ENDTX_MASK) {
+		/* this might be NULL but that's ok because free() tolerates that */
 		free(arch_serial_default_interface.tx_current);
 
 		/* DMA automatically does this to the actual hardware registers */
