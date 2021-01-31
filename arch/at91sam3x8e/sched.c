@@ -9,6 +9,8 @@
 #include <ardix/string.h>
 #include <ardix/sched.h>
 
+extern struct task *_sched_current_task;
+
 void irq_sys_tick(void)
 {
 	/*
@@ -55,10 +57,10 @@ int arch_sched_hwtimer_init(unsigned int freq)
 	return 0;
 }
 
-void arch_sched_process_init(struct process *process, void (*entry)(void))
+void arch_sched_task_init(struct task *task, void (*entry)(void))
 {
-	struct reg_snapshot *regs = process->stack_bottom - sizeof(*regs);
-	process->sp = regs;
+	struct reg_snapshot *regs = task->stack_bottom - sizeof(*regs);
+	task->sp = regs;
 
 	memset(regs, 0, sizeof(*regs));
 	regs->hw.pc = entry;
@@ -66,10 +68,10 @@ void arch_sched_process_init(struct process *process, void (*entry)(void))
 	regs->sw.lr = (void *)0xFFFFFFF9U;
 }
 
-void sched_yield(enum proc_state state)
+void sched_yield(enum task_state state)
 {
 	REG_SYSTICK_VAL = 0U; /* Reset timer */
-	_current_process->state = state;
+	_sched_current_task->state = state;
 	arch_irq_invoke(IRQNO_PEND_SV);
 }
 

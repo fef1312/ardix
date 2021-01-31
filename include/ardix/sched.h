@@ -3,19 +3,17 @@
 
 #pragma once
 
-#include <arch/hardware.h>
-
 #include <ardix/list.h>
 #include <ardix/types.h>
 
-#ifndef CONFIG_SCHED_MAXPROC
-/** The maximum number of processes. */
-#define CONFIG_SCHED_MAXPROC 8
-#endif /* SCHED_MAXPROC */
+#ifndef CONFIG_SCHED_MAXTASK
+/** The maximum number of tasks. */
+#define CONFIG_SCHED_MAXTASK 8
+#endif
 
-#if CONFIG_SCHED_MAXPROC > 64
-#warning "CONFIG_SCHED_MAXPROC is > 64, this could have a significant impact on performance"
-#endif /* CONFIG_SCHED_MAXPROC > 64 */
+#if CONFIG_SCHED_MAXTASK > 64
+#warning "CONFIG_SCHED_MAXTASK is > 64, this could have a significant performance impact"
+#endif
 
 #ifndef CONFIG_SCHED_INTR_FREQ
 /** Frequency (in Hertz) at which a scheduling interrupt should be fired */
@@ -23,41 +21,37 @@
 #endif
 
 #ifndef CONFIG_STACKSZ
-/** Per-process stack size in bytes */
+/** Per-task stack size in bytes */
 #define CONFIG_STACKSZ 4096U
-#endif /* CONFIG_STACKSZ */
+#endif
 
-enum proc_state {
-	/** Process is dead / doesn't exist */
-	PROC_DEAD,
-	/** Process is ready for execution or currently running. */
-	PROC_READY,
-	/** Process is waiting for its next time share. */
-	PROC_QUEUE,
-	/** Process is sleeping, `sleep_until` specifies when to wake it up. */
-	PROC_SLEEP,
-	/** Process is waiting for I/O to flush buffers. */
-	PROC_IOWAIT,
+enum task_state {
+	/** Task is dead / doesn't exist */
+	TASK_DEAD,
+	/** Task is ready for execution or currently running. */
+	TASK_READY,
+	/** Task is waiting for its next time share. */
+	TASK_QUEUE,
+	/** Task is sleeping, `sleep_until` specifies when to wake it up. */
+	TASK_SLEEP,
+	/** Task is waiting for I/O to flush buffers. */
+	TASK_IOWAIT,
 };
 
 /** Stores an entire process image. */
-struct process {
-	/** Stack pointer. */
+struct task {
+	/** current stack pointer (only gets updated for task switching) */
 	void *sp;
-	/** Bottom of the stack (i.e. the highest address). */
+	/** first address of the stack (highest if the stack grows downwards) */
 	void *stack_bottom;
-	/** If `state` is `PROC_SLEEP`, the last execution time. */
+	/** if `state` is `TASK_SLEEP`, the last execution time */
 	unsigned long int lastexec;
-	/** If `state` is `PROC_SLEEP`, the amount of us to sleep in total. */
+	/** if `state` is `TASK_SLEEP`, the amount of us to sleep in total */
 	unsigned long int sleep_usecs;
-	/** Process ID. */
-	pid_t pid;
-	/** Process state. */
-	enum proc_state state;
-};
 
-/** The currently executing process. */
-extern struct process *_current_process;
+	enum task_state state;
+	pid_t pid;
+};
 
 /**
  * Initialize the scheduler subsystem.
@@ -66,41 +60,32 @@ extern struct process *_current_process;
 int sched_init(void);
 
 /**
- * Switch to the next process (atomic / interrupt handler context only).
+ * Switch to the next task (interrupt context only).
  * Must be called directly from within an interrupt routine.
- * Takes care of the following stuff:
+ * This selects a new task to be  run and updates the old and new task's `state`
+ * field to the appropriate value.
  *
- * - Selecting a new process to run, or putting the CPU to sleep
- * - Updating the `_current_process` pointer
- * - Setting the `state` member of both the old and new process to the
- *   appropriate value
- *
- * To avoid the horrors of inline assembly, the stack pointer is modified in
- * actual assembler files rather than here.
- *
- * @param curr_sp: The stack pointer of the current process.
- * @returns The stack pointer of the new process.
+ * @param curr_sp: stack pointer of the current task
+ * @returns stack pointer of the new task
  */
-void *sched_process_switch(void *curr_sp);
+void *sched_switch(void *curr_sp);
 
 /**
- * Create a new process.
+ * Create a copy of the current process image and return it.
  *
- * @param entry: The process entry point.
- * @returns A pointer to the new process, or `NULL` if something went wrong.
- *
- * TODO: make something like errno to tell what *exactly* went wrong
+ * @param task: the task to make a copy of
+ * @returns the new (child) task copy, or `NULL` on failure
  */
-struct process *sched_process_create(void (*entry)(void));
+struct task *sched_task_clone(struct task *dest);
 
 /**
- * Request the scheduler be invoked early, resulting in the current process to
+ * Request the scheduler be invoked early, resulting in the current task to
  * be suspended.
  *
- * @param state The state the process should enter.
- *	Allowed values are `PROC_SLEEP` and `PROC_IOWAIT`.
+ * @param state: State the task should enter.
+ *	Allowed values are `TASK_SLEEP` and `TASK_IOWAIT`.
  */
-void sched_yield(enum proc_state state);
+void sched_yield(enum task_state state);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

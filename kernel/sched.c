@@ -16,45 +16,45 @@
 extern uint32_t _sstack;
 extern uint32_t _estack;
 
-struct process *proc_table[CONFIG_SCHED_MAXPROC];
-struct process *_current_process;
+static struct task *_sched_tasktab[CONFIG_SCHED_MAXTASK];
+struct task *_sched_current_task;
 
 int sched_init(void)
 {
 	int i;
 
-	_current_process = malloc(sizeof(*_current_process));
-	if (_current_process == NULL)
+	_sched_current_task = malloc(sizeof(*_sched_current_task));
+	if (_sched_current_task == NULL)
 		return -ENOMEM;
 
-	_current_process->sp = &_sstack;
-	_current_process->stack_bottom = &_estack;
-	_current_process->pid = 0;
-	_current_process->state = PROC_READY;
-	proc_table[0] = _current_process;
+	_sched_current_task->sp = &_sstack;
+	_sched_current_task->stack_bottom = &_estack;
+	_sched_current_task->pid = 0;
+	_sched_current_task->state = TASK_READY;
+	_sched_tasktab[0] = _sched_current_task;
 
-	for (i = 1; i < CONFIG_SCHED_MAXPROC; i++)
-		proc_table[i] = NULL;
+	for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
+		_sched_tasktab[i] = NULL;
 
 	i = arch_watchdog_init();
 
 	if (i == 0)
-		i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXPROC);
+		i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXTASK);
 
 	return i;
 }
 
 /**
- * Determine whether the specified process should be executed next.
+ * Determine whether the specified task is a candidate for execution.
  *
- * @param proc: The process.
- * @returns Whether `proc` should be next in line for the scheduler.
+ * @param task: the task
+ * @returns whether `task` could be run next
  */
-static inline bool sched_proc_should_run(const struct process *proc)
+static inline bool sched_task_should_run(const struct task *task)
 {
-	enum proc_state state = proc->state;
+	enum task_state state = task->state;
 
-	if (state == PROC_QUEUE || state == PROC_READY || state == PROC_IOWAIT)
+	if (state == TASK_QUEUE || state == TASK_READY || state == TASK_IOWAIT)
 		return true;
 
 	return false;
@@ -62,60 +62,26 @@ static inline bool sched_proc_should_run(const struct process *proc)
 
 void *sched_process_switch(void *curr_sp)
 {
-	pid_t nextpid = _current_process->pid;
-	_current_process->sp = curr_sp;
+	struct task *tmp;
+	pid_t nextpid = _sched_current_task->pid;
+	_sched_current_task->sp = curr_sp;
 
-	if (_current_process->state != PROC_SLEEP && _current_process->state != PROC_IOWAIT)
-		_current_process->state = PROC_QUEUE;
+	if (_sched_current_task->state != TASK_SLEEP && _sched_current_task->state != TASK_IOWAIT)
+		_sched_current_task->state = TASK_QUEUE;
 
 	while (1) {
 		nextpid++;
-		nextpid %= CONFIG_SCHED_MAXPROC;
-		if (proc_table[nextpid] != NULL && sched_proc_should_run(proc_table[nextpid])) {
-			_current_process = proc_table[nextpid];
+		nextpid %= CONFIG_SCHED_MAXTASK;
+		tmp = &_sched_tasktab[nextpid];
+		if (tmp != NULL && sched_task_should_run(_sched_current_task)) {
+			_sched_current_task = tmp;
 			break;
 		}
 		/* TODO: Add idle thread */
 	}
 
-	_current_process->state = PROC_READY;
-	return _current_process->sp;
-}
-
-struct process *sched_process_create(void (*entry)(void))
-{
-	pid_t pid;
-	struct process *proc = malloc(sizeof(*proc));
-	if (proc == NULL)
-		return NULL;
-
-	atomic_enter();
-
-	for (pid = 1; pid < CONFIG_SCHED_MAXPROC; pid++) {
-		if (proc_table[pid] == NULL)
-			break;
-	}
-
-	if (pid == CONFIG_SCHED_MAXPROC) {
-		/* max number of processess exceeded */
-		free(proc);
-		atomic_leave();
-		return NULL;
-	}
-
-	proc->pid = pid;
-	proc->stack_bottom = &_estack - (pid * (signed)CONFIG_STACKSZ);
-	proc->lastexec = 0;
-	proc->sleep_usecs = 0;
-	proc->state = PROC_QUEUE;
-
-	arch_sched_process_init(proc, entry);
-
-	proc_table[pid] = proc;
-
-	atomic_leave();
-
-	return proc;
+	_sched_current_task->state = TASK_READY;
+	return _sched_current_task->sp;
 }
 
 /*
