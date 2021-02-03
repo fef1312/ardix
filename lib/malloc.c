@@ -83,9 +83,7 @@ struct memblk {
 #define MEMBLK_OVERHEAD (2 * MEMBLK_SIZE_LENGTH)
 
 /** Minimum effective allocation size (and all sizes must be a multiple of this one). */
-#define MIN_BLKSZ (sizeof(struct list_head))
-
-#define without_lsb(x) (((x) >> 1u) << 1u)
+#define MIN_BLKSZ (sizeof(struct memblk) - MEMBLK_OVERHEAD)
 
 /** The list of free blocks, ordered by ascending size. */
 LIST_HEAD(memblk_free_list);
@@ -95,7 +93,7 @@ static void memblk_set_size(struct memblk *block, size_t size)
 	block->size = size;
 	void *endptr = block;
 	endptr += MEMBLK_SIZE_LENGTH;
-	endptr += without_lsb(size); /* discard the allocated bit */
+	endptr += size & ~1u; /* discard the allocated bit */
 	*(size_t *)(endptr) = size;
 }
 
@@ -112,9 +110,9 @@ static void memblk_set_size(struct memblk *block, size_t size)
 static struct memblk *memblk_split(struct memblk *blk, size_t size)
 {
 	struct memblk *cursor;
-	struct memblk *newblk = (void *)blk + MEMBLK_OVERHEAD + without_lsb(size);
+	struct memblk *newblk = (void *)blk + MEMBLK_OVERHEAD + (size & ~1u);
 
-	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - without_lsb(size));
+	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - (size & ~1u));
 	memblk_set_size(blk, size);
 
 	list_for_each_entry_reverse(&blk->list, cursor, list) {
@@ -156,7 +154,7 @@ void *malloc(size_t size)
 		return NULL; /* as per POSIX.1-2008 */
 
 	/* round up to the next multiple of `MIN_BLKSZ` */
-	size = (size / MIN_BLKSZ) * MIN_BLKSZ;
+	size = ((volatile)(size / MIN_BLKSZ)) * MIN_BLKSZ;
 	size += MIN_BLKSZ;
 
 	atomic_enter();
@@ -226,7 +224,7 @@ void free(void *ptr)
 
 	atomic_enter();
 
-	memblk_set_size(blk, without_lsb(blk->size));
+	memblk_set_size(blk, blk->size & ~1u);
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
 	neighsz = (void *)blk + MEMBLK_OVERHEAD + blk->size;
