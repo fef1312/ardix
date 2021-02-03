@@ -7,19 +7,19 @@
 
 #include <ardix/serial.h>
 
-int arch_serial_init(struct serial_interface *interface);
-void arch_serial_exit(struct serial_interface *interface);
+int arch_serial_init(struct serial_device *dev);
+void arch_serial_exit(struct serial_device *dev);
 
 /**
  * Copy `buf` to a hardware buffer in the TX queue.
  * The transmission is performed asynchronously.
  *
- * @param interface: serial interface to enqueue the buffer for
+ * @param dev: serial device to enqueue the buffer for
  * @param buf: raw buffer data
  * @param len: length of `buf`
  * @returns actual amount of bytes enqueued, or a negative error code on failure
  */
-ssize_t arch_serial_write(struct serial_interface *interface, const void *buf, size_t len);
+ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len);
 
 #include ARCH_INCLUDE(serial.h)
 

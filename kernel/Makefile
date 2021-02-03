@@ -29,6 +29,7 @@ include $(ARDIX_KERNEL_PWD)/fs/Makefile
 include $(ARDIX_KERNEL_PWD)/io/Makefile
 
 ARDIX_SOURCES += \
+	$(ARDIX_KERNEL_PWD)/device.c \
 	$(ARDIX_KERNEL_PWD)/kent.c \
 	$(ARDIX_KERNEL_PWD)/printk.c \
 	$(ARDIX_KERNEL_PWD)/ringbuf.c \

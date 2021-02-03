@@ -16,20 +16,20 @@
 #include <errno.h>
 #include <stddef.h>
 
-struct arch_serial_interface arch_serial_default_interface = {
+struct arch_serial_device arch_serial_default_device = {
 	.tx_current = NULL,
 	.tx_next = NULL,
-	.interface = {
+	.device = {
 		.rx = NULL,
 		.id = 0,
 		.baud = 0,
 	},
 };
-struct serial_interface *serial_default_interface = &arch_serial_default_interface.interface;
+struct serial_device *serial_default_device = &arch_serial_default_device.device;
 
-int arch_serial_init(struct serial_interface *interface)
+int arch_serial_init(struct serial_device *dev)
 {
-	if (interface->baud <= 0 || interface->id != 0)
+	if (dev->baud <= 0 || dev->id != 0)
 		return -1;
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
@@ -49,7 +49,7 @@ int arch_serial_init(struct serial_interface *interface)
 	REG_UART_MR = REG_UART_MR_PAR_NO | REG_UART_MR_CHMODE_NORMAL;
 
 	/* From Atmel Datasheet: baud rate = MCK / (REG_UART_BRGR * 16) */
-	REG_UART_BRGR = (uint16_t)(( sys_core_clock / (uint32_t)interface->baud ) >> 4);
+	REG_UART_BRGR = (uint16_t)(( sys_core_clock / (uint32_t)dev->baud ) >> 4);
 
 	/* choose the events we want an interrupt on */
 	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
@@ -65,9 +65,9 @@ int arch_serial_init(struct serial_interface *interface)
 	return 0;
 }
 
-void arch_serial_exit(struct serial_interface *interface)
+void arch_serial_exit(struct serial_device *dev)
 {
-	if (interface->id != 0)
+	if (dev->id != 0)
 		return;
 
 	/* disable receiver and transmitter */
@@ -78,15 +78,15 @@ void arch_serial_exit(struct serial_interface *interface)
 	/* disable peripheral clock for UART (PID is taken from Atmel Datasheet, Section 9.1 */
 	REG_PMC_PCDR0 = REG_PMC_PCDR0_PID(8);
 
-	interface->id = -1;
+	dev->id = -1;
 }
 
-ssize_t arch_serial_write(struct serial_interface *interface, const void *buf, size_t len)
+ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len)
 {
 	struct arch_serial_buffer *arch_buf = NULL;
-	struct arch_serial_interface *arch_iface = to_arch_serial_interface(interface);
+	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
 
-	if (arch_iface->tx_next != NULL)
+	if (arch_dev->tx_next != NULL)
 		return -EBUSY;
 
 	if (len >= (1 << 16)) /* DMA uses 16-bit counters */
@@ -99,14 +99,14 @@ ssize_t arch_serial_write(struct serial_interface *interface, const void *buf, s
 	memcpy(&arch_buf->data[0], buf, len);
 	arch_buf->len = (uint16_t)len;
 
-	if (arch_iface->tx_current == NULL) {
-		arch_iface->tx_current = arch_buf;
+	if (arch_dev->tx_current == NULL) {
+		arch_dev->tx_current = arch_buf;
 		REG_UART_PDC_TPR = (uint32_t)&arch_buf->data[0];
 		REG_UART_PDC_TCR = arch_buf->len;
 		/* we weren't transmitting, so the interrupt was masked */
 		REG_UART_IER = REG_UART_IER_ENDTX_MASK;
 	} else {
-		arch_iface->tx_next = arch_buf;
+		arch_dev->tx_next = arch_buf;
 		REG_UART_PDC_TNPR = (uint32_t)&arch_buf->data[0];
 		REG_UART_PDC_TNCR = arch_buf->len;
 	}
@@ -122,19 +122,19 @@ void irq_uart(void)
 	/* RX has received a byte, store it into the ring buffer */
 	if (state & REG_UART_SR_RXRDY_MASK) {
 		tmp = REG_UART_RHR;
-		ringbuf_write(arch_serial_default_interface.interface.rx, &tmp, sizeof(tmp));
+		ringbuf_write(arch_serial_default_device.device.rx, &tmp, sizeof(tmp));
 	}
 
 	/* REG_UART_PDC_TCR has reached zero */
 	if (state & REG_UART_SR_ENDTX_MASK) {
 		/* this might be NULL but that's ok because free() tolerates that */
-		free(arch_serial_default_interface.tx_current);
+		free(arch_serial_default_device.tx_current);
 
 		/* DMA automatically does this to the actual hardware registers */
-		arch_serial_default_interface.tx_current = arch_serial_default_interface.tx_next;
-		arch_serial_default_interface.tx_next = NULL;
+		arch_serial_default_device.tx_current = arch_serial_default_device.tx_next;
+		arch_serial_default_device.tx_next = NULL;
 
-		if (arch_serial_default_interface.tx_current == NULL)
+		if (arch_serial_default_device.tx_current == NULL)
 			REG_UART_IDR = REG_UART_IDR_ENDTX_MASK;
 	}
 

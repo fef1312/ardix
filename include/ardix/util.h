@@ -5,6 +5,8 @@
 
 #include <stddef.h>
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
 /**
  * Cast a pointer to a member of a struct out to the containing structure.
  *

@@ -6,10 +6,10 @@
 #include <ardix/io.h>
 #include <ardix/printk.h>
 #include <ardix/sched.h>
-#include <ardix/serial.h>
 
 #include <stdint.h>
 #include <stddef.h>
+#include <unistd.h>
 
 #define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
 #define REG_PIOB_PDR			(*(uint32_t *)0x400E1004U)
@@ -34,9 +34,12 @@ void do_bootstrap(void)
 	REG_PIOB_CODR = 1 << 27;
 
 	sched_init();
+
+	devices_init();
+
 	io_init();
 
-	printk("hello, world\n");
+	write(1, "hello, world\n", 13);
 
 	while (true) {
 		if (count++ != 1000000)
@@ -47,7 +50,6 @@ void do_bootstrap(void)
 			REG_PIOB_CODR = 1 << 27;
 		else
 			REG_PIOB_SODR = 1 << 27;
-		printk("endless loop iteration #%u\n", print_count);
 
 		count = 0;
 	}

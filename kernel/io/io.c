@@ -8,7 +8,7 @@ int io_init(void)
 {
 	int ret;
 
-	ret = serial_init(serial_default_interface, CONFIG_SERIAL_BAUD);
+	ret = serial_init(serial_default_device, CONFIG_SERIAL_BAUD);
 
 	return ret;
 }

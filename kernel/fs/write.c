@@ -24,7 +24,7 @@ ssize_t sys_write(int fd, __user const void *buf, size_t len)
 	ret = (ssize_t)copy_from_user(copy, buf, len);
 
 	/* TODO: reschedule if blocking */
-	ret = serial_write(serial_default_interface, copy, (size_t)ret);
+	ret = serial_write(serial_default_device, copy, (size_t)ret);
 
 	free(copy);
 

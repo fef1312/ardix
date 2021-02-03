@@ -2,6 +2,7 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <ardix/atomic.h>
+#include <ardix/device.h>
 #include <ardix/ringbuf.h>
 #include <ardix/sched.h>
 #include <ardix/serial.h>
@@ -10,50 +11,52 @@
 
 #include <stddef.h>
 
-int serial_init(struct serial_interface *interface, long int baud)
+int serial_init(struct serial_device *dev, long int baud)
 {
 	int err = -1;
 
-	if (interface->id < 0)
-		return -1; /* invalid interface */
+	if (dev->id < 0)
+		return -1; /* invalid dev */
 
-	interface->baud = baud;
+	err = device_init(&dev->device, NULL);
 
-	interface->rx = ringbuf_create(SERIAL_BUFSZ);
-	if (interface->rx == NULL)
+	dev->baud = baud;
+
+	dev->rx = ringbuf_create(SERIAL_BUFSZ);
+	if (dev->rx == NULL)
 		return -1;
 
-	err = arch_serial_init(interface);
+	err = arch_serial_init(dev);
 	if (err)
-		ringbuf_destroy(interface->rx);
+		ringbuf_destroy(dev->rx);
 
 	return err;
 }
 
-void serial_exit(struct serial_interface *interface)
+void serial_exit(struct serial_device *dev)
 {
-	arch_serial_exit(interface);
-	ringbuf_destroy(interface->rx);
-	interface->id = -1;
+	arch_serial_exit(dev);
+	ringbuf_destroy(dev->rx);
+	dev->id = -1;
 }
 
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len)
+ssize_t serial_read(void *dest, struct serial_device *dev, size_t len)
 {
 	ssize_t ret;
 
 	atomic_enter();
-	ret = (ssize_t)ringbuf_read(dest, interface->rx, len);
+	ret = (ssize_t)ringbuf_read(dest, dev->rx, len);
 	atomic_leave();
 
 	return ret;
 }
 
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len)
+ssize_t serial_write(struct serial_device *dev, const void *data, size_t len)
 {
 	ssize_t ret;
 
 	atomic_enter();
-	ret = arch_serial_write(interface, data, len);
+	ret = arch_serial_write(dev, data, len);
 	atomic_leave();
 
 	return ret;

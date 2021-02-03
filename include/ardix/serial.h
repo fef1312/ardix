@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <ardix/device.h>
 #include <ardix/types.h>
 #include <ardix/ringbuf.h>
 
@@ -18,50 +19,47 @@
 #define SERIAL_BUFSZ 256
 #endif
 
-struct serial_interface {
+struct serial_device {
+	struct device device;
 	struct ringbuf *rx;
 	long int baud;
 	int id;
 };
 
 /** The default serial console (this is where printk outputs to) */
-extern struct serial_interface *serial_default_interface;
+extern struct serial_device *serial_default_device;
 
 /**
- * Initialize a serial interface.
+ * Initialize a serial device.
  *
- * @param interface: The serial interface.
- * @param baud: The baud rate (bits/second).
+ * @param dev: serial device
+ * @param baud: baud rate (bits/sec)
  * @returns 0 on success, a negative number otherwise.
  */
-int serial_init(struct serial_interface *interface, long int baud);
+int serial_init(struct serial_device *dev, long int baud);
 
-/**
- * Flush all buffers (if possible) and close the serial interface.
- *
- * @param interface: The serial interface.
- */
-void serial_exit(struct serial_interface *interface);
+/** Flush all buffers (if possible) and close the serial device. */
+void serial_exit(struct serial_device *dev);
 
 /**
  * Read from the serial buffer.
  *
- * @param dest: Where to store the received data.
- * @param interface: The serial interface to read data from.
- * @param len: The maximum amount of bytes to read.
- * @returns The actual amount of bytes read.
+ * @param dest: where to write received data
+ * @param dev: serial device to read from
+ * @param len: amount of bytes to read
+ * @returns actual amount of bytes read
  */
-ssize_t serial_read(void *dest, struct serial_interface *interface, size_t len);
+ssize_t serial_read(void *dest, struct serial_device *dev, size_t len);
 
 /**
  * Write data to the serial buffer.
  *
- * @param interface: The serial interface to write data to.
- * @param data: The data to write.
- * @param len: The length of `data`.
- * @returns The actual amount of bytes written.
+ * @param dev: serial device to write to
+ * @param data: where to read data from
+ * @param len: amount of bytes to write
+ * @returns actual amount of bytes written
  */
-ssize_t serial_write(struct serial_interface *interface, const void *data, size_t len);
+ssize_t serial_write(struct serial_device *dev, const void *data, size_t len);
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>

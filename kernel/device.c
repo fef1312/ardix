@@ -1,38 +1,40 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#include <ardix/device.h>
+#include <ardix/kent.h>
+#include <ardix/list.h>
 #include <ardix/malloc.h>
-#include <ardix/serial.h>
-#include <ardix/syscall.h>
-#include <ardix/userspace.h>
+#include <ardix/types.h>
 
 #include <errno.h>
 #include <stddef.h>
-#include <toolchain.h>
 
-ssize_t sys_read(int fd, __user void *buf, size_t len)
+struct kent *devices_kent = NULL;
+
+/** Initialize the devices subsystem. */
+int devices_init(void)
 {
-	ssize_t ret;
-	void *copy;
+	if (devices_kent != NULL)
+		return -EEXIST;
 
-	if (fd != 0) /* we only support stdin (serial console) right now */
-		return -EBADF;
-
-	copy = malloc(len);
-	if (copy == NULL)
+	devices_kent = malloc(sizeof(*devices_kent));
+	if (devices_kent == NULL)
 		return -ENOMEM;
 
-	ret = serial_read(copy, serial_default_device, len);
-	if (ret > 0)
-		copy_to_user(buf, copy, (size_t)ret);
+	return kent_init(NULL, devices_kent);
+}
 
-	free(copy);
+int device_init(struct device *dev, struct device *parent)
+{
+	if (devices_kent == NULL)
+		return -ENOENT;
 
-	return ret;
+	return kent_init(devices_kent, &dev->kent);
 }
 
 /*
- * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
+ * Copyright (c) 2021 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:

@@ -1,38 +1,51 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
+#pragma once
+
+#include <ardix/kent.h>
+#include <ardix/list.h>
 #include <ardix/malloc.h>
-#include <ardix/serial.h>
-#include <ardix/syscall.h>
-#include <ardix/userspace.h>
+#include <ardix/types.h>
 
-#include <errno.h>
 #include <stddef.h>
-#include <toolchain.h>
 
-ssize_t sys_read(int fd, __user void *buf, size_t len)
+/** Top-level abstraction for any device connected to the system. */
+struct device {
+	struct kent kent;
+};
+
+/** Cast a kent out to its containing struct device */
+#define to_device(ptr) container_of(ptr, struct device, kent)
+
+extern struct kent *devices_kent;
+
+/** Initialize the devices subsystem. */
+int devices_init(void);
+
+/**
+ * Initialize a device and add it to the device tree.
+ *
+ * @param dev: device to initialze
+ * @param parent: parent device (may me `NULL` if unapplicable)
+ * @returns 0 on success, or a negative error code on failure
+ */
+int device_init(struct device *dev, struct device *parent);
+
+/** Increment a device's reference counter. */
+inline void device_get(struct device *dev)
 {
-	ssize_t ret;
-	void *copy;
+	kent_get(&dev->kent);
+}
 
-	if (fd != 0) /* we only support stdin (serial console) right now */
-		return -EBADF;
-
-	copy = malloc(len);
-	if (copy == NULL)
-		return -ENOMEM;
-
-	ret = serial_read(copy, serial_default_device, len);
-	if (ret > 0)
-		copy_to_user(buf, copy, (size_t)ret);
-
-	free(copy);
-
-	return ret;
+/** Decrement a device's referece counter. */
+inline void device_put(struct device *dev)
+{
+	kent_put(&dev->kent);
 }
 
 /*
- * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
+ * Copyright (c) 2021 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:

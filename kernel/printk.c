@@ -17,8 +17,8 @@
  * TODO: THIS CAUSES A STACK BUFFER OVERFLOW ON SYSTEMS WHERE INT IS 64 BITS
  */
 
-/* 10 decimal digits (2 ** 32 - 1) + ASCII NUL */
-#define PRINTK_UINT_BUFSZ 11
+/* 10 decimal digits of 4294967295 (2 ** 32 - 1) */
+#define PRINTK_UINT_BUFSZ 10
 
 __rodata static const char fmt_hex_table[] = {
 	'0', '1', '2', '3',
@@ -42,7 +42,7 @@ static int fmt_handle_ptr(uintptr_t ptr)
 		ptr >>= 4;
 	} while (pos != &buf[2]);
 
-	ret = serial_write(serial_default_interface, &buf[0], 2 * sizeof(uintptr_t) + 2);
+	ret = serial_write(serial_default_device, &buf[0], 2 * sizeof(uintptr_t) + 2);
 	return ret;
 }
 
@@ -59,7 +59,7 @@ static int fmt_handle_uint(unsigned int u)
 	} while (u != 0);
 	pos++;
 
-	ret = serial_write(serial_default_interface, pos,
+	ret = serial_write(serial_default_device, pos,
 			   PRINTK_UINT_BUFSZ - ( (size_t)pos - (size_t)&buf[0] ));
 	return ret;
 }
@@ -70,7 +70,7 @@ static inline int fmt_handle_int(int i)
 	char minus = '-';
 
 	if (i < 0) {
-		ret = serial_write(serial_default_interface, &minus, sizeof(minus));
+		ret = serial_write(serial_default_device, &minus, sizeof(minus));
 		i = -i;
 	}
 
@@ -102,12 +102,12 @@ static inline int fmt_handle(const char **pos, va_list args)
 
 	switch (**pos) {
 	case '%': /* literal percent sign */
-		ret = serial_write(serial_default_interface, *pos, sizeof(**pos));
+		ret = serial_write(serial_default_device, *pos, sizeof(**pos));
 		break;
 
 	case 'c': /* char */
 		val.c = va_arg(args, typeof(val.c));
-		ret = serial_write(serial_default_interface, &val.c, sizeof(val.c));
+		ret = serial_write(serial_default_device, &val.c, sizeof(val.c));
 		break;
 
 	case 'd': /* int */
@@ -123,7 +123,7 @@ static inline int fmt_handle(const char **pos, va_list args)
 	case 's': /* string */
 		val.s = va_arg(args, typeof(val.s));
 		ret = (int)strlen(val.s);
-		ret = serial_write(serial_default_interface, val.s, (size_t)ret);
+		ret = serial_write(serial_default_device, val.s, (size_t)ret);
 		break;
 
 	case 'u': /* unsigned int */
@@ -149,7 +149,7 @@ int printk(const char *fmt, ...)
 	while (*tmp != '\0') {
 		if (*tmp++ == '%') {
 			/* flush out everything we have so far (minus one char for %) */
-			ret += (int)serial_write(serial_default_interface, fmt,
+			ret += (int)serial_write(serial_default_device, fmt,
 						 (size_t)tmp - (size_t)fmt - 1);
 
 			tmpret = fmt_handle(&tmp, args);
@@ -166,9 +166,10 @@ int printk(const char *fmt, ...)
 	}
 
 	if (tmp != fmt && ret >= 0)
-		ret += serial_write(serial_default_interface, fmt, (size_t)tmp - (size_t)fmt);
+		ret += serial_write(serial_default_device, fmt, (size_t)tmp - (size_t)fmt);
 
 	va_end(args);
+
 	return ret;
 }
 

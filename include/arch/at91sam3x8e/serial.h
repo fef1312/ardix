@@ -18,23 +18,23 @@ struct arch_serial_buffer {
 	uint8_t data[];
 };
 
-/** Architecture-specific extension of `struct serial_interface` */
-struct arch_serial_interface {
+/** Architecture-specific extension of `struct serial_device` */
+struct arch_serial_device {
 	/** should always match REG_UART_PDC_TPR */
 	struct arch_serial_buffer *tx_current;
 	/** should always match REG_UART_PDC_TNPR */
 	struct arch_serial_buffer *tx_next;
 
-	struct serial_interface interface;
+	struct serial_device device;
 };
 
 /**
- * Cast a `struct serial_interface` out to a `struct arch_serial_interface`.
+ * Cast a `struct serial_device` out to a `struct arch_serialdevice`.
  *
- * @param ptr: The `struct serial_interface *` to cast out from.
- * @returns The containing `struct arch_serial_interface *`.
+ * @param ptr: The `struct serial_device *` to cast out from.
+ * @returns The containing `struct arch_serialdevice *`.
  */
-#define to_arch_serial_interface(ptr) container_of(ptr, struct arch_serial_interface, interface)
+#define to_arch_serial_device(ptr) container_of(ptr, struct arch_serial_device, device)
 
 /*
  * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
