@@ -138,6 +138,15 @@
 #define ERFKILL		132
 #define EHWPOISON	133
 
+/**
+ * Obtain an error message from the POSIX error number.
+ * The returned string must not be modified in any way.
+ *
+ * @param errnum: POSIX error number
+ * @returns an immutable human-readable string briefly describing the error
+ */
+char *strerror(int errnum);
+
 /* TODO: actually define errno */
 
 /*
