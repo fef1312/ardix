@@ -2,6 +2,7 @@
 /* See the end of this file for copyright, licensing, and warranty information. */
 
 #include <ardix/atomic.h>
+#include <ardix/dma.h>
 #include <ardix/io.h>
 #include <ardix/malloc.h>
 #include <ardix/ringbuf.h>
@@ -83,7 +84,7 @@ void arch_serial_exit(struct serial_device *dev)
 
 ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len)
 {
-	struct arch_serial_buffer *arch_buf = NULL;
+	struct dmabuf *dmabuf = NULL;
 	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
 
 	if (arch_dev->tx_next != NULL)
@@ -92,23 +93,22 @@ ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len
 	if (len >= (1 << 16)) /* DMA uses 16-bit counters */
 		len = 0xffff;
 
-	arch_buf = malloc(sizeof(*arch_buf) + len);
-	if (arch_buf == NULL)
+	dmabuf = dmabuf_create(&dev->device, len);
+	if (dmabuf == NULL)
 		return -ENOMEM;
 
-	memcpy(&arch_buf->data[0], buf, len);
-	arch_buf->len = (uint16_t)len;
+	memcpy(&dmabuf->data[0], buf, len);
 
 	if (arch_dev->tx_current == NULL) {
-		arch_dev->tx_current = arch_buf;
-		REG_UART_PDC_TPR = (uint32_t)&arch_buf->data[0];
-		REG_UART_PDC_TCR = arch_buf->len;
+		arch_dev->tx_current = dmabuf;
+		REG_UART_PDC_TPR = (uint32_t)&dmabuf->data[0];
+		REG_UART_PDC_TCR = (uint16_t)dmabuf->len;
 		/* we weren't transmitting, so the interrupt was masked */
 		REG_UART_IER = REG_UART_IER_ENDTX_MASK;
 	} else {
-		arch_dev->tx_next = arch_buf;
-		REG_UART_PDC_TNPR = (uint32_t)&arch_buf->data[0];
-		REG_UART_PDC_TNCR = arch_buf->len;
+		arch_dev->tx_next = dmabuf;
+		REG_UART_PDC_TNPR = (uint32_t)&dmabuf->data[0];
+		REG_UART_PDC_TNCR = (uint16_t)dmabuf->len;
 	}
 
 	return (ssize_t)len;
@@ -128,7 +128,7 @@ void irq_uart(void)
 	/* REG_UART_PDC_TCR has reached zero */
 	if (state & REG_UART_SR_ENDTX_MASK) {
 		/* this might be NULL but that's ok because free() tolerates that */
-		free(arch_serial_default_device.tx_current);
+		dmabuf_put(arch_serial_default_device.tx_current);
 
 		/* DMA automatically does this to the actual hardware registers */
 		arch_serial_default_device.tx_current = arch_serial_default_device.tx_next;

@@ -1,36 +1,57 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* See the end of this file for copyright, licensing, and warranty information. */
 
-#pragma once
-
+#include <ardix/device.h>
 #include <ardix/dma.h>
-#include <ardix/serial.h>
+#include <ardix/kent.h>
+#include <ardix/malloc.h>
+#include <ardix/types.h>
 #include <ardix/util.h>
 
-#ifndef CONFIG_ARCH_SERIAL_BUFSZ
-#define CONFIG_ARCH_SERIAL_BUFSZ 32
-#endif /* CONFIG_ARCH_SERIAL_BUFSZ */
+#include <stddef.h>
 
-/** Architecture-specific extension of `struct serial_device` */
-struct arch_serial_device {
-	/** should always match REG_UART_PDC_TPR */
-	struct dmabuf *tx_current;
-	/** should always match REG_UART_PDC_TNPR */
-	struct dmabuf *tx_next;
+static void dmabuf_destroy(struct kent *kent)
+{
+	struct dmabuf *buf = container_of(kent, struct dmabuf, kent);
+	free(buf);
+}
 
-	struct serial_device device;
+static struct kent_ops dma_kent_ops = {
+	.destroy = &dmabuf_destroy,
 };
 
-/**
- * Cast a `struct serial_device` out to a `struct arch_serialdevice`.
- *
- * @param ptr: The `struct serial_device *` to cast out from.
- * @returns The containing `struct arch_serialdevice *`.
- */
-#define to_arch_serial_device(ptr) container_of(ptr, struct arch_serial_device, device)
+struct dmabuf *dmabuf_create(struct device *dev, size_t len)
+{
+	int err = 0;
+	struct dmabuf *buf = malloc(sizeof(*buf) + len);
+	if (buf == NULL)
+		return NULL;
+
+	buf->kent.operations = &dma_kent_ops;
+
+	err = kent_init(&dev->kent, &buf->kent);
+	if (err != 0) {
+		free(buf);
+		return NULL;
+	}
+
+	buf->len = len;
+
+	return buf;
+}
+
+void dmabuf_get(struct dmabuf *buf)
+{
+	kent_get(&buf->kent);
+}
+
+void dmabuf_put(struct dmabuf *buf)
+{
+	kent_put(&buf->kent);
+}
 
 /*
- * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
+ * Copyright (c) 2021 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:

@@ -3,34 +3,33 @@
 
 #pragma once
 
-#include <ardix/dma.h>
-#include <ardix/serial.h>
-#include <ardix/util.h>
+#include <ardix/device.h>
+#include <ardix/kent.h>
+#include <ardix/types.h>
 
-#ifndef CONFIG_ARCH_SERIAL_BUFSZ
-#define CONFIG_ARCH_SERIAL_BUFSZ 32
-#endif /* CONFIG_ARCH_SERIAL_BUFSZ */
-
-/** Architecture-specific extension of `struct serial_device` */
-struct arch_serial_device {
-	/** should always match REG_UART_PDC_TPR */
-	struct dmabuf *tx_current;
-	/** should always match REG_UART_PDC_TNPR */
-	struct dmabuf *tx_next;
-
-	struct serial_device device;
+struct dmabuf {
+	struct kent kent;
+	size_t len;
+	uint8_t data[0];
 };
 
 /**
- * Cast a `struct serial_device` out to a `struct arch_serialdevice`.
+ * Create a new DMA buffer and its corresponding kent.
  *
- * @param ptr: The `struct serial_device *` to cast out from.
- * @returns The containing `struct arch_serialdevice *`.
+ * @param dev: device to create the buffer for
+ * @param len: buffer length in bytes
+ * @returns a pointer to the buffer, or `NULL` on failure
  */
-#define to_arch_serial_device(ptr) container_of(ptr, struct arch_serial_device, device)
+struct dmabuf *dmabuf_create(struct device *dev, size_t len);
+
+/** Increment a DMA buffer's reference counter. */
+void dmabuf_get(struct dmabuf *buf);
+
+/** Decrement a DMA buffer's reference counter. */
+void dmabuf_put(struct dmabuf *buf);
 
 /*
- * Copyright (c) 2020 Felix Kopp <sandtler@sandtler.club>
+ * Copyright (c) 2021 Felix Kopp <sandtler@sandtler.club>
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
