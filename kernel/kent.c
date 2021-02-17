@@ -10,7 +10,7 @@
 
 struct kent *kent_root;
 
-int kent_init(struct kent *parent, struct kent *kent)
+int kent_init(struct kent *kent, struct kent *parent)
 {
 	int ret = 0;
 

@@ -44,11 +44,11 @@ extern struct kent *kent_root;
 /**
  * Initialize a kent and increment its refcounter by one.
  *
- * @param parent: The parent kent.
  * @param kent: The kent.
+ * @param parent: The parent kent.
  * @returns A nonzero value on failure
  */
-int kent_init(struct kent *parent, struct kent *kent);
+int kent_init(struct kent *kent, struct kent *parent);
 
 /**
  * Increment the reference counter.

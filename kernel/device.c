@@ -12,6 +12,16 @@
 
 struct kent *devices_kent = NULL;
 
+static void device_destroy(struct kent *kent)
+{
+	struct device *dev = to_device(kent);
+	free(dev);
+}
+
+struct kent_ops devices_kent_ops = {
+	.destroy = &device_destroy,
+};
+
 /** Initialize the devices subsystem. */
 int devices_init(void)
 {
@@ -22,7 +32,10 @@ int devices_init(void)
 	if (devices_kent == NULL)
 		return -ENOMEM;
 
-	return kent_init(NULL, devices_kent);
+	/* we don't need that because the root device kent lives forever */
+	devices_kent->operations = NULL;
+
+	return kent_init(devices_kent, NULL);
 }
 
 int device_init(struct device *dev, struct device *parent)
@@ -30,7 +43,7 @@ int device_init(struct device *dev, struct device *parent)
 	if (devices_kent == NULL)
 		return -ENOENT;
 
-	return kent_init(devices_kent, &dev->kent);
+	return kent_init(&dev->kent, devices_kent);
 }
 
 /*

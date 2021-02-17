@@ -29,7 +29,7 @@ struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 
 	buf->kent.operations = &dma_kent_ops;
 
-	err = kent_init(&dev->kent, &buf->kent);
+	err = kent_init(&buf->kent, &dev->kent);
 	if (err != 0) {
 		free(buf);
 		return NULL;
