@@ -72,7 +72,7 @@ void *sched_process_switch(void *curr_sp)
 	while (1) {
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
-		tmp = &_sched_tasktab[nextpid];
+		tmp = _sched_tasktab[nextpid];
 		if (tmp != NULL && sched_task_should_run(_sched_current_task)) {
 			_sched_current_task = tmp;
 			break;
