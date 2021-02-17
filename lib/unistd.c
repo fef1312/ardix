@@ -10,12 +10,12 @@
 
 __shared ssize_t read(int fildes, void *buf, size_t nbyte)
 {
-	return syscall(SYSCALL_READ, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte, 0, 0, 0);
+	return syscall(SYSCALL_READ, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte);
 }
 
 __shared ssize_t write(int fildes, const void *buf, size_t nbyte)
 {
-	return syscall(SYSCALL_WRITE, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte, 0, 0, 0);
+	return syscall(SYSCALL_WRITE, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte);
 }
 
 /*
