@@ -20,7 +20,7 @@ enum syscall {
 int syscall(enum syscall number, ...);
 
 /** The table of system call handlers, indexed by syscall number. */
-extern const int (*sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+extern int (*const sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
 					 sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
 
 /* catchall handler that returns -ENOSYS */

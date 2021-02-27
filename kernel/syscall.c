@@ -9,7 +9,7 @@
 	[number] (int (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
 
 __rodata
-const int (*sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+int (*const sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
 				  sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
 	sys_table_entry(SYSCALL_READ, &sys_read),
 	sys_table_entry(SYSCALL_WRITE, &sys_write),
