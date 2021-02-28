@@ -16,7 +16,7 @@ struct device {
 };
 
 /** Cast a kent out to its containing struct device */
-#define to_device(ptr) container_of(ptr, struct device, kent)
+#define kent_to_device(ptr) container_of(ptr, struct device, kent)
 
 extern struct kent *devices_kent;
 
@@ -27,10 +27,9 @@ int devices_init(void);
  * Initialize a device and add it to the device tree.
  *
  * @param dev: device to initialze
- * @param parent: parent device (may me `NULL` if unapplicable)
  * @returns 0 on success, or a negative error code on failure
  */
-int device_init(struct device *dev, struct device *parent);
+int device_init(struct device *dev);
 
 /** Increment a device's reference counter. */
 inline void device_get(struct device *dev)

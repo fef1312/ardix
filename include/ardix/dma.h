@@ -13,8 +13,11 @@ struct dmabuf {
 	uint8_t data[0];
 };
 
+#define kent_to_dmabuf(ptr) container_of(ptr, struct dmabuf, kent)
+
 /**
  * Create a new DMA buffer and its corresponding kent.
+ * Use `dmabuf_get` and `dmabuf_put` for refcounting.
  *
  * @param dev: device to create the buffer for
  * @param len: buffer length in bytes

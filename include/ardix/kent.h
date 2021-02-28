@@ -25,7 +25,10 @@ struct kent_ops {
 /**
  * struct kent: Kernel Entity
  *
- * This is basically a primitive ripoff of the kobject system in Linux.
+ * This is basically a primitive ripoff of the kobject system in Linux, except
+ * there is no representation in a virtual filesystem and it is only really used
+ * to keeping track of hierarchial reference counting.
+ *
  * The main purpose of kents is to provide a basic common abstraction layer for
  * all modules and submodules of the Ardix kernel.  kents are arranged in a tree
  * structure, and use an atomic reference counter to keep track of when it is
@@ -42,13 +45,23 @@ struct kent {
 extern struct kent *kent_root;
 
 /**
- * Initialize a kent and increment its refcounter by one.
+ * Initialize to root kent.
+ * This should probably be called before bootstrapping anything else hooking
+ * into the kent hierarchy i guess.
  *
- * @param kent: The kent.
- * @param parent: The parent kent.
- * @returns A nonzero value on failure
+ * @returns a nonzero value on failure
  */
-int kent_init(struct kent *kent, struct kent *parent);
+int kent_root_init(void);
+
+/**
+ * Initialize a kent and set its refcount to one.
+ * This will fail unless both the operations and parent members are initialized.
+ * The parent refcount is incremented.
+ *
+ * @param kent: the kent
+ * @returns a nonzero value on failure
+ */
+int kent_init(struct kent *kent);
 
 /**
  * Increment the reference counter.
@@ -60,7 +73,7 @@ void kent_get(struct kent *kent);
 /**
  * Decrement the reference counter.
  * If it reaches zero, the kent is destroyed by invoking the respective callback
- * in the operations field.
+ * in the operations field and the parent reference counter is also decremented.
  *
  * @param kent: The kent.
  */

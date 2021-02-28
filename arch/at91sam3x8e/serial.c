@@ -127,8 +127,8 @@ void irq_uart(void)
 
 	/* REG_UART_PDC_TCR has reached zero */
 	if (state & REG_UART_SR_ENDTX_MASK) {
-		/* this might be NULL but that's ok because free() tolerates that */
-		dmabuf_put(arch_serial_default_device.tx_current);
+		if (arch_serial_default_device.tx_current != NULL)
+			dmabuf_put(arch_serial_default_device.tx_current);
 
 		/* DMA automatically does this to the actual hardware registers */
 		arch_serial_default_device.tx_current = arch_serial_default_device.tx_next;

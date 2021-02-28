@@ -18,7 +18,7 @@ int serial_init(struct serial_device *dev, long int baud)
 	if (dev->id < 0)
 		return -1; /* invalid dev */
 
-	err = device_init(&dev->device, NULL);
+	err = device_init(&dev->device);
 
 	dev->baud = baud;
 
