@@ -94,7 +94,7 @@ static void memblk_set_size(struct memblk *block, size_t size)
 	void *endptr = block;
 	endptr += MEMBLK_SIZE_LENGTH;
 	endptr += size & ~1u; /* discard the allocated bit */
-	*(size_t *)(endptr) = size;
+	*(size_t *)endptr = size;
 }
 
 /**
@@ -154,7 +154,7 @@ void *malloc(size_t size)
 		return NULL; /* as per POSIX.1-2008 */
 
 	/* round up to the next multiple of `MIN_BLKSZ` */
-	size = ((volatile)(size / MIN_BLKSZ)) * MIN_BLKSZ;
+	size = (size / MIN_BLKSZ) * MIN_BLKSZ;
 	size += MIN_BLKSZ;
 
 	atomic_enter();
