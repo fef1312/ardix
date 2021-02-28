@@ -103,7 +103,7 @@ __rodata static const char *error_messages[] = {
 	[ESOCKTNOSUPPORT]	"Socket type not supported",
 };
 
-__shared char *strerror(int errnum)
+char *strerror(int errnum)
 {
 	if (errnum < 0)
 		errnum = -errnum;

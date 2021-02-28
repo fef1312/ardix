@@ -51,6 +51,16 @@
 #define __rodata __section(.rodata#)
 #endif
 
+#ifndef __pure
+/** Declare a function is pure so gcc can do some common subexpression elimination. */
+#define __pure __attribute__((pure))
+#endif
+
+#ifndef __const
+/** Like `__pure`, and the fuction does not access any memory except its stack. */
+#define __const __attribute__((const))
+#endif
+
 #ifndef __user
 /** Denote a pointer to user space (this will be used for static code checks later) */
 #define __user

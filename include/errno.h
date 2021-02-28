@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <toolchain.h>
+
 #define EPERM		1
 #define ENOENT		2
 #define ESRCH		3
@@ -145,7 +147,7 @@
  * @param errnum: POSIX error number
  * @returns an immutable human-readable string briefly describing the error
  */
-char *strerror(int errnum);
+__shared char *strerror(int errnum);
 
 /* TODO: actually define errno */
 

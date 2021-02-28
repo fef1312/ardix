@@ -7,7 +7,7 @@
 
 #if CONFIG_SCHED_MAXPROC < 128
 #define _PID_TYPE_ int8_t
-#elif CONFIG_SCHED_MAXPROC < 32767
+#elif CONFIG_SCHED_MAXPROC < 32768
 #define _PID_TYPE_ int16_t
 #else
 #define _PID_TYPE_ int32_t
@@ -15,10 +15,6 @@
 
 /** Process identifier. */
 typedef _PID_TYPE_		pid_t;
-
-#ifndef __SIG_ATOMIC_TYPE__
-#define __SIG_ATOMIC_TYPE__ int
-#endif /* __SIG_ATOMIC_TYPE__ */
 
 /** Simple atomic reference counter */
 typedef struct {

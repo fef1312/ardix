@@ -2,70 +2,74 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
 #include <ctype.h>
-#include <toolchain.h>
 
-__shared int isalpha(int c)
+int isalpha(int c)
 {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-__shared int isblank(int c)
+int isblank(int c)
 {
 	return c == ' ' || c == '\t';
 }
 
-__shared int iscntrl(int c)
+int iscntrl(int c)
 {
 	return c == 0x7F || (c >= 0 && c <= 0x1F);
 }
 
-__shared int isdigit(int c)
+int isdigit(int c)
 {
 	return c >= '0' && c <= '9';
 }
 
-__shared int isgraph(int c)
+int isgraph(int c)
 {
 	/* space *not* included */
 	return c > 0x20 && c <= 0x7E;
 }
 
-__shared int islower(int c)
+int islower(int c)
 {
 	return c >= 'a' && c <= 'z';
 }
 
-__shared int isprint(int c)
+int isprint(int c)
 {
 	/* space *is* included */
 	return c >= 0x20 && c <= 0x7E;
 }
 
-__shared int ispunct(int c)
+int ispunct(int c)
 {
 	return isprint(c) && !isalnum(c);
 }
 
-__shared int isspace(int c)
+int isspace(int c)
 {
 	return c == ' ' || (c >= '\n' && c <= '\r');
 }
 
-__shared int isupper(int c)
+int isupper(int c)
 {
 	return c >= 'A' && c <= 'Z';
 }
 
-__shared int isxdigit(int c)
+int isxdigit(int c)
 {
 	return (c >= '0' && c <= '9')
 		|| (c >= 'A' && c <= 'F')
 		|| (c >= 'a' && c <= 'f');
 }
 
-__shared int isascii(int c)
+int isascii(int c)
 {
 	return c & 0x7F;
+}
+
+int isalnum(int c)
+{
+	return isalpha(c) || isdigit(c);
 }
 
 /*

@@ -1,19 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <stdarg.h>
-
 #include <ardix/syscall.h>
 
-#include <toolchain.h>
 #include <unistd.h>
 
-__shared ssize_t read(int fildes, void *buf, size_t nbyte)
+ssize_t read(int fildes, void *buf, size_t nbyte)
 {
 	return syscall(SYSCALL_READ, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte);
 }
 
-__shared ssize_t write(int fildes, const void *buf, size_t nbyte)
+ssize_t write(int fildes, const void *buf, size_t nbyte)
 {
 	return syscall(SYSCALL_WRITE, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte);
 }

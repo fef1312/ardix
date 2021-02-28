@@ -5,8 +5,8 @@
 
 #include <stdint.h>
 
-ssize_t read(int fildes, void *buf, size_t nbyte);
-ssize_t write(int fildes, const void *buf, size_t nbyte);
+__shared ssize_t read(int fildes, void *buf, size_t nbyte);
+__shared ssize_t write(int fildes, const void *buf, size_t nbyte);
 
 /*
  * This file is part of Ardix.

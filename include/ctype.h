@@ -11,7 +11,7 @@
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is an alphabetic character, zero if not.
  */
-int isalpha(int c);
+__const __shared int isalpha(int c);
 
 /**
  * Return whether `c` is a control character.
@@ -19,7 +19,7 @@ int isalpha(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a control character, zero if not.
  */
-int iscntrl(int c);
+__const __shared int iscntrl(int c);
 
 /**
  * Return whether `c` is a digit.
@@ -27,7 +27,7 @@ int iscntrl(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a digit, zero if not.
  */
-int isdigit(int c);
+__const __shared int isdigit(int c);
 
 /**
  * Return whether `c` is a printable character except space.
@@ -36,7 +36,7 @@ int isdigit(int c);
  * @returns A nonzero value if `c` is a printable character and not space,
  *	zero if not.
  */
-int isgraph(int c);
+__const __shared int isgraph(int c);
 
 /**
  * Return whether `c` is a lowercase letter.
@@ -44,7 +44,7 @@ int isgraph(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is lowercase, zero if not.
  */
-int islower(int c);
+__const __shared int islower(int c);
 
 /**
  * Return whether `c` is a printable character including space.
@@ -52,7 +52,7 @@ int islower(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a printable character, zero if not.
  */
-int isprint(int c);
+__const __shared int isprint(int c);
 
 /**
  * Return whether `c` is a printable character
@@ -61,7 +61,7 @@ int isprint(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a punctuation character, zero if not.
  */
-int ispunct(int c);
+__const __shared int ispunct(int c);
 
 /**
  * Return whether `c` is a white-space character.
@@ -71,7 +71,7 @@ int ispunct(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a white-space character, zero if not.
  */
-int isspace(int c);
+__const __shared int isspace(int c);
 
 /**
  * Return whether `c` is an uppercase letter.
@@ -79,7 +79,7 @@ int isspace(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is uppercase, zero if not.
  */
-int isupper(int c);
+__const __shared int isupper(int c);
 
 /**
  * Return whether `c` is a hexadecimal digit.
@@ -88,7 +88,7 @@ int isupper(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a blaank character, zero if not.
  */
-int isxdigit(int c);
+__const __shared int isxdigit(int c);
 
 /**
  * Return whether `c` is a 7-bit unsigned char.
@@ -96,7 +96,7 @@ int isxdigit(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is an ASCII character, zero if not.
  */
-int isascii(int c);
+__const __shared int isascii(int c);
 
 /**
  * Return whether `c` is a space or a tab character.
@@ -104,7 +104,7 @@ int isascii(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if `c` is a blank character, zero if not.
  */
-int isblank(int c);
+__const __shared int isblank(int c);
 
 /**
  * Check whether `c` is an alphanumeric character.
@@ -113,10 +113,7 @@ int isblank(int c);
  * @param c: The character, cast to an `int`.
  * @returns A nonzero value if the character is alphanumeric, zero if not.
  */
-__always_inline int isalnum(int c)
-{
-	return isalpha(c) || isdigit(c);
-}
+__const __shared int isalnum(int c);
 
 /*
  * This file is part of Ardix.

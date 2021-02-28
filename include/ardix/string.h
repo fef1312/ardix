@@ -5,7 +5,7 @@
 
 #include <ardix/types.h>
 
-int memcmp(const void *s1, const void *s2, size_t n);
+#include <toolchain.h>
 
 /**
  * Copy `n` bytes from `src` to `dest`.
@@ -15,7 +15,7 @@ int memcmp(const void *s1, const void *s2, size_t n);
  * @param n: The amount of bytes to copy.
  * @returns A pointer to `dest`.
  */
-void *memcpy(void *dest, const void *src, size_t n);
+__shared void *memcpy(void *dest, const void *src, size_t n);
 
 /**
  * Starting from `ptr`, fill `n` bytes with the constant byte `c`.
@@ -25,7 +25,7 @@ void *memcpy(void *dest, const void *src, size_t n);
  * @param n: The amount of bytes to write.
  * @returns A pointer to `ptr`.
  */
-void *memset(void *ptr, int c, size_t n);
+__shared void *memset(void *ptr, int c, size_t n);
 
 /**
  * Copy a memory area.
@@ -37,7 +37,7 @@ void *memset(void *ptr, int c, size_t n);
  * @param n: The amount of bytes to copy.
  * @return a pointer to dest.
  */
-void *memmove(void *dest, const void *src, size_t n);
+__shared void *memmove(void *dest, const void *src, size_t n);
 
 /**
  * Compare the two strings `s1` and `s2`.
@@ -47,7 +47,7 @@ void *memmove(void *dest, const void *src, size_t n);
  * @returns `0` if both strings are equal, a positive value f `s1` is greater
  *	than `s2`, and a negative value if `s1` is less than `s2`.
  */
-int strcmp(const char *s1, const char *s2);
+__shared int strcmp(const char *s1, const char *s2);
 
 /**
  * Copy a `NUL` terminated string from `src` to `dest`.
@@ -57,7 +57,7 @@ int strcmp(const char *s1, const char *s2);
  * @param src: The original string to copy from.
  * @returns A pointer to the destination string.
  */
-char *strcpy(char *dest, const char *src);
+__shared char *strcpy(char *dest, const char *src);
 
 /**
  * Copy a `NUL` terminated string from `src` to `dest`, but at most `n`
@@ -69,7 +69,7 @@ char *strcpy(char *dest, const char *src);
  * @param n: The amount of characters to copy at most.
  * @returns A pointer to the destination string.
  */
-char *strncpy(char *dest, const char *src, size_t n);
+__shared char *strncpy(char *dest, const char *src, size_t n);
 
 /**
  * Compute the length of the `NUL` terminated string `s`.
@@ -77,7 +77,7 @@ char *strncpy(char *dest, const char *src, size_t n);
  * @param s: The string.
  * @returns The length of `s` without the `NUL` terminator.
  */
-size_t strlen(const char *s);
+__shared size_t strlen(const char *s);
 
 /*
  * This file is part of Ardix.
