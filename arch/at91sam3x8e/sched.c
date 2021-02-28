@@ -6,8 +6,9 @@
 #include <arch/at91sam3x8e/interrupt.h>
 
 #include <ardix/atomic.h>
-#include <ardix/string.h>
 #include <ardix/sched.h>
+
+#include <string.h>
 
 extern struct task *_sched_current_task;
 

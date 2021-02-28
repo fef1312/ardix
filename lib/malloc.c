@@ -4,9 +4,9 @@
 #include <ardix/atomic.h>
 #include <ardix/list.h>
 #include <ardix/malloc.h>
-#include <ardix/string.h>
 #include <ardix/types.h>
 
+#include <string.h>
 #include <toolchain.h>
 
 /*

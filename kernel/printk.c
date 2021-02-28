@@ -1,16 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <ardix/printk.h>
+#include <ardix/serial.h>
+
 #include <errno.h>
 /* Using GCC's stdarg.h is recommended even with -nodefaultlibs and -fno-builtin */
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <ardix/printk.h>
-#include <ardix/serial.h>
-#include <ardix/string.h>
-
+#include <string.h>
 #include <toolchain.h>
 
 /*

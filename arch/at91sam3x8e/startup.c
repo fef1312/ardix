@@ -5,10 +5,10 @@
 #include <arch/at91sam3x8e/interrupt.h>
 
 #include <ardix/malloc.h>
-#include <ardix/string.h>
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <toolchain.h>
 
 /* from flash.ld */

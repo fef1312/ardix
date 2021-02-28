@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <stddef.h>
-#include <stdint.h>
 #include <arch/at91sam3x8e/interrupt.h>
 #include <arch/hardware.h>
-#include <ardix/string.h>
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 #include <toolchain.h>
 
 /*

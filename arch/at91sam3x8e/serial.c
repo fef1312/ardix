@@ -7,7 +7,6 @@
 #include <ardix/malloc.h>
 #include <ardix/ringbuf.h>
 #include <ardix/serial.h>
-#include <ardix/string.h>
 #include <ardix/types.h>
 
 #include <arch/at91sam3x8e/hardware.h>
@@ -16,6 +15,7 @@
 
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
 
 struct arch_serial_device arch_serial_default_device = {
 	.tx_current = NULL,

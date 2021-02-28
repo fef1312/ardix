@@ -7,11 +7,11 @@
 #include <ardix/atomic.h>
 #include <ardix/malloc.h>
 #include <ardix/sched.h>
-#include <ardix/string.h>
 #include <ardix/types.h>
 
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
 
 extern uint32_t _sstack;
 extern uint32_t _estack;
@@ -82,6 +82,36 @@ void *sched_process_switch(void *curr_sp)
 
 	_sched_current_task->state = TASK_READY;
 	return _sched_current_task->sp;
+}
+
+struct task *sched_fork(struct task *parent)
+{
+	pid_t pid;
+	struct task *child = malloc(sizeof(*child));
+
+	if (child == NULL)
+		goto err_alloc;
+
+	for (pid = 0; pid < CONFIG_SCHED_MAXTASK; pid++) {
+		if (_sched_tasktab[pid] == NULL)
+			break;
+	}
+	if (pid == CONFIG_SCHED_MAXTASK)
+		goto err_maxtask;
+
+	child->pid = pid;
+	list_init(&child->children);
+	list_insert(&parent->children, &child->siblings);
+
+err_maxtask:
+	free(child);
+err_alloc:
+	return NULL;
+}
+
+struct task *sched_current_task(void)
+{
+	return _sched_current_task;
 }
 
 /*

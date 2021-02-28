@@ -4,7 +4,7 @@
 #include <ardix/types.h>
 #include <ardix/userspace.h>
 
-#include <ardix/string.h>
+#include <string.h>
 #include <toolchain.h>
 
 /*

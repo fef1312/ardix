@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <ardix/string.h>
 #include <ardix/types.h>
 
-#include <toolchain.h>
 #include <stdbool.h>
+#include <string.h>
+#include <toolchain.h>
 
 #ifndef __HAVE_ASM_MEMCMP
 int memcmp(const void *s1, const void *s2, size_t n)
