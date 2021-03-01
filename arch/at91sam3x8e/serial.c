@@ -84,31 +84,42 @@ void arch_serial_exit(struct serial_device *dev)
 
 ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len)
 {
-	struct dmabuf *dmabuf = NULL;
+	int ret;
+	struct dmabuf *dmabuf = dmabuf_create(&dev->device, len);
+	if (dmabuf == NULL)
+		return -ENOMEM;
+
+	memcpy(dmabuf->data, buf, len);
+	ret = serial_write_dma(dev, dmabuf);
+	dmabuf_put(dmabuf);
+	return ret;
+}
+
+ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf)
+{
+	uint16_t len;
 	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
+
+	dmabuf_get(buf);
 
 	if (arch_dev->tx_next != NULL)
 		return -EBUSY;
 
-	if (len >= (1 << 16)) /* DMA uses 16-bit counters */
+	if (buf->len >= 0xffff)
 		len = 0xffff;
-
-	dmabuf = dmabuf_create(&dev->device, len);
-	if (dmabuf == NULL)
-		return -ENOMEM;
-
-	memcpy(&dmabuf->data[0], buf, len);
+	else
+		len = (uint16_t)buf->len;
 
 	if (arch_dev->tx_current == NULL) {
-		arch_dev->tx_current = dmabuf;
-		REG_UART_PDC_TPR = (uint32_t)&dmabuf->data[0];
-		REG_UART_PDC_TCR = (uint16_t)dmabuf->len;
+		arch_dev->tx_current = buf;
+		REG_UART_PDC_TPR = (uint32_t)buf->data;
+		REG_UART_PDC_TCR = len;
 		/* we weren't transmitting, so the interrupt was masked */
 		REG_UART_IER = REG_UART_IER_ENDTX_MASK;
 	} else {
-		arch_dev->tx_next = dmabuf;
-		REG_UART_PDC_TNPR = (uint32_t)&dmabuf->data[0];
-		REG_UART_PDC_TNCR = (uint16_t)dmabuf->len;
+		arch_dev->tx_next = buf;
+		REG_UART_PDC_TNPR = (uint32_t)buf->data;
+		REG_UART_PDC_TNCR = len;
 	}
 
 	return (ssize_t)len;

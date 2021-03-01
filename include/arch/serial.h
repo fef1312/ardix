@@ -5,6 +5,7 @@
 
 #include <arch/arch_include.h>
 
+#include <ardix/dma.h>
 #include <ardix/serial.h>
 
 int arch_serial_init(struct serial_device *dev);
@@ -20,6 +21,18 @@ void arch_serial_exit(struct serial_device *dev);
  * @returns actual amount of bytes enqueued, or a negative error code on failure
  */
 ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len);
+
+/**
+ * Directly enqueue a DMA buffer to a serial device, resulting in a zero-copy
+ * write.  This will increment the buffer's refcount and decrement it again when
+ * it has been written out completely, so the caller is responsible for calling
+ * `dmabuf_put` as well in order to prevent a memory leak.
+ *
+ * @param dev: serial device to write to
+ * @param buf: raw DMA buffer to append
+ * @returns actual bytes that will be written, or a negative error code
+ */
+ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf);
 
 #include ARCH_INCLUDE(serial.h)
 

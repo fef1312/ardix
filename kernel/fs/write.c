@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <arch/serial.h>
+
+#include <ardix/dma.h>
 #include <ardix/malloc.h>
 #include <ardix/serial.h>
 #include <ardix/syscall.h>
@@ -13,20 +16,19 @@
 ssize_t sys_write(int fd, __user const void *buf, size_t len)
 {
 	ssize_t ret;
-	void *copy;
+	struct dmabuf *dma;
 
 	if (fd != 1) /* we only support stdout (serial console) right now */
 		return -EBADF;
 
-	copy = malloc(len);
-	if (copy == NULL)
+	dma = dmabuf_create(&serial_default_device->device, len);
+	if (dma == NULL)
 		return -ENOMEM;
-	ret = (ssize_t)copy_from_user(copy, buf, len);
 
+	copy_from_user(dma->data, buf, len);
 	/* TODO: reschedule if blocking */
-	ret = serial_write(serial_default_device, copy, (size_t)ret);
-
-	free(copy);
+	ret = serial_write_dma(serial_default_device, dma);
+	dmabuf_put(dma);
 
 	return ret;
 }
