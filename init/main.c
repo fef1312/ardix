@@ -4,11 +4,13 @@
 #include <arch/hardware.h>
 
 #include <ardix/io.h>
+#include <ardix/kent.h>
 #include <ardix/printk.h>
 #include <ardix/sched.h>
 
-#include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <unistd.h>
 
 #define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
@@ -33,17 +35,19 @@ void do_bootstrap(void)
 	REG_PIOB_PER = 1 << 27;
 	REG_PIOB_CODR = 1 << 27;
 
+	kent_root_init();
+
 	sched_init();
 
 	devices_init();
 
 	io_init();
 
-	write(1, "hello, world\n", 13);
-
 	while (true) {
 		if (count++ != 1000000)
 			continue;
+
+		printk("hello, world (%u)!\n", print_count);
 
 		print_count++;
 		if (print_count % 2)
