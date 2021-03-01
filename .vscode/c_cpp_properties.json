@@ -1,48 +1,6 @@
 {
     "configurations": [
         {
-            "name": "atmega328p",
-            "defines": [
-                "DEBUG",
-                "ARCH=atmega328p",
-                "ARCH_ATMEGA328P"
-            ],
-            "compilerPath": "/usr/bin/avr-gcc",
-            "cStandard": "gnu11",
-            "intelliSenseMode": "gcc-x86",
-            "includePath": [
-                "include"
-            ],
-            "compilerArgs": [
-                "-mmcu=atmega328p",
-                "-nostdlib",
-                "-nodefaultlibs",
-                "-fno-builtin",
-                "-fpack-struct",
-                "-Wall",
-                "-Wstrict-prototypes",
-                "-Wredundant-decls",
-                "-Wnested-externs",
-                "-Wbad-function-cast",
-                "-Wshadow",
-                "-Wsign-compare",
-                "-Wfloat-equal",
-                "-Wunreachable-code",
-                "-Wwrite-strings",
-                "-Wconversion",
-                "-Waggregate-return",
-                "-Winline",
-                "-Wcast-align"
-            ],
-            "browse": {
-                "path": [
-                    "include",
-                    "${workspaceFolder}"
-                ],
-                "limitSymbolsToIncludedHeaders": true
-            }
-        },
-        {
             "name": "at91sam3x8e",
             "defines": [
                 "DEBUG",
@@ -59,6 +17,9 @@
             "compilerArgs": [
                 "-mcpu=cortex-m3",
                 "-mthumb",
+                "-mabi=aapcs",
+                "-march=armv7-m",
+                "-masm-syntax-unified",
                 "-nodefaultlibs",
                 "-nostartfiles",
                 "-fno-builtin",
@@ -69,7 +30,6 @@
                 "-Wbad-function-cast",
                 "-Wshadow",
                 "-Wsign-compare",
-                "-Wfloat-equal",
                 "-Wunreachable-code",
                 "-Wwrite-strings",
                 "-Wconversion",

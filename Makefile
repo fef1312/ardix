@@ -49,14 +49,19 @@ else
 endif
 
 CFLAGS += -Wall \
+	-Wno-sign-conversion \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	-Wnested-externs -Wbad-function-cast \
+	-Wnested-externs \
+	-Wbad-function-cast \
 	-Wshadow \
-	-Wsign-compare -Wfloat-equal \
+	-Wsign-compare \
 	-Wunreachable-code \
-	-Wwrite-strings -Wconversion \
-	-Waggregate-return -Winline -Wcast-align
+	-Wwrite-strings \
+	-Wconversion \
+	-Waggregate-return \
+	-Winline \
+	-Wcast-align
 
 ifdef DEBUG
     CFLAGS += -DDEBUG
