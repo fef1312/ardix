@@ -18,6 +18,17 @@ extern uint32_t _estack;
 static struct task *_sched_tasktab[CONFIG_SCHED_MAXTASK];
 struct task *_sched_current_task;
 
+static void sched_kent_destroy(struct kent *kent)
+{
+	struct task *task = container_of(kent, struct task, kent);
+	_sched_tasktab[task->pid] = NULL;
+	free(task);
+}
+
+static struct kent_ops sched_kent_ops = {
+	.destroy = sched_kent_destroy,
+};
+
 int sched_init(void)
 {
 	int i;
@@ -26,19 +37,29 @@ int sched_init(void)
 	if (_sched_current_task == NULL)
 		return -ENOMEM;
 
-	_sched_current_task->sp = &_sstack;
-	_sched_current_task->stack_bottom = &_estack;
-	_sched_current_task->pid = 0;
-	_sched_current_task->state = TASK_READY;
-	_sched_tasktab[0] = _sched_current_task;
+	_sched_current_task->kent.parent = kent_root;
+	_sched_current_task->kent.operations = &sched_kent_ops;
+	i = kent_init(&_sched_current_task->kent);
+	if (i == 0) {
+		_sched_current_task->sp = &_sstack;
+		_sched_current_task->stack_bottom = &_estack;
+		_sched_current_task->pid = 0;
+		_sched_current_task->state = TASK_READY;
+		_sched_tasktab[0] = _sched_current_task;
 
-	for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
-		_sched_tasktab[i] = NULL;
+		for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
+			_sched_tasktab[i] = NULL;
 
-	i = arch_watchdog_init();
+		i = arch_watchdog_init();
 
-	if (i == 0)
-		i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXTASK);
+		if (i == 0)
+			i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXTASK);
+	}
+
+	/*
+	 * we don't really need to deallocate resources on error because we
+	 * are going to panic anyways if the scheduler fails to initialize.
+	 */
 
 	return i;
 }
@@ -71,6 +92,7 @@ void *sched_process_switch(void *curr_sp)
 	while (1) {
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
+
 		tmp = _sched_tasktab[nextpid];
 		if (tmp != NULL && sched_task_should_run(tmp)) {
 			_sched_current_task = tmp;
@@ -98,10 +120,15 @@ struct task *sched_fork(struct task *parent)
 	if (pid == CONFIG_SCHED_MAXTASK)
 		goto err_maxtask;
 
-	child->pid = pid;
-	list_init(&child->children);
-	list_insert(&parent->children, &child->siblings);
+	child->kent.parent = &parent->kent;
+	child->kent.operations = &sched_kent_ops;
+	if (kent_init(&child->kent) != 0)
+		goto err_kent;
 
+	child->pid = pid;
+	return child;
+
+err_kent:
 err_maxtask:
 	free(child);
 err_alloc:

@@ -8,31 +8,18 @@
 #include <errno.h>
 #include <stddef.h>
 
-struct kent *kent_root = NULL;
-
-static void kent_root_destroy(struct kent *kent)
-{
-	/*
-	 * this callback should never actually be executed in the first place
-	 * because the kent root lives as long as the kernel is running but hey,
-	 * it's not like our flash memory has a size limit or anything :)
-	 */
-	free(kent);
-	kent_root = NULL;
-}
-
 static struct kent_ops kent_root_ops = {
-	.destroy = &kent_root_destroy,
+	.destroy = NULL,
 };
+
+struct kent _kent_root;
+struct kent *kent_root = NULL;
 
 int kent_root_init(void)
 {
 	if (kent_root != NULL)
 		return -EEXIST;
-
-	kent_root = malloc(sizeof(*kent_root));
-	if (kent_root == NULL)
-		return -ENOMEM;
+	kent_root = &_kent_root;
 
 	kent_root->parent = NULL;
 	kent_root->operations = &kent_root_ops;

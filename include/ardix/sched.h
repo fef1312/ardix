@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <ardix/kent.h>
 #include <ardix/list.h>
 #include <ardix/types.h>
 
@@ -39,6 +40,7 @@ enum task_state {
 
 /** Stores an entire process image. */
 struct task {
+	struct kent kent;
 	/** current stack pointer (only gets updated for task switching) */
 	void *sp;
 	/** first address of the stack (highest if the stack grows downwards) */
@@ -61,7 +63,7 @@ int sched_init(void);
 /**
  * Switch to the next task (interrupt context only).
  * Must be called directly from within an interrupt routine.
- * This selects a new task to be  run and updates the old and new task's `state`
+ * This selects a new task to be run and updates the old and new task's `state`
  * field to the appropriate value.
  *
  * @param curr_sp: stack pointer of the current task
@@ -75,7 +77,7 @@ void *sched_switch(void *curr_sp);
  * @param task: the task to make a copy of
  * @returns the new (child) task copy, or `NULL` on failure
  */
-struct task *sched_task_clone(struct task *dest);
+struct task *sched_task_clone(struct task *task);
 
 /**
  * Request the scheduler be invoked early, resulting in the current task to

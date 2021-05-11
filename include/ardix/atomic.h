@@ -2,7 +2,13 @@
 
 #pragma once
 
-/** Enter atomic context. */
+/**
+ * Enter atomic context.
+ *
+ * Since Ardix does not support SMP, this method will simply increment a
+ * reference counter that is checked in the scheduler interrupt routine before
+ * performing the context switch.
+ */
 void atomic_enter(void);
 
 /** Leave atomic context. */
