@@ -1,24 +1,13 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-.syntax unified
-.thumb
+.include "asm.S"
 
 .text
 
 .extern sched_process_switch
 
-.thumb_func
-.global irq_pend_sv
-.type irq_pend_sv, %function
-
 /* void irq_pend_sv(void); */
-irq_pend_sv:
-	/*
-	 * There seems to be a limitation in Thumb which prohibits popping to
-	 * any register > r7.  Hence, we need to split the PUSHes and POPs into
-	 * multiple operations and MOV register values around.
-	 */
-
+func_begin irq_pend_sv
 	/*
 	 * Some registers have already been saved by hardware at this point,
 	 * we only need to take care of r4-r11 and lr (the latter of which is
@@ -26,17 +15,10 @@ irq_pend_sv:
 	 * The stuff we push onto the stack manually looks about like this:
 	 *
 	 * <<< stack grow direction (decreasing addresses) <<<
-	 * r8 r9 r10 r11 lr r4 r5 r6 r7
+	 * r4 r5 r6 r7 r8 r9 r10 r11 lr
 	 */
 
-	push	{r4-r7}			/* r4-r7 */
-
-	mov	r3,	r8
-	mov	r4,	r9
-	mov	r5,	r10
-	mov	r6,	r11
-	mov	r7,	lr
-	push	{r3-r7}			/* r8-r11, lr */
+	push	{r4-r11,lr}
 
 	/*
 	 * Now that our stack is completely saved, we can proceed to call the
@@ -54,23 +36,11 @@ irq_pend_sv:
 	 * just in reverse order.
 	 */
 
-	pop	{r3-r7}			/* r8-r11, lr */
-	mov	lr,	r7
-	mov	r11,	r6
-	mov	r10,	r5
-	mov	r9,	r4
-	mov	r8,	r3
+	pop	{r4-r11,lr}
 
-	pop	{r4-r7}			/* r4-r7 */
-
-	/*
-	 * ... and now get the fuck outta here, hoping I never need to touch
-	 * this again, even though deep inside I know I will return here at some
-	 * point because something broke (or I feel the need to micro-optimize).
-	 */
 	bx	lr
 
-.size irq_pend_sv, .-irq_pend_sv
+func_end irq_pend_sv
 
 /*
  * This file is part of Ardix.

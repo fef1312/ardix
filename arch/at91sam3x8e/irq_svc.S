@@ -1,18 +1,13 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-.syntax unified
-.thumb
+.include "asm.S"
 
 .text
 
 .extern arch_enter
 
-.thumb_func
-.global irq_svc
-.type irq_svc, %function
-
 /* void irq_svc(void); */
-irq_svc:
+func_begin irq_svc
 	/*
 	 * Syscalls on Cortex-M use the following parameter calling convention:
 	 *
@@ -30,30 +25,16 @@ irq_svc:
 	 * like in irq_pend_sv, we save everything on the stack to make early
 	 * process switching possible in case the syscall is blocking.
 	 */
-	push	{r4-r7}			/* r4-r7 */
-
-	mov	r3,	r8
-	mov	r4,	r9
-	mov	r5,	r10
-	mov	r6,	r11
-	mov	r7,	lr
-	push	{r3-r7}			/* r8-r11, lr */
+	push	{r3-r11,lr}			/* r4-r7 */
 
 	mov	r0,	sp
 	bl	arch_enter		/* arch_enter(sp); */
 
-	pop	{r3-r7}			/* r8-r11, lr */
-	mov	lr,	r7
-	mov	r11,	r6
-	mov	r10,	r5
-	mov	r9,	r4
-	mov	r8,	r3
-
-	pop	{r4-r7}			/* r4-r7 */
+	pop	{r3-r11,lr}
 
 	bx	lr
 
-.size irq_svc, .-irq_svc
+func_end irq_svc
 
 /*
  * This file is part of Ardix.

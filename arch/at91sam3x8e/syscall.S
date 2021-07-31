@@ -1,45 +1,31 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-.syntax unified
-.thumb
+.include "asm.S"
 
 /* this is only invoked from user space, obviously */
 .section .text.shared
 
-.thumb_func
-.global syscall
-.type syscall, %function
 /* int syscall(int number, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6); */
-syscall:
-	push	{r4-r5,r7}
+func_begin syscall
 
 	/*
-	 * I HAVE NO IDEA WHY THE  F U C K  GCC THINKS I CAN'T MOV TWO LOW REGS
-	 * IN ONE INSTRUCTION WHEN THAT IS  L I T E R A L L Y  IN THE ASM OUTPUT
-	 * OF GCC WHEN COMPILING SOME C CODE.  BUT AT THIS POINT, I WON'T EVEN
-	 * BOTHER WITH WHATEVER SHITTY COMPILE OPTION OR PREPROCESSOR DIRECTIVE
-	 * I HAVE TO TURN ON IN ORDER FOR THIS PIECE OF SHIT THAT DARES CALLING
-	 * ITSELF A COMPILER TO EAT MY SHIT CODE AND SHIT OUT THE SHITTY BINARY
-	 * I WANT.  FUCK YOU, SYSCALLS WILL JUST TAKE 8 INSTRUCTIONS MORE.
+	 *   arg  | syscall |  AAPCS
+	 * -------|---------|---------
+	 * number | r7      | r0
+	 * arg1   | r0      | r1
+	 * arg2   | r1      | r2
+	 * arg3   | r2      | r3
+	 * arg4   | r3      | sp + 0
+	 * arg5   | r4      | sp + 4
+	 * arg6   | r5      | sp + 8
 	 */
 
-	mov	r4,	r12
-	push	{r4}
+	push	{r4-r5,r7}
 
-	mov	r12,	r0		/* syscall number */
-	mov	r7,	r12
-
-	mov	r12,	r1		/* arg1 */
-	mov	r0,	r12
-
-	mov	r12,	r2		/* arg2 */
-	mov	r1,	r12
-
-	mov	r12,	r3		/* arg3 */
-	mov	r2,	r12
-
-	pop	{r4}
-	mov	r12,	r4
+	mov	r7,	r0		/* number */
+	mov	r0,	r1		/* arg1 */
+	mov	r1,	r2		/* arg2 */
+	mov	r2,	r3		/* arg3 */
 
 	/* stack params begin at 12 bytes offset because we already pushed three registers */
 	ldr	r3,	[sp, #12]	/* arg4 */
@@ -53,7 +39,7 @@ syscall:
 	/* r0 (return value) is set by the kernel */
 	bx	lr
 
-.size syscall, .-syscall
+func_end syscall
 
 /*
  * This file is part of Ardix.
