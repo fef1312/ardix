@@ -6,6 +6,8 @@ target_link_libraries(ardix INTERFACE ardix_kernel)
 target_compile_options(ardix_kernel PRIVATE ${ARDIX_COMPILE_OPTIONS})
 target_include_directories(ardix_kernel PRIVATE ${ARDIX_INCLUDE_DIRS})
 
+add_subdirectory(fs)
+
 target_sources(ardix_kernel PRIVATE
 	device.c
 	dma.c

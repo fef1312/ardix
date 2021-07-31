@@ -72,10 +72,17 @@ add_subdirectory(lib)
 target_include_directories(ardix INTERFACE ${ARDIX_INCLUDE_DIRS})
 target_compile_options(ardix INTERFACE ${ARDIX_COMPILE_OPTIONS})
 
-# TODO: don't use this hack lmao
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/empty.c "")
-add_executable(ardix.elf ${CMAKE_CURRENT_BINARY_DIR}/empty.c)
-target_link_libraries(ardix.elf PRIVATE ardix)
+add_custom_target(ardix.elf DEPENDS ardix)
+add_custom_command(
+	TARGET ardix.elf
+	COMMAND ${CMAKE_LINKER}
+	ARGS ${ARDIX_LINKER_FLAGS} -o ardix.elf
+		$<TARGET_FILE:ardix_arch>
+		$<TARGET_FILE:ardix_init>
+		$<TARGET_FILE:ardix_kernel>
+		$<TARGET_FILE:ardix_kernel_fs>
+		$<TARGET_FILE:ardix_lib>
+)
 
 add_custom_target(ardix.bin ALL DEPENDS ardix.elf)
 add_custom_command(
