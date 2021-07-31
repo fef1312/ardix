@@ -1,7 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/at91sam3x8e/hardware.h>
-#include <arch/watchdog.h>
+#include <arch/hardware.h>
+#include <arch-generic/watchdog.h>
 
 int arch_watchdog_init(void)
 {

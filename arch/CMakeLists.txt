@@ -1,6 +1,9 @@
-#
+# See the end of this file for copyright and license terms.
+
+add_subdirectory(${ARCH})
+
 # This file is part of Ardix.
-# Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
+# Copyright (c) 2021 Felix Kopp <owo@fef.moe>.
 #
 # Ardix is non-violent software: you may only use, redistribute,
 # and/or modify it under the terms of the CNPLv6+ as found in
@@ -9,10 +12,3 @@
 #
 # Ardix comes with ABSOLUTELY NO WARRANTY, to the extent
 # permitted by applicable law.  See the CNPLv6+ for details.
-#
-
-ARDIX_KERNEL_FS_PWD = $(ARDIX_KERNEL_PWD)/fs
-
-ARDIX_SOURCES += \
-	$(ARDIX_KERNEL_FS_PWD)/read.c \
-	$(ARDIX_KERNEL_FS_PWD)/write.c

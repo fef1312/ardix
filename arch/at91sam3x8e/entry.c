@@ -1,6 +1,6 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/entry.h>
+#include <arch-generic/entry.h>
 #include <arch/hardware.h>
 
 #include <ardix/syscall.h>

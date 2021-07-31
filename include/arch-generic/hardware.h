@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <arch/arch_include.h>
-
 /**
  * Block the CPU by continuously checking the same expression in an
  * infinite loop, until the condition is true.  Useful for polling.
@@ -29,13 +27,6 @@
  * diagnostic message, if the system has one (kind of like BIOS beep codes).
  */
 void sys_init(void);
-
-#ifndef STACK_SIZE
-/** stack size per process in bytes */
-#define STACK_SIZE 2048U
-#endif
-
-#include ARCH_INCLUDE(hardware.h)
 
 /*
  * This file is part of Ardix.

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <config.h>
 #include <stdint.h>
 
 #if CONFIG_SCHED_MAXPROC < 128

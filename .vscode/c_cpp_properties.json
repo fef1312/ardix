@@ -12,7 +12,9 @@
             "cppStandard": "gnu++14",
             "intelliSenseMode": "gcc-arm",
             "includePath": [
-                "./include"
+                "./include",
+                "./build/include",
+                "./arch/at91sam3x8e/include"
             ],
             "compilerArgs": [
                 "-mcpu=cortex-m3",

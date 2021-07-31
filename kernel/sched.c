@@ -1,7 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/sched.h>
-#include <arch/watchdog.h>
+#include <arch-generic/sched.h>
+#include <arch-generic/watchdog.h>
 
 #include <ardix/atomic.h>
 #include <ardix/malloc.h>

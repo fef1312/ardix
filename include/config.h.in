@@ -2,11 +2,16 @@
 
 #pragma once
 
-#ifdef ARCH_AT91SAM3X8E
-#define ARCH_INCLUDE(file) <arch/at91sam3x8e/file>
-#else
-#error "Unsupported architecture"
-#endif
+#define ARDIX_VERSION_MAJOR @ardix_VERSION_MAJOR@
+#define ARDIX_VERSION_MINOR @ardix_VERSION_MINOR@
+#define ARDIX_VERSION_PATCH @ardix_VERSION_PATCH@
+#define ARDIX_VERSION "@ardix_VERSION@@ardix_VERSION_SUFFIX"
+
+#cmakedefine DEBUG
+#cmakedefine ARCH
+
+#define CONFIG_STACK_SIZE @CONFIG_STACK_SIZE@
+#define CONFIG_SCHED_MAXPROC @CONFIG_SCHED_MAXPROC@
 
 /*
  * This file is part of Ardix.

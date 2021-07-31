@@ -4,7 +4,6 @@
 
 #include <arch/hardware.h>
 
-#include <stdbool.h>
 #include <toolchain.h>
 
 struct process; /* see include/ardix/sched.h */

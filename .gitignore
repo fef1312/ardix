@@ -1,9 +1,4 @@
-*.gch
-*.o
-*.elf
-*.bin
-*.hex
-/.config
+build/
 
 # vim
 [._]*.s[a-v][a-z]

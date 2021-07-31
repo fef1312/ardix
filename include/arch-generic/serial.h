@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <arch/arch_include.h>
-
 #include <ardix/dma.h>
 #include <ardix/serial.h>
 
@@ -33,7 +31,7 @@ ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len
  */
 ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf);
 
-#include ARCH_INCLUDE(serial.h)
+#include <arch/serial.h>
 
 /*
  * This file is part of Ardix.

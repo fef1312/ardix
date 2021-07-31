@@ -1,7 +1,8 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/at91sam3x8e/interrupt.h>
+#include <arch/interrupt.h>
 #include <arch/hardware.h>
+#include <arch-generic/hardware.h>
 
 #include <stddef.h>
 #include <stdint.h>

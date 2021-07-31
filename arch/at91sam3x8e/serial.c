@@ -8,9 +8,9 @@
 #include <ardix/serial.h>
 #include <ardix/types.h>
 
-#include <arch/at91sam3x8e/hardware.h>
-#include <arch/at91sam3x8e/interrupt.h>
-#include <arch/serial.h>
+#include <arch/hardware.h>
+#include <arch/interrupt.h>
+#include <arch-generic/serial.h>
 
 #include <errno.h>
 #include <stddef.h>

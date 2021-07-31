@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <arch-generic/serial.h>
 #include <ardix/dma.h>
 #include <ardix/serial.h>
 #include <ardix/util.h>

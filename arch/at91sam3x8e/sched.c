@@ -1,8 +1,8 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/sched.h>
-#include <arch/at91sam3x8e/hardware.h>
-#include <arch/at91sam3x8e/interrupt.h>
+#include <arch-generic/sched.h>
+#include <arch/hardware.h>
+#include <arch/interrupt.h>
 
 #include <ardix/atomic.h>
 #include <ardix/sched.h>

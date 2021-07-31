@@ -24,24 +24,21 @@ permitted by applicable law.  See the CNPLv6+ for details.
     * `arm-gcc`
     * `arm-ld`
     * `arm-objcopy`
-- GNU `make`
+- CMake >= 3.14
 - A programmer (`bossac` recommended)
 - A Unix-like shell (sorry Microsoft lackeys, you can use the Windows Subsystem for Linux for
   compiling but probably not for flashing)
 
 ### Configuration
 
-Right now, you have to manually define environment variables:
+Configuration is done with the standard CMake config system.
+The following options are available:
 
-- `ARM_CC`: Full path to `arm-none-eabi-gcc`.  If unset, we will search for it in your PATH.
-- `ARM_LD`: Full path to `arm-none-eabi-ld`.  If unset, we will search for it in your PATH.
-- `ARM_OBJCOPY`: Full path to `arm-none-eabi-objcopy`.
-  If unset, we will search for it in your PATH.
-- `ARCH`: Codename for the target architecture.  This is mandatory.
+- `TOOLCHAIN_PATH`: Path where the compiler toolchain is located.
+  Defaults to `/usr/bin`.
+- `ARCH`: Codename for the target architecture.
   The following architectures are currently supported:
     * `at91sam3x8e` (Arduino Due)
-- `EXTRA_CFLAGS`: Any additional arguments that should be passed to the compiler.
-- `EXTRA_LDFLAGS`: Any additional arguments that should be passed to the linker.
 
 ### Build
 
@@ -49,17 +46,18 @@ To build the EEPROM image, execute the following command:
 
 ```shell
 # Replace <target> with one of the target architectures from the list above
-ARCH='<target>' make ardix.bin
+cmake -DARCH=<arch> -B build -S .
+cmake --build build
 ```
 
-This will create the `ardix.bin` file, which can be passed to `bossac` for flashing.
+This will create `ardix.bin` in the `build` directory, which can be passed to `bossac` for flashing.
 If you are using an Arduino DUE (at91sam3x8e), make sure to connect the USB cable to the programmer
 port (the one closer to the power jack).
 
 ```shell
 # Replace <tty> with the name of the tty device in /dev
 # that is connected to your Arduino
-bossac -e -w -v -b -a --port=<tty> ardix.bin
+bossac -e -w -v -b -a --port=<tty> build/ardix.bin
 ```
 
 Please refer to `bossac --help` for more information on how to use it.

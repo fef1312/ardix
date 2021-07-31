@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <arch/syscall.h>
+#include <arch-generic/syscall.h>
 
 #include <ardix/types.h>
 
