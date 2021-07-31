@@ -21,9 +21,10 @@ if(DEBUG)
 	set(CMAKE_C_FLAGS "-g ${CMAKE_C_FLAGS}")
 endif()
 
-set(CMAKE_LINKER_FLAGS "-T${CMAKE_CURRENT_LIST_DIR}/config.ld -T${CMAKE_CURRENT_LIST_DIR}/flash.ld --whole-archive")
+# see CMakeLists.txt for config.ld generation
+set(CMAKE_LINKER_FLAGS "-T${CMAKE_BINARY_DIR}/config.ld -T${CMAKE_CURRENT_LIST_DIR}/flash.ld --whole-archive")
 set(ARDIX_LINKER_FLAGS
-	-T${CMAKE_CURRENT_LIST_DIR}/config.ld
+	-T${CMAKE_BINARY_DIR}/config.ld
 	-T${CMAKE_CURRENT_LIST_DIR}/flash.ld
 	--whole-archive
 )

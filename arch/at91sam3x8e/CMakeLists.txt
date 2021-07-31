@@ -6,6 +6,11 @@ target_link_libraries(ardix INTERFACE ardix_arch)
 target_compile_options(ardix_arch PRIVATE ${ARDIX_COMPILE_OPTIONS})
 target_include_directories(ardix_arch PRIVATE ${ARDIX_INCLUDE_DIRS})
 
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/config.ld.in
+	${CMAKE_BINARY_DIR}/config.ld # see toolchain.cmake
+)
+
 target_sources(ardix_arch PRIVATE
 	atom_get_put.S
 	atom.c

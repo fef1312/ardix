@@ -1,10 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-/*
- * stack size is 8K
- * TODO: modify flash.ld to actually align this properly
- */
-STACK_SIZE = 0x2000;
+/* TODO: modify flash.ld to actually align this properly */
+STACK_SIZE = @CONFIG_STACK_SIZE@;
 
 /*
  * This file is part of Ardix.
