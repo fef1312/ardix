@@ -7,6 +7,7 @@ target_compile_options(ardix_arch PRIVATE ${ARDIX_COMPILE_OPTIONS})
 target_include_directories(ardix_arch PRIVATE ${ARDIX_INCLUDE_DIRS})
 
 target_sources(ardix_arch PRIVATE
+	atom_get_put.S
 	atom.c
 	atomic.c
 	entry.c

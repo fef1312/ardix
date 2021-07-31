@@ -1,21 +1,22 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <ardix/atom.h>
-#include <stddef.h>
+.syntax unified
+.thumb
+.cpu cortex-m3
 
-void atom_init(atom_t *atom)
-{
-	atom->count = 0;
-}
+.macro func_begin name
+	.global \name
+	.type \name, "function"
+\name :
+.endm
 
-int atom_count(atom_t *atom)
-{
-	return atom->count;
-}
+.macro func_end name
+	.size \name, .-\name
+.endm
 
 /*
  * This file is part of Ardix.
- * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
+ * Copyright (c) 2021 Felix Kopp <owo@fef.moe>.
  *
  * Ardix is non-violent software: you may only use, redistribute,
  * and/or modify it under the terms of the CNPLv6+ as found in

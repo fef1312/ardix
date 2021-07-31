@@ -3,14 +3,24 @@
 #pragma once
 
 #include <ardix/types.h>
+#include <toolchain.h>
 
 #define ATOM_DEFINE(name) atom_t name = { .count = 0, }
 
 void atom_init(atom_t *atom);
 
-int atom_get(atom_t *atom);
+extern int _atom_get(int *count);
+extern int _atom_put(int *count);
 
-int atom_put(atom_t *atom);
+__always_inline int atom_get(atom_t *atom)
+{
+	return _atom_get(&atom->count);
+}
+
+__always_inline int atom_put(atom_t *atom)
+{
+	return _atom_get(&atom->count);
+}
 
 int atom_count(atom_t *atom);
 

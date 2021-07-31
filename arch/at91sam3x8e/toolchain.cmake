@@ -16,8 +16,10 @@ set(CMAKE_RANLIB	${TOOLCHAIN_PATH}/arm-none-eabi-ranlib${CMAKE_EXECUTABLE_SUFFIX
 set(CMAKE_SZE		${TOOLCHAIN_PATH}/arm-none-eabi-size${CMAKE_EXECUTABLE_SUFFIX} CACHE INTERNAL "")
 set(CMAKE_STRIP		${TOOLCHAIN_PATH}/arm-none-eabi-strip${CMAKE_EXECUTABLE_SUFFIX} CACHE INTERNAL "")
 
-set(CMAKE_C_FLAGS "-Os -nodefaultlibs -nostartfiles -mcpu=cortex-m3 -mthumb -mabi=aapcs -march=armv7-m -masm-syntax-unified")
-set(CMAKE_C_FLAGS_DEBUG -g)
+set(CMAKE_C_FLAGS "-Os -nodefaultlibs -nostartfiles -mcpu=cortex-m3 -mabi=aapcs")
+if(DEBUG)
+	set(CMAKE_C_FLAGS "-g ${CMAKE_C_FLAGS}")
+endif()
 
 set(CMAKE_LINKER_FLAGS "-T${CMAKE_CURRENT_LIST_DIR}/config.ld -T${CMAKE_CURRENT_LIST_DIR}/flash.ld --whole-archive")
 set(ARDIX_LINKER_FLAGS
