@@ -8,10 +8,6 @@
 #include <errno.h>
 #include <stddef.h>
 
-static struct kent_ops kent_root_ops = {
-	.destroy = NULL,
-};
-
 struct kent _kent_root;
 struct kent *kent_root = NULL;
 
@@ -22,7 +18,7 @@ int kent_root_init(void)
 	kent_root = &_kent_root;
 
 	kent_root->parent = NULL;
-	kent_root->operations = &kent_root_ops;
+	kent_root->destroy = NULL;
 	atom_init(&kent_root->refcount);
 	kent_get(kent_root);
 
@@ -31,7 +27,7 @@ int kent_root_init(void)
 
 int kent_init(struct kent *kent)
 {
-	if (kent->parent == NULL || kent->operations == NULL)
+	if (kent->parent == NULL || kent->destroy == NULL)
 		return -EFAULT;
 	kent_get(kent->parent);
 
@@ -51,7 +47,7 @@ void kent_put(struct kent *kent)
 	struct kent *parent = kent->parent;
 
 	if (atom_put(&kent->refcount) == 0) {
-		kent->operations->destroy(kent);
+		kent->destroy(kent);
 
 		if (parent != NULL)
 			kent_put(parent);

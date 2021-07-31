@@ -18,16 +18,12 @@ extern uint32_t _estack;
 static struct task *_sched_tasktab[CONFIG_SCHED_MAXTASK];
 struct task *_sched_current_task;
 
-static void sched_kent_destroy(struct kent *kent)
+static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
 	_sched_tasktab[task->pid] = NULL;
 	free(task);
 }
-
-static struct kent_ops sched_kent_ops = {
-	.destroy = sched_kent_destroy,
-};
 
 int sched_init(void)
 {
@@ -38,7 +34,7 @@ int sched_init(void)
 		return -ENOMEM;
 
 	_sched_current_task->kent.parent = kent_root;
-	_sched_current_task->kent.operations = &sched_kent_ops;
+	_sched_current_task->kent.destroy = task_destroy;
 	i = kent_init(&_sched_current_task->kent);
 	if (i == 0) {
 		_sched_current_task->sp = &_sstack;
@@ -121,7 +117,7 @@ struct task *sched_fork(struct task *parent)
 		goto err_maxtask;
 
 	child->kent.parent = &parent->kent;
-	child->kent.operations = &sched_kent_ops;
+	child->kent.destroy = task_destroy;
 	if (kent_init(&child->kent) != 0)
 		goto err_kent;
 

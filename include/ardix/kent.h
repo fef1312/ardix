@@ -5,40 +5,21 @@
 #include <ardix/atom.h>
 #include <ardix/types.h>
 
-struct kent;
-
-/**
- * A collection of housekeeping callbacks for kents.
- * This is implemented by every module using kents.
- */
-struct kent_ops {
-	/**
-	 * Destroy this kent and release all allocated resources.
-	 * This is called when the refcount value reaches 0.
-	 *
-	 * @param kent: The kent to be destroyed.
-	 */
-	void (*destroy)(struct kent *kent);
-};
-
 /**
  * struct kent: Kernel Entity
  *
- * This is basically a primitive ripoff of the kobject system in Linux, except
- * there is no representation in a virtual filesystem and it is only really used
- * to keeping track of hierarchial reference counting.
- *
- * The main purpose of kents is to provide a basic common abstraction layer for
- * all modules and submodules of the Ardix kernel.  kents are arranged in a tree
- * structure, and use an atomic reference counter to keep track of when it is
- * safe to destroy them.  This structure is meant to be embedded into bigger
- * structs and then cast out of when a reference to this one is passed to one of
- * the
+ * Kernel entities form a tree structure of reference counters and are meant to
+ * be embedded into structures with dynamic lifetime.  The reference count is
+ * incremented and decremented using the `kent_get()` and `kent_put()` functions
+ * respectively, and when the count reaches zero the `destroy` callback is
+ * invoked.  This callback is responsible for performing any cleanup work
+ * required and releasing resources attached to the structure.  Additionally,
+ * the parent kent's reference count is decremented as well.
  */
 struct kent {
 	struct kent *parent;
 	atom_t refcount;
-	struct kent_ops *operations;
+	void (*destroy)(struct kent *kent);
 };
 
 extern struct kent *kent_root;

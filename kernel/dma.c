@@ -15,10 +15,6 @@ static void dmabuf_destroy(struct kent *kent)
 	free(buf);
 }
 
-static struct kent_ops dmabuf_kent_ops = {
-	.destroy = &dmabuf_destroy,
-};
-
 struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 {
 	int err = 0;
@@ -27,7 +23,7 @@ struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 		return NULL;
 
 	buf->kent.parent = &dev->kent;
-	buf->kent.operations = &dmabuf_kent_ops;
+	buf->kent.destroy = dmabuf_destroy;
 
 	err = kent_init(&buf->kent);
 	if (err) {
