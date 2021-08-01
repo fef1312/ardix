@@ -43,12 +43,15 @@ static struct printf_buf *printf_buf_create(int fd)
 	return buf;
 }
 
-static void printf_buf_destroy(struct printf_buf *buf)
+static ssize_t printf_buf_destroy(struct printf_buf *buf)
 {
+	ssize_t ret = 0;
+
 	if (buf->len != 0)
-		write(buf->fd, &buf->data[0], buf->len);
+		ret = write(buf->fd, &buf->data[0], buf->len);
 
 	free(buf);
+	return ret;
 }
 
 static ssize_t printf_buf_write(struct printf_buf *buf, const void *data, size_t len)
@@ -241,7 +244,9 @@ int vfprintf(FILE *f, const char *fmt, va_list args)
 	if (tmp != fmt && ret >= 0)
 		ret += printf_buf_write(buf, fmt, (size_t)tmp - (size_t)fmt);
 
-	printf_buf_destroy(buf);
+	ssize_t tmpret = printf_buf_destroy(buf);
+	if (tmpret < 0)
+		ret = tmpret;
 
 	return (int)ret;
 }
