@@ -35,13 +35,13 @@ int devices_init(void);
 int device_init(struct device *dev);
 
 /** Increment a device's reference counter. */
-inline void device_get(struct device *dev)
+__always_inline void device_get(struct device *dev)
 {
 	kent_get(&dev->kent);
 }
 
 /** Decrement a device's referece counter. */
-inline void device_put(struct device *dev)
+__always_inline void device_put(struct device *dev)
 {
 	kent_put(&dev->kent);
 }
