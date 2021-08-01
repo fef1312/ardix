@@ -25,12 +25,12 @@ func_begin irq_svc
 	 * like in irq_pend_sv, we save everything on the stack to make early
 	 * process switching possible in case the syscall is blocking.
 	 */
-	push	{r3-r11,lr}			/* r4-r7 */
+	push	{r4-r11,lr}
 
 	mov	r0,	sp
 	bl	arch_enter		/* arch_enter(sp); */
 
-	pop	{r3-r11,lr}
+	pop	{r4-r11,lr}
 
 	bx	lr
 
