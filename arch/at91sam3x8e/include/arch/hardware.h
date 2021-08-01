@@ -17,6 +17,10 @@ extern uint32_t sys_core_clock;
  * hardware routines on IRQ entry.  Required for scheduling / context switching.
  */
 struct reg_sw_snapshot {
+	word_t r4;
+	word_t r5;
+	word_t r6;
+	word_t r7;
 	word_t r8;
 	word_t r9;
 	word_t r10;
@@ -26,10 +30,6 @@ struct reg_sw_snapshot {
 	 * because the IRQ entry overwrites it
 	 */
 	void *lr;	/* alias r14 */
-	word_t r4;
-	word_t r5;
-	word_t r6;
-	word_t r7;
 };
 
 /**
