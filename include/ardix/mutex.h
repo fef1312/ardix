@@ -2,37 +2,107 @@
 
 #pragma once
 
+#include <ardix/types.h>
+
 #include <toolchain.h>
 
+/**
+ * @defgroup mutex Synchronization Primitives
+ *
+ * @{
+ */
+
+/**
+ * @brief A simple mutex.
+ *
+ * Mutexes can be locked using the `mutex_lock()` and `mutex_unlock()` methods
+ * respectively.  The former will block until the lock is acquired and thus
+ * should never be used from interrupt context.  Use `mutex_trylock()` if you
+ * don't want blocking.
+ */
 struct mutex {
-	int lock;
+	uint8_t lock;	/**< Current lock value, don't read directly */
 };
 
-extern int _mutex_lock(int *lock);
-extern int _mutex_trylock(int *lock);
-extern void _mutex_unlock(int *lock);
+/**
+ * @brief Internal assembly routine for `mutex_lock()`.
+ * @private
+ */
+extern void _mutex_lock(uint8_t *lock);
+/**
+ * @brief Internal assembly routine for `mutex_trylock()`.
+ * @private
+ */
+extern int _mutex_trylock(uint8_t *lock);
+/**
+ * @brief Internal assembly routine for `mutex_unlock()`.
+ * @private
+ */
+extern void _mutex_unlock(uint8_t *lock);
 
+/**
+ * @brief Initialize a mutex and set it to unlocked.
+ *
+ * @param mutex Mutex to initialize
+ */
 __always_inline void mutex_init(struct mutex *mutex)
 {
 	mutex->lock = 0;
 }
 
-__always_inline int mutex_lock(struct mutex *mutex)
+/**
+ * @brief Acquire an exclusive lock on a mutex.
+ * This call will block until the lock was acquired and therefore cannot fail.
+ *
+ * @param mutex Mutex to lock
+ */
+__always_inline void mutex_lock(struct mutex *mutex)
 {
-	return _mutex_lock(&mutex->lock);
+	_mutex_lock(&mutex->lock);
 }
 
+/**
+ * @brief Release an exclusive lock on a mutex.
+ *
+ * @param mutex Mutex to unlock
+ */
 __always_inline void mutex_unlock(struct mutex *mutex)
 {
 	_mutex_unlock(&mutex->lock);
 }
 
+/**
+ * @brief Attempt to acquire an exclusive lock on a mutex.
+ * The return value is zero if the claim succeeds, and nonzero otherwise.
+ *
+ * @param mutex Mutex to attempt to lock
+ * @returns 0 if the lock was acquired, a nonzero value otherwise
+ */
 __always_inline int mutex_trylock(struct mutex *mutex)
 {
 	return _mutex_trylock(&mutex->lock);
 }
 
+/**
+ * @brief Determine whether a mutex is locked.
+ *
+ * @param mutex Mutex to get the lock value of
+ * @returns Nonzero if the mutex is locked, zero otherwise
+ */
+__always_inline int mutex_is_locked(struct mutex *mutex)
+{
+	return mutex->lock;
+}
+
+/**
+ * @brief Statically declare and define a mutex (file scope only).
+ * The mutex does not need to be initialized using `mutex_init()`.
+ *
+ * @param name Name of the `struct mutex` that will be defined
+ */
 #define MUTEX(name) struct mutex name = { .lock = 0 }
+
+/** @} */
 
 /*
  * This file is part of Ardix.

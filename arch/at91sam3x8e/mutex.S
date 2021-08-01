@@ -2,32 +2,51 @@
 
 .include "asm.S"
 
-.text
+.section .text.shared
 
-/* int _mutex_lock(int *lock); */
+/* void _mutex_lock(uint8_t *lock); */
 func_begin _mutex_lock
 
-	mov	r1,	#1
+	mov		r1,	#1		/* uint8_t newval = 1; */
 
-1:	ldrex	r2,	[r0]
-	cmp	r2,	#0
-	itt	eq
-	strexeq	r2,	r1,	[r0]
-	cmpeq	r2,	#0
+1:	ldrexb		r2,	[r0]		/* uint8_t tmp = __ldrexb(lock); */
 
-	bne	1b
+	cmp		r2,	#0
+	itt		eq
+	strexbeq	r2,	r1,	[r0]	/* tmp = __strexb(newval, lock); */
+	cmpeq		r2,	#0
+
+	bne		1b
 
 	dmb
-	eor	r0,	r0
-	bx	lr
+	bx		lr
 
 func_end _mutex_lock
 
-/* int _mutex_unlock(int *lock); */
+/* int _mutex_trylock(uint8_t *lock); */
+func_begin _mutex_trylock
+
+	mov		r1,	#1		/* uint8_t newval = 1; */
+	/* move lock to r2 to make room in r0 for the return value */
+	mov		r2,	r0
+
+	ldrexb		r0,	[r2]		/* uint8_t tmp = __ldrexb(lock); */
+
+	cmp		r0,	#0
+	ittt		eq
+	strexbeq	r0,	r1,	[r2]	/* tmp = __strexb(newval, lock); */
+	cmpeq		r0,	#0
+	dmbeq					/* if (tmp == 0) __dmb(); */
+
+	bx		lr			/* return tmp; */
+
+func_end _mutex_trylock
+
+/* void _mutex_unlock(uint8_t *lock); */
 func_begin _mutex_unlock
 
 	mov	r1,	#0
-	str	r1,	[r0]
+	strb	r1,	[r0]
 	dmb
 	bx	lr
 
