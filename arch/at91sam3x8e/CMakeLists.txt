@@ -19,6 +19,7 @@ target_sources(ardix_arch PRIVATE
 	interrupt.c
 	irq_pend_sv.S
 	irq_svc.S
+	mutex.S
 	sched.c
 	serial.c
 	startup.c
