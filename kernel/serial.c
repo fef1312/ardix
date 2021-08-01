@@ -9,9 +9,10 @@
 
 #include <arch/serial.h>
 
+#include <config.h>
 #include <stddef.h>
 
-static ssize_t serial_device_read(void *dest, struct device *dev, size_t len)
+static ssize_t serial_device_read(void *dest, struct device *dev, size_t len, off_t offset)
 {
 	ssize_t ret;
 	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
@@ -23,7 +24,7 @@ static ssize_t serial_device_read(void *dest, struct device *dev, size_t len)
 	return ret;
 }
 
-static ssize_t serial_device_write(struct device *dev, const void *src, size_t len)
+static ssize_t serial_device_write(struct device *dev, const void *src, size_t len, off_t offset)
 {
 	ssize_t ret;
 	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
@@ -45,17 +46,27 @@ int serial_init(struct serial_device *dev, long int baud)
 	dev->device.read = serial_device_read;
 	dev->device.write = serial_device_write;
 	err = device_init(&dev->device);
+	if (err)
+		goto err_device_init;
 
 	dev->baud = baud;
 
-	dev->rx = ringbuf_create(SERIAL_BUFSZ);
+	dev->rx = ringbuf_create(CONFIG_SERIAL_BUFSZ);
 	if (dev->rx == NULL)
-		return -1;
+		goto err_ringbuf_create;
 
 	err = arch_serial_init(dev);
 	if (err)
-		ringbuf_destroy(dev->rx);
+		goto err_arch_serial_init;
 
+	goto out;
+
+err_arch_serial_init:
+	ringbuf_destroy(dev->rx);
+err_ringbuf_create:
+	device_put(&dev->device);
+err_device_init:
+out:
 	return err;
 }
 

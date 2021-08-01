@@ -8,16 +8,6 @@
 
 #include <toolchain.h>
 
-#ifndef CONFIG_SERIAL_BAUD
-/** serial baud rate */
-#define CONFIG_SERIAL_BAUD 115200
-#endif
-
-#ifndef SERIAL_BUFSZ
-/** size of a serial I/O buffer in bytes */
-#define SERIAL_BUFSZ 256
-#endif
-
 struct serial_device {
 	struct device device;
 	struct ringbuf *rx;

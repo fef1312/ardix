@@ -1,8 +1,23 @@
 # See the end of this file for copyright and license terms.
 
+set(ARCH "at91sam3x8e" CACHE STRING "Target architecture")
+set_property(CACHE ARCH PROPERTY STRINGS
+	"at91sam3x8e"
+)
+string(TOUPPER ${ARCH} ARCH_UPPERCASE)
+
 set(CONFIG_NFILE 16 CACHE STRING "Maximum number of open files")
+
 set(CONFIG_STACK_SIZE 2048 CACHE STRING "Stack size in bytes")
+
 set(CONFIG_SCHED_MAXPROC 8 CACHE STRING "Maximum number of processes")
+
+set(CONFIG_SERIAL_BAUD 115200 CACHE STRING "Default serial baud rate")
+set_property(CACHE CONFIG_SERIAL_BAUD PROPERTY STRINGS
+	200 2400 4800 9600 19200 38400 57600 115200
+)
+
+set(CONFIG_SERIAL_BUFSZ 256 CACHE STRING "Default serial buffer size in bytes")
 
 # This file is part of Ardix.
 # Copyright (c) 2021 Felix Kopp <owo@fef.moe>.

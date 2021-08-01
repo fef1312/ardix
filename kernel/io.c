@@ -1,14 +1,38 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <ardix/file.h>
 #include <ardix/io.h>
 #include <ardix/serial.h>
+
+#include <config.h>
+
+struct file *kstdout;
+struct file *kstdin;
 
 int io_init(void)
 {
 	int ret;
 
 	ret = serial_init(serial_default_device, CONFIG_SERIAL_BAUD);
+	if (ret != 0)
+		goto err_serial_init;
 
+	kstdin = file_create(&serial_default_device->device, FILE_TYPE_PIPE, &ret);
+	if (ret != 0)
+		goto err_kstdin_create;
+
+	kstdout = file_create(&serial_default_device->device, FILE_TYPE_PIPE, &ret);
+	if (ret != 0)
+		goto err_kstdout_create;
+
+	goto out;
+
+err_kstdout_create:
+	file_put(kstdin);
+err_kstdin_create:
+	serial_exit(serial_default_device);
+err_serial_init:
+out:
 	return ret;
 }
 

@@ -2,19 +2,17 @@
 
 cmake_minimum_required(VERSION 3.14.0)
 
-set(ARCH "at91sam3x8e" CACHE STRING "Target architecture")
+include(options.cmake)
 include(arch/${ARCH}/toolchain.cmake)
 
 project(ardix VERSION 0.1.0 LANGUAGES C ASM)
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_EXTENSIONS ON)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_EXTENSIONS OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
     option(DEBUG "Enable debug features" ON)
 endif()
-
-include(options.cmake)
 
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
@@ -61,8 +59,6 @@ configure_file(
 	${CMAKE_BINARY_DIR}/include/config.h
 )
 
-# this must be included before any other subdirectories because
-# it updates ARDIX_INCLUDE_DIRS and ARDIX_COMPILE_OPTIONS
 add_subdirectory(arch)
 
 add_subdirectory(init)
