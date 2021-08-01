@@ -25,7 +25,7 @@
  * This is invoked from the startup code (usually) located in
  * arch/<architecture>/startup.c.
  */
-void do_bootstrap(void)
+void main(void)
 {
 	uint32_t count = 0;
 	unsigned int print_count = 0;

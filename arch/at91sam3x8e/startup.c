@@ -25,7 +25,7 @@ extern uint32_t _sheap;		/* heap start */
 extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
-void do_bootstrap(void);
+void main(void);
 
 __naked void irq_reset(void)
 {
