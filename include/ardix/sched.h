@@ -6,18 +6,10 @@
 #include <ardix/list.h>
 #include <ardix/types.h>
 
-#ifndef CONFIG_SCHED_MAXTASK
-/** The maximum number of tasks. */
-#define CONFIG_SCHED_MAXTASK 8
-#endif
+#include <config.h>
 
 #if CONFIG_SCHED_MAXTASK > 64
 #warning "CONFIG_SCHED_MAXTASK is > 64, this could have a significant performance impact"
-#endif
-
-#ifndef CONFIG_SCHED_INTR_FREQ
-/** Frequency (in Hertz) at which a scheduling interrupt should be fired */
-#define CONFIG_SCHED_INTR_FREQ 10000U
 #endif
 
 #ifndef CONFIG_STACKSZ
@@ -54,6 +46,8 @@ struct task {
 	pid_t pid;
 };
 
+extern struct task *current;
+
 /**
  * Initialize the scheduler subsystem.
  * This sets up a hardware interrupt timer (SysTick for Cortex-M3).
@@ -86,7 +80,7 @@ struct task *sched_task_clone(struct task *task);
  * @param state: State the task should enter.
  *	Allowed values are `TASK_SLEEP` and `TASK_IOWAIT`.
  */
-void sched_yield(enum task_state state);
+void yield(enum task_state state);
 
 /*
  * This file is part of Ardix.

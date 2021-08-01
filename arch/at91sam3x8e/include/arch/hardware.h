@@ -29,7 +29,7 @@ struct reg_sw_snapshot {
 	 * lr is saved by hardware, but we need to store it twice
 	 * because the IRQ entry overwrites it
 	 */
-	void *lr;	/* alias r14 */
+	uintptr_t lr;	/* alias r14 */
 };
 
 /**
@@ -42,8 +42,8 @@ struct reg_hw_snapshot {
 	word_t r2;
 	word_t r3;
 	word_t r12;
-	void *lr;	/* alias r14 */
-	void *pc;	/* alias r15 */
+	uintptr_t lr;	/* alias r14 */
+	uintptr_t pc;	/* alias r15 */
 	word_t psr;
 };
 

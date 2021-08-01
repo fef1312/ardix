@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-extern struct task *_sched_current_task;
-
 void irq_sys_tick(void)
 {
 	/*
@@ -63,15 +61,15 @@ void arch_sched_task_init(struct task *task, void (*entry)(void))
 	task->sp = regs;
 
 	memset(regs, 0, sizeof(*regs));
-	regs->hw.pc = entry;
+	regs->hw.pc = (uintptr_t)entry;
 	regs->hw.psr = 0x01000000U;
-	regs->sw.lr = (void *)0xFFFFFFF9U;
+	regs->sw.lr = 0xfffffff9U;
 }
 
-void sched_yield(enum task_state state)
+void yield(enum task_state state)
 {
 	REG_SYSTICK_VAL = 0U; /* Reset timer */
-	_sched_current_task->state = state;
+	current->state = state;
 	arch_irq_invoke(IRQNO_PEND_SV);
 }
 

@@ -15,13 +15,13 @@
 extern uint32_t _sstack;
 extern uint32_t _estack;
 
-static struct task *_sched_tasktab[CONFIG_SCHED_MAXTASK];
-struct task *_sched_current_task;
+static struct task *tasktab[CONFIG_SCHED_MAXTASK];
+struct task *current;
 
 static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
-	_sched_tasktab[task->pid] = NULL;
+	tasktab[task->pid] = NULL;
 	free(task);
 }
 
@@ -29,27 +29,27 @@ int sched_init(void)
 {
 	int i;
 
-	_sched_current_task = malloc(sizeof(*_sched_current_task));
-	if (_sched_current_task == NULL)
+	current = malloc(sizeof(*current));
+	if (current == NULL)
 		return -ENOMEM;
 
-	_sched_current_task->kent.parent = kent_root;
-	_sched_current_task->kent.destroy = task_destroy;
-	i = kent_init(&_sched_current_task->kent);
+	current->kent.parent = kent_root;
+	current->kent.destroy = task_destroy;
+	i = kent_init(&current->kent);
 	if (i == 0) {
-		_sched_current_task->sp = &_sstack;
-		_sched_current_task->stack_bottom = &_estack;
-		_sched_current_task->pid = 0;
-		_sched_current_task->state = TASK_READY;
-		_sched_tasktab[0] = _sched_current_task;
+		current->sp = &_sstack;
+		current->stack_bottom = &_estack;
+		current->pid = 0;
+		current->state = TASK_READY;
+		tasktab[0] = current;
 
 		for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
-			_sched_tasktab[i] = NULL;
+			tasktab[i] = NULL;
 
 		i = arch_watchdog_init();
 
 		if (i == 0)
-			i = arch_sched_hwtimer_init(CONFIG_SCHED_MAXTASK);
+			i = arch_sched_hwtimer_init(CONFIG_SCHED_FREQ);
 	}
 
 	/*
@@ -79,26 +79,26 @@ static inline bool sched_task_should_run(const struct task *task)
 void *sched_process_switch(void *curr_sp)
 {
 	struct task *tmp;
-	pid_t nextpid = _sched_current_task->pid;
-	_sched_current_task->sp = curr_sp;
+	pid_t nextpid = current->pid;
+	current->sp = curr_sp;
 
-	if (_sched_current_task->state != TASK_SLEEP && _sched_current_task->state != TASK_IOWAIT)
-		_sched_current_task->state = TASK_QUEUE;
+	if (current->state != TASK_SLEEP && current->state != TASK_IOWAIT)
+		current->state = TASK_QUEUE;
 
 	while (1) {
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
 
-		tmp = _sched_tasktab[nextpid];
+		tmp = tasktab[nextpid];
 		if (tmp != NULL && sched_task_should_run(tmp)) {
-			_sched_current_task = tmp;
+			current = tmp;
 			break;
 		}
 		/* TODO: Add idle thread */
 	}
 
-	_sched_current_task->state = TASK_READY;
-	return _sched_current_task->sp;
+	current->state = TASK_READY;
+	return current->sp;
 }
 
 struct task *sched_fork(struct task *parent)
@@ -110,7 +110,7 @@ struct task *sched_fork(struct task *parent)
 		goto err_alloc;
 
 	for (pid = 0; pid < CONFIG_SCHED_MAXTASK; pid++) {
-		if (_sched_tasktab[pid] == NULL)
+		if (tasktab[pid] == NULL)
 			break;
 	}
 	if (pid == CONFIG_SCHED_MAXTASK)
@@ -129,11 +129,6 @@ err_maxtask:
 	free(child);
 err_alloc:
 	return NULL;
-}
-
-struct task *sched_current_task(void)
-{
-	return _sched_current_task;
 }
 
 /*
