@@ -2,17 +2,31 @@
 
 #pragma once
 
-#define ARDIX_VERSION_MAJOR @ardix_VERSION_MAJOR@
-#define ARDIX_VERSION_MINOR @ardix_VERSION_MINOR@
-#define ARDIX_VERSION_PATCH @ardix_VERSION_PATCH@
-#define ARDIX_VERSION "@ardix_VERSION@@ardix_VERSION_SUFFIX"
+#include <ardix/kent.h>
+#include <ardix/mutex.h>
+#include <ardix/types.h>
 
-#cmakedefine DEBUG
-#cmakedefine ARCH
+enum file_type {
+	FILE_TYPE_REGULAR,
+	FILE_TYPE_PIPE,
+};
 
-#define CONFIG_NFILE @CONFIG_NFILE@
-#define CONFIG_STACK_SIZE @CONFIG_STACK_SIZE@
-#define CONFIG_SCHED_MAXPROC @CONFIG_SCHED_MAXPROC@
+struct file {
+	struct kent kent;
+	int fd;
+	loff_t pos;
+	struct mutex lock;
+	struct device *device;
+	enum file_type type;
+};
+
+struct file *file_create(struct device *dev, enum file_type type, int *err);
+
+struct file *file_get(int fd);
+void file_put(struct file *file);
+
+ssize_t file_write(struct file *file, const void *buf, size_t len);
+ssize_t file_read(void *buf, struct file *file, size_t len);
 
 /*
  * This file is part of Ardix.

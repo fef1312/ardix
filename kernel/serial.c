@@ -2,6 +2,7 @@
 
 #include <ardix/atomic.h>
 #include <ardix/device.h>
+#include <ardix/mutex.h>
 #include <ardix/ringbuf.h>
 #include <ardix/sched.h>
 #include <ardix/serial.h>
@@ -10,6 +11,30 @@
 
 #include <stddef.h>
 
+static ssize_t serial_device_read(void *dest, struct device *dev, size_t len)
+{
+	ssize_t ret;
+	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
+	mutex_lock(&dev->lock);
+
+	ret = serial_read(dest, serial_dev, len);
+
+	mutex_unlock(&dev->lock);
+	return ret;
+}
+
+static ssize_t serial_device_write(struct device *dev, const void *src, size_t len)
+{
+	ssize_t ret;
+	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
+	mutex_lock(&dev->lock);
+
+	ret = serial_write(serial_dev, src, len);
+
+	mutex_unlock(&dev->lock);
+	return ret;
+}
+
 int serial_init(struct serial_device *dev, long int baud)
 {
 	int err = -1;
@@ -17,6 +42,8 @@ int serial_init(struct serial_device *dev, long int baud)
 	if (dev->id < 0)
 		return -1; /* invalid dev */
 
+	dev->device.read = serial_device_read;
+	dev->device.write = serial_device_write;
 	err = device_init(&dev->device);
 
 	dev->baud = baud;

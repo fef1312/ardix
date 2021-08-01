@@ -5,6 +5,7 @@
 #include <ardix/kent.h>
 #include <ardix/list.h>
 #include <ardix/malloc.h>
+#include <ardix/mutex.h>
 #include <ardix/types.h>
 
 #include <stddef.h>
@@ -12,6 +13,9 @@
 /** Top-level abstraction for any device connected to the system. */
 struct device {
 	struct kent kent;
+	struct mutex lock;
+	ssize_t (*read)(void *dest, struct device *device, size_t size, off_t offset);
+	ssize_t (*write)(struct device *device, const void *src, size_t size, off_t offset);
 };
 
 /** Cast a kent out to its containing struct device */

@@ -7,6 +7,7 @@ target_compile_options(ardix_kernel_fs PRIVATE ${ARDIX_COMPILE_OPTIONS})
 target_include_directories(ardix_kernel_fs PRIVATE ${ARDIX_INCLUDE_DIRS})
 
 target_sources(ardix_kernel_fs PRIVATE
+	file.c
 	read.c
 	write.c
 )

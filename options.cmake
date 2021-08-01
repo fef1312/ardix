@@ -1,5 +1,6 @@
 # See the end of this file for copyright and license terms.
 
+set(CONFIG_NFILE 16 CACHE STRING "Maximum number of open files")
 set(CONFIG_STACK_SIZE 2048 CACHE STRING "Stack size in bytes")
 set(CONFIG_SCHED_MAXPROC 8 CACHE STRING "Maximum number of processes")
 

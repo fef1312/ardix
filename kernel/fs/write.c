@@ -1,10 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/serial.h>
-
-#include <ardix/dma.h>
+#include <ardix/file.h>
 #include <ardix/malloc.h>
-#include <ardix/serial.h>
 #include <ardix/syscall.h>
 #include <ardix/userspace.h>
 
@@ -15,20 +12,23 @@
 ssize_t sys_write(int fd, __user const void *buf, size_t len)
 {
 	ssize_t ret;
-	struct dmabuf *dma;
+	void *copy;
 
-	if (fd != 1) /* we only support stdout (serial console) right now */
+	struct file *f = file_get(fd);
+	if (f == NULL)
 		return -EBADF;
 
-	dma = dmabuf_create(&serial_default_device->device, len);
-	if (dma == NULL)
+	copy = malloc(len);
+	if (copy == NULL) {
+		file_put(f);
 		return -ENOMEM;
+	}
 
-	copy_from_user(dma->data, buf, len);
-	/* TODO: reschedule if blocking */
-	ret = serial_write_dma(serial_default_device, dma);
-	dmabuf_put(dma);
+	len = copy_from_user(copy, buf, len);
+	ret = file_write(f, copy, len);
 
+	free(copy);
+	file_put(f);
 	return ret;
 }
 

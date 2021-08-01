@@ -1,7 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <ardix/file.h>
 #include <ardix/malloc.h>
-#include <ardix/serial.h>
 #include <ardix/syscall.h>
 #include <ardix/userspace.h>
 
@@ -14,19 +14,20 @@ ssize_t sys_read(int fd, __user void *buf, size_t len)
 	ssize_t ret;
 	void *copy;
 
-	if (fd != 0) /* we only support stdin (serial console) right now */
+	struct file *f = file_get(fd);
+	if (f == NULL)
 		return -EBADF;
 
 	copy = malloc(len);
 	if (copy == NULL)
 		return -ENOMEM;
 
-	ret = serial_read(copy, serial_default_device, len);
-	if (ret > 0)
-		copy_to_user(buf, copy, (size_t)ret);
+	ret = file_read(copy, f, len);
+	if (ret >= 0)
+		ret = copy_to_user(buf, copy, ret);
 
 	free(copy);
-
+	file_put(f);
 	return ret;
 }
 

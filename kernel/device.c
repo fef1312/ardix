@@ -41,14 +41,12 @@ static void device_destroy(struct kent *kent)
 
 int device_init(struct device *dev)
 {
-	if (devices_kent == NULL)
-		return -ENOENT;
-
 	if (dev->kent.destroy == NULL)
 		dev->kent.destroy = device_destroy;
 	if (dev->kent.parent == NULL)
 		dev->kent.parent = devices_kent;
 
+	mutex_init(&dev->lock);
 	return kent_init(&dev->kent);
 }
 
