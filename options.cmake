@@ -19,6 +19,8 @@ set_property(CACHE CONFIG_SERIAL_BAUD PROPERTY STRINGS
 
 set(CONFIG_SERIAL_BUFSZ 256 CACHE STRING "Default serial buffer size in bytes")
 
+set(CONFIG_PRINTF_BUFSZ 64 CACHE STRING "Default buffer size for printf() and friends")
+
 # This file is part of Ardix.
 # Copyright (c) 2021 Felix Kopp <owo@fef.moe>.
 #

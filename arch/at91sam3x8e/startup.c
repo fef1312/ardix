@@ -25,7 +25,7 @@ extern uint32_t _sheap;		/* heap start */
 extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
-void main(void);
+extern int main(void);
 
 __naked void irq_reset(void)
 {
@@ -38,7 +38,7 @@ __naked void irq_reset(void)
 	malloc_init(&_sheap, (size_t)(&_eheap) - (size_t)(&_sheap));
 
 	/* start the Kernel */
-	do_bootstrap();
+	main();
 
 	/* halt (this should never be reached) */
 	while (1);

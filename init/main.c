@@ -4,12 +4,12 @@
 
 #include <ardix/io.h>
 #include <ardix/kent.h>
-#include <ardix/printk.h>
 #include <ardix/sched.h>
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <unistd.h>
 
 #define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
@@ -25,7 +25,7 @@
  * This is invoked from the startup code (usually) located in
  * arch/<architecture>/startup.c.
  */
-void main(void)
+int main(void)
 {
 	uint32_t count = 0;
 	unsigned int print_count = 0;
@@ -34,19 +34,27 @@ void main(void)
 	REG_PIOB_PER = 1 << 27;
 	REG_PIOB_CODR = 1 << 27;
 
-	kent_root_init();
+	int err = kent_root_init();
+	if (err != 0)
+		return err;
 
-	sched_init();
+	err = sched_init();
+	if (err != 0)
+		return err;
 
-	devices_init();
+	err = devices_init();
+	if (err != 0)
+		return err;
 
-	io_init();
+	err = io_init();
+	if (err != 0)
+		return err;
 
 	while (true) {
 		if (count++ != 1000000)
 			continue;
 
-		printk("hello, world (%u)!\n", print_count);
+		printf("hello, world (%u)!\n", print_count);
 
 		print_count++;
 		if (print_count % 2)

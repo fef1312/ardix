@@ -11,6 +11,7 @@ target_sources(ardix_lib PRIVATE
 	errno.c
 	list.c
 	malloc.c
+	printf.c
 	string.c
 	unistd.c
 )
