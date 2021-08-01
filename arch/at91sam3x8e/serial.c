@@ -99,10 +99,10 @@ ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf)
 	uint16_t len;
 	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
 
-	dmabuf_get(buf);
-
 	if (arch_dev->tx_next != NULL)
 		return -EBUSY;
+
+	dmabuf_get(buf);
 
 	if (buf->len >= 0xffff)
 		len = 0xffff;
