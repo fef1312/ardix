@@ -13,6 +13,7 @@
 #define ARDIX_VERSION_STR "@ardix_VERSION@@ardix_VERSION_SUFFIX@"
 
 #cmakedefine DEBUG
+#cmakedefine CONFIG_CHECK_SYSCALL_SOURCE
 
 #define ARCH "@ARCH@"
 #define ARCH_@ARCH_UPPERCASE@

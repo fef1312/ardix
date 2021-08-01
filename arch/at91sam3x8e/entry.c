@@ -9,6 +9,13 @@
 #include <errno.h>
 #include <stddef.h>
 
+#include <config.h>
+
+#ifdef CONFIG_CHECK_SYSCALL_SOURCE
+/* syscall.S */
+extern uintptr_t __syscall_entry_point;
+#endif
+
 void arch_enter(void *sp)
 {
 	struct reg_snapshot *regs = sp;
@@ -16,6 +23,18 @@ void arch_enter(void *sp)
 	int (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
 		       sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
 	int sc_ret;
+
+#	ifdef CONFIG_CHECK_SYSCALL_SOURCE
+	/*
+	 * We need to ignore the program counter's LSB because the CPU uses
+	 * that as a flag for whether it's operating in ARM or Thumb mode
+	 * (1 for Thumb); the instructions are always 2-byte aligned.
+	 */
+	if ((regs->hw.pc & 0xfffffffe) != __syscall_entry_point) {
+		arch_syscall_set_rval(regs, -EACCES);
+		return;
+	}
+#	endif
 
 	if (sc_num > NSYSCALLS) {
 		arch_syscall_set_rval(regs, -ENOSYS);

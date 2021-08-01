@@ -25,6 +25,8 @@ set(CONFIG_SERIAL_BUFSZ 256 CACHE STRING "Default serial buffer size in bytes")
 
 set(CONFIG_PRINTF_BUFSZ 64 CACHE STRING "Default buffer size for printf() and friends")
 
+option(CONFIG_CHECK_SYSCALL_SOURCE "Prohibit inline syscalls" OFF)
+
 # This file is part of Ardix.
 # Copyright (c) 2021 Felix Kopp <owo@fef.moe>.
 #

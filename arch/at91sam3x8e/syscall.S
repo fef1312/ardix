@@ -32,6 +32,8 @@ func_begin syscall
 	ldr	r4,	[sp, #16]	/* arg5 */
 	ldr	r5,	[sp, #20]	/* arg6 */
 
+.global __syscall_entry_point
+__syscall_entry_point:
 	svc	#0
 
 	pop	{r4-r5,r7}
