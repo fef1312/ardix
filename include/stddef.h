@@ -12,8 +12,17 @@
  * @param member: The member inside the struct to the offset of.
  * @returns The offset of `member` reelative to `type`, casted to a `size_t`.
  */
-#define offsetof(type, member) ((size_t)&((type *)0)->member)
+#define offsetof(type, member) __builtin_offsetof(type, member)
 #endif /* offsetof */
+
+#ifndef typeof
+/**
+ * @brief Get the type `expr` evaluates to (for generic macros).
+ *
+ * @param expr Expression to get the type of
+ */
+#define typeof(expr) __typeof(expr)
+#endif
 
 #ifndef NULL
 /** The `NULL` pointer. */
