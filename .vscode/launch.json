@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Release",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/ardix.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "${workspaceRoot}/openocd.cfg"
+            ],
+            "runToMain": false,
+            "gdbPath": "/usr/bin/arm-none-eabi-gdb",
+            "preRestartCommands": [
+                "file ./build/ardix.elf",
+                "load",
+                "add-symbol-file ./build/ardix.elf",
+                "enable breakpoint",
+                "monitor reset"
+            ]
+        }
+    ]
+  }
