@@ -2,7 +2,11 @@
 
 #pragma once
 
+#include <ardix/file.h>
 #include <ardix/serial.h>
+
+extern struct file *kstdout;
+extern struct file *kstdin;
 
 /**
  * Initialize all basic I/O subsystems.
