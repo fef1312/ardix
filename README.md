@@ -31,21 +31,20 @@ permitted by applicable law.  See the CNPLv6+ for details.
 
 ### Configuration
 
-Configuration is done with the standard CMake config system.
-The following options are available:
+Configuration is done with the standard CMake config system.  See `options.cmake` for a full list
+of available configuration variables.  In the simplest case, you will only need to specify the
+target architecture (`ARCH`) to get a basic build.  The following architectures are supported:
 
-- `TOOLCHAIN_PATH`: Path where the compiler toolchain is located.
-  Defaults to `/usr/bin`.
-- `ARCH`: Codename for the target architecture.
-  The following architectures are currently supported:
-    * `at91sam3x8e` (Arduino Due)
+- `at91sam3x8e` (Arduino Due)
 
 ### Build
 
-To build the EEPROM image, execute the following command:
+To build the EEPROM image, execute the following command.
+Pass any other configuration options you want to set to the first command or use `cmake-gui(1)`.
 
 ```shell
 # Replace <target> with one of the target architectures from the list above
+# This will default to at91sam3x8e (Arduino Due)
 cmake -DARCH=<arch> -B build -S .
 cmake --build build
 ```
