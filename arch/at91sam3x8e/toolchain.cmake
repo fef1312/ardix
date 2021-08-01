@@ -16,9 +16,11 @@ set(CMAKE_RANLIB	${TOOLCHAIN_PATH}/arm-none-eabi-ranlib${CMAKE_EXECUTABLE_SUFFIX
 set(CMAKE_SZE		${TOOLCHAIN_PATH}/arm-none-eabi-size${CMAKE_EXECUTABLE_SUFFIX} CACHE INTERNAL "")
 set(CMAKE_STRIP		${TOOLCHAIN_PATH}/arm-none-eabi-strip${CMAKE_EXECUTABLE_SUFFIX} CACHE INTERNAL "")
 
-set(CMAKE_C_FLAGS "-Os -nodefaultlibs -nostartfiles -mcpu=cortex-m3 -mabi=aapcs")
+set(CMAKE_C_FLAGS "-nodefaultlibs -nostartfiles -mcpu=cortex-m3 -mthumb -mabi=aapcs")
 if(DEBUG)
-	set(CMAKE_C_FLAGS "-g ${CMAKE_C_FLAGS}")
+	set(CMAKE_C_FLAGS "-g -O0 ${CMAKE_C_FLAGS}")
+else()
+	set(CMAKE_C_FLAGS "-Os ${CMAKE_C_FLAGS}")
 endif()
 
 # see CMakeLists.txt for config.ld generation

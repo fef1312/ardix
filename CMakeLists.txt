@@ -11,7 +11,6 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-    option(DEBUG "Enable debug features" ON)
 endif()
 
 find_package(Git QUIET)
@@ -67,6 +66,8 @@ add_subdirectory(lib)
 
 target_include_directories(ardix INTERFACE ${ARDIX_INCLUDE_DIRS})
 target_compile_options(ardix INTERFACE ${ARDIX_COMPILE_OPTIONS})
+target_link_options(ardix INTERFACE ${ARDIX_LINK_OPTIONS})
+list(JOIN ARDIX_LINKER_FLAGS " " ARDIX_LINK_OPTIONS)
 
 add_custom_target(ardix.elf DEPENDS ardix)
 add_custom_command(

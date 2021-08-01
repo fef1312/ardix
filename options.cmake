@@ -1,5 +1,7 @@
 # See the end of this file for copyright and license terms.
 
+option(DEBUG "Enable debug features" ON)
+
 set(ARCH "at91sam3x8e" CACHE STRING "Target architecture")
 set_property(CACHE ARCH PROPERTY STRINGS
 	"at91sam3x8e"
@@ -10,7 +12,9 @@ set(CONFIG_NFILE 16 CACHE STRING "Maximum number of open files")
 
 set(CONFIG_STACK_SIZE 2048 CACHE STRING "Stack size in bytes")
 
-set(CONFIG_SCHED_MAXPROC 8 CACHE STRING "Maximum number of processes")
+set(CONFIG_SCHED_MAXTASK 8 CACHE STRING "Maximum number of running tasks")
+
+set(CONFIG_SCHED_FREQ 1000 CACHE STRING "Task switch frequency in Hz")
 
 set(CONFIG_SERIAL_BAUD 115200 CACHE STRING "Default serial baud rate")
 set_property(CACHE CONFIG_SERIAL_BAUD PROPERTY STRINGS
