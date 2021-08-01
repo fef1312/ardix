@@ -5,6 +5,8 @@
 /* this is only invoked from user space, obviously */
 .section .text.shared
 
+.global __syscall_return_point
+
 /* int syscall(int number, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6); */
 func_begin syscall
 
@@ -32,10 +34,9 @@ func_begin syscall
 	ldr	r4,	[sp, #16]	/* arg5 */
 	ldr	r5,	[sp, #20]	/* arg6 */
 
-.global __syscall_entry_point
-__syscall_entry_point:
 	svc	#0
 
+__syscall_return_point:
 	pop	{r4-r5,r7}
 
 	/* r0 (return value) is set by the kernel */

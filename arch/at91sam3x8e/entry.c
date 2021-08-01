@@ -13,7 +13,7 @@
 
 #ifdef CONFIG_CHECK_SYSCALL_SOURCE
 /* syscall.S */
-extern uintptr_t __syscall_entry_point;
+extern uint16_t __syscall_return_point;
 #endif
 
 void arch_enter(void *sp)
@@ -27,10 +27,11 @@ void arch_enter(void *sp)
 #	ifdef CONFIG_CHECK_SYSCALL_SOURCE
 	/*
 	 * We need to ignore the program counter's LSB because the CPU uses
-	 * that as a flag for whether it's operating in ARM or Thumb mode
-	 * (1 for Thumb); the instructions are always 2-byte aligned.
+	 * that as a flag for whether it's operating in ARM or Thumb mode;
+	 * the instructions are always 2-byte aligned.  Additionally, the PC
+	 * points to the instruction *after* the SVC, not SVC itself.
 	 */
-	if ((regs->hw.pc & 0xfffffffe) != __syscall_entry_point) {
+	if (((uintptr_t)regs->hw.pc & 0xfffffffe) != (uintptr_t)&__syscall_return_point) {
 		arch_syscall_set_rval(regs, -EACCES);
 		return;
 	}

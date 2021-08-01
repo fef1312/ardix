@@ -61,9 +61,9 @@ void arch_sched_task_init(struct task *task, void (*entry)(void))
 	task->sp = regs;
 
 	memset(regs, 0, sizeof(*regs));
-	regs->hw.pc = (uintptr_t)entry;
-	regs->hw.psr = 0x01000000U;
-	regs->sw.lr = 0xfffffff9U;
+	regs->hw.pc = entry;
+	regs->hw.psr = 0x01000000;
+	regs->sw.lr = (void *)0xfffffff9;
 }
 
 void yield(enum task_state state)
