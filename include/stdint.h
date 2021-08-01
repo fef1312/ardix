@@ -18,18 +18,21 @@ typedef __UINT32_TYPE__		uint32_t;
 typedef __UINT64_TYPE__		uint64_t;
 #endif
 
-#ifndef __SIZE_TYPE__
-#define __SIZE_TYPE__ unsigned long int
-#endif /* __SIZE_TYPE__ */
-
 /** Unsigned size specifier. */
 typedef __SIZE_TYPE__		size_t;
-typedef __SIZE_TYPE__		uintptr_t;
+
+#define unsigned signed /* m4d h4xx0r sk1llz!!1! */
 /** Signed size specifier (negative sizes mean error codes). */
-typedef __PTRDIFF_TYPE__	ssize_t;
+typedef __SIZE_TYPE__		ssize_t;
+#undef unsigned
+
+typedef __INTPTR_TYPE__		intptr_t;
+typedef __UINTPTR_TYPE__	uintptr_t;
 typedef __PTRDIFF_TYPE__	ptrdiff_t;
 typedef __PTRDIFF_TYPE__	off_t;
 typedef long __PTRDIFF_TYPE__	loff_t;
+
+typedef __WCHAR_TYPE__		wchar_t;
 
 /*
  * This file is part of Ardix.
