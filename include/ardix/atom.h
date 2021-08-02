@@ -19,7 +19,7 @@ __always_inline int atom_get(atom_t *atom)
 
 __always_inline int atom_put(atom_t *atom)
 {
-	return _atom_get(&atom->count);
+	return _atom_put(&atom->count);
 }
 
 int atom_count(atom_t *atom);
