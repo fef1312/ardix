@@ -16,11 +16,13 @@ static ssize_t serial_device_read(void *dest, struct device *dev, size_t len, of
 {
 	ssize_t ret;
 	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
-	mutex_lock(&dev->lock);
 
-	ret = serial_read(dest, serial_dev, len);
+	ret = mutex_trylock(&dev->lock);
+	if (ret == 0) {
+		ret = serial_read(dest, serial_dev, len);
+		mutex_unlock(&dev->lock);
+	}
 
-	mutex_unlock(&dev->lock);
 	return ret;
 }
 
@@ -28,11 +30,13 @@ static ssize_t serial_device_write(struct device *dev, const void *src, size_t l
 {
 	ssize_t ret;
 	struct serial_device *serial_dev = container_of(dev, struct serial_device, device);
-	mutex_lock(&dev->lock);
 
-	ret = serial_write(serial_dev, src, len);
+	ret = mutex_trylock(&dev->lock);
+	if (ret == 0) {
+		ret = serial_write(serial_dev, src, len);
+		mutex_unlock(&dev->lock);
+	}
 
-	mutex_unlock(&dev->lock);
 	return ret;
 }
 

@@ -4,6 +4,7 @@
 
 #include <ardix/types.h>
 
+#include <errno.h>
 #include <toolchain.h>
 
 /**
@@ -73,14 +74,17 @@ __always_inline void mutex_unlock(struct mutex *mutex)
 
 /**
  * @brief Attempt to acquire an exclusive lock on a mutex.
- * The return value is zero if the claim succeeds, and nonzero otherwise.
+ * The return value is zero if the claim succeeds.
  *
  * @param mutex Mutex to attempt to lock
- * @returns 0 if the lock was acquired, a nonzero value otherwise
+ * @returns 0 if the lock was acquired, `-EAGAIN` otherwise
  */
 __always_inline int mutex_trylock(struct mutex *mutex)
 {
-	return _mutex_trylock(&mutex->lock);
+	if (_mutex_trylock(&mutex->lock) == 0)
+		return 0;
+	else
+		return -EAGAIN;
 }
 
 /**

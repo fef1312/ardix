@@ -84,27 +84,31 @@ void file_put(struct file *f)
 
 ssize_t file_read(void *buf, struct file *file, size_t len)
 {
-	ssize_t ret;
-	mutex_lock(&file->lock);
+	ssize_t ret = mutex_trylock(&file->lock);
 
-	ret = file->device->read(buf, file->device, len, file->pos);
-	if (file->type == FILE_TYPE_REGULAR && ret > 0)
-		file->pos += ret;
+	if (ret == 0) {
+		ret = file->device->read(buf, file->device, len, file->pos);
+		if (file->type == FILE_TYPE_REGULAR && ret > 0)
+			file->pos += ret;
 
-	mutex_unlock(&file->lock);
+		mutex_unlock(&file->lock);
+	}
+
 	return ret;
 }
 
 ssize_t file_write(struct file *file, const void *buf, size_t len)
 {
-	ssize_t ret;
-	mutex_lock(&file->lock);
+	ssize_t ret = mutex_trylock(&file->lock);
 
-	ret = file->device->write(file->device, buf, len, file->pos);
-	if (file->type == FILE_TYPE_REGULAR && ret > 0)
-		file->pos += ret;
+	if (ret == 0) {
+		ret = file->device->write(file->device, buf, len, file->pos);
+		if (file->type == FILE_TYPE_REGULAR && ret > 0)
+			file->pos += ret;
 
-	mutex_unlock(&file->lock);
+		mutex_unlock(&file->lock);
+	}
+
 	return ret;
 }
 
