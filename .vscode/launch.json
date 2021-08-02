@@ -2,24 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Release",
+            "name": "openocd",
             "cwd": "${workspaceRoot}",
             "executable": "./build/ardix.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
             "configFiles": [
-                "${workspaceRoot}/openocd.cfg"
+                "${workspaceRoot}/arch/at91sam3x8e/openocd.cfg"
             ],
+            "device": "AT91SAM3X8E",
             "runToMain": false,
             "gdbPath": "/usr/bin/arm-none-eabi-gdb",
-            "preRestartCommands": [
-                "file ./build/ardix.elf",
-                "load",
-                "add-symbol-file ./build/ardix.elf",
-                "enable breakpoint",
-                "monitor reset"
-            ]
+            "svdFile": "${workspaceRoot}/arch/at91sam3x8e/SAM3X8E.svd"
         }
     ]
-  }
+}
