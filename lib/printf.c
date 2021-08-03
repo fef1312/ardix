@@ -65,7 +65,7 @@ static ssize_t printf_buf_write(struct printf_buf *buf, const void *data, size_t
 			 * TODO: We don't need to take the syscall detour
 			 *       if we are already in kernel context
 			 */
-			ssize_t write_ret = write(buf->fd, &buf->data[0], buf->len);
+			ssize_t write_ret = write(buf->fd, buf->data, buf->len);
 			if (write_ret < 0) {
 				ret = write_ret;
 				break;
@@ -81,7 +81,7 @@ static ssize_t printf_buf_write(struct printf_buf *buf, const void *data, size_t
 			}
 
 			if (write_ret != (ssize_t)buf->len)
-				memmove(&buf->data[0], &buf->data[write_ret], buf->len - write_ret);
+				memmove(buf->data, &buf->data[write_ret], buf->len - write_ret);
 
 			buf->len -= write_ret;
 		}
@@ -132,7 +132,7 @@ static int fmt_handle_uint(struct printf_buf *buf, unsigned int u)
 	} while (u != 0);
 	pos++;
 
-	ret = printf_buf_write(buf, pos, PRINTF_UINT_BUFSZ - (pos - &str[0]));
+	ret = printf_buf_write(buf, pos, PRINTF_UINT_BUFSZ - (pos - str));
 	return ret;
 }
 
