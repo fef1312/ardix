@@ -3,13 +3,11 @@
         {
             "name": "at91sam3x8e",
             "defines": [
-                "DEBUG",
-                "ARCH=at91sam3x8e",
-                "ARCH_AT91SAM3X8E"
+                "DEBUG"
             ],
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
-            "cStandard": "gnu11",
-            "cppStandard": "gnu++14",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
             "intelliSenseMode": "gcc-arm",
             "includePath": [
                 "./include",
