@@ -13,6 +13,7 @@ target_sources(ardix_kernel PRIVATE
 	dma.c
 	io.c
 	kent.c
+	kevent.c
 	ringbuf.c
 	sched.c
 	serial.c
