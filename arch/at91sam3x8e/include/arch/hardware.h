@@ -68,7 +68,7 @@ struct reg_snapshot {
  */
 
 /** Real-time Timer Mode Register */
-#define REG_RTT_MR		(*(uint32_t *)0x400E1A30U)
+#define REG_RTT_MR		(*(volatile uint32_t *)0x400E1A30U)
 /** Real-time Timer Restart bitmask (for `RTT_MR`) */
 #define REG_RTT_RTTRST_BIT	((uint32_t)1 << 18)
 /** Real-time Timer Increment Interrupt Enable bitmask (for `REG_RTT_MR`) */
@@ -76,20 +76,20 @@ struct reg_snapshot {
 /** Alarm Interrupt Enable bitmask (for `REG_RTT_MR`) */
 #define REG_RTT_ALMIEN_BIT	((uint32_t)1 << 16)
 /** Real-time Timer Prescaler Value */
-#define REG_RTT_RTPRES		(*(uint16_t *)0x400E1A30U)
+#define REG_RTT_RTPRES		(*(volatile uint16_t *)0x400E1A30U)
 
 /** Real-time Timer Alarm Register */
-#define REG_RTT_AR		(*(uint32_t *)0x400E1A34U)
+#define REG_RTT_AR		(*(volatile uint32_t *)0x400E1A34U)
 /** Real-time Timer Alarm Value */
 #define REG_RTT_AR_ALMV		REG_RTT_AR
 
 /** Real-time timer Value Register */
-#define REG_RTT_VR		(*(uint32_t *)0x400E1A38U)
+#define REG_RTT_VR		(*(volatile uint32_t *)0x400E1A38U)
 /** Current Real-time Value */
 #define REG_RTT_VR_CRTV		REG_RTT_VR
 
 /** Real-time Timer Status Register */
-#define REG_RTT_SR		(*(const uint32_t *)0x400E1A3CU)
+#define REG_RTT_SR		(*(const volatile uint32_t *)0x400E1A3CU)
 /** Real-time Timer Increment bitmask (for `REG_RTT_SR`) */
 #define REG_RTT_SR_RTTINC_BIT	((uint32_t)1 << 1)
 /** Real-time Timer Alarm Status bitmask (for `REG_RTT_SR`) */
@@ -100,7 +100,7 @@ struct reg_snapshot {
  */
 
 /** SysTick Control and Status Register */
-#define REG_SYSTICK_CTRL			(*(uint32_t *)0xE000E010U)
+#define REG_SYSTICK_CTRL			(*(volatile uint32_t *)0xE000E010U)
 /** SysTick CTRL COUNTFLAG bitmask (for `REG_SYSTICK_CTRL`) */
 #define REG_SYSTICK_CTRL_COUNTFLAG_BIT		((uint32_t)1 << 16)
 /** SysTick CTRL CLKSOURCE bitmask (for `REG_SYSTICK_CTRL`) */
@@ -111,16 +111,16 @@ struct reg_snapshot {
 #define REG_SYSTICK_CTRL_ENABLE_BIT		((uint32_t)1)
 
 /** SysTick Reload Value Register */
-#define REG_SYSTICK_LOAD		(*(uint32_t *)0xE000E014U)
+#define REG_SYSTICK_LOAD		(*(volatile uint32_t *)0xE000E014U)
 #define REG_SYSTICK_LOAD_RELOAD_MASK	((uint32_t)0x00FFFFFFU)
 
 /** SysTick Current Value Register */
-#define REG_SYSTICK_VAL			(*(uint32_t *)0xE000E018U)
+#define REG_SYSTICK_VAL			(*(volatile uint32_t *)0xE000E018U)
 /** SysTick Current Value bitmask (for `REG_SYSTICK_VAL`) */
 #define REG_SYSTICK_VAL_CURRENT_MASK	((uint32_t)0x00FFFFFFU)
 
 /** SysTick Calibration Value Register */
-#define REG_SYSTICK_CALIB		(*(uint32_t *)0xE000E01CU)
+#define REG_SYSTICK_CALIB		(*(volatile uint32_t *)0xE000E01CU)
 #define REG_SYSTICK_CALIB_NOREF_MASK	((uint32_t)1 << 31)
 #define REG_SYSTICK_CALIB_SKEW_MASK	((uint32_t)1 << 30)
 #define REG_SYSTICK_CALIB_TENMS_MASK	((uint32_t)0x00FFFFFFU)
@@ -130,7 +130,7 @@ struct reg_snapshot {
  */
 
 /** RTC Control Register */
-#define REG_RTC_CR		(*(uint32_t *)0x400E1A60U)
+#define REG_RTC_CR		(*(volatile uint32_t *)0x400E1A60U)
 
 /*
  * Parallel Input/Output Controller (PIO)
@@ -146,62 +146,62 @@ struct reg_snapshot {
 #define PIOD 3
 
 /** PIO Controller n Enable Register (requires `REG_PIOA_WPMR` to be cleared) */
-#define REG_PIO_PER(n)			(*(uint32_t *)(0x400E0E00U + 0x200U * n))
+#define REG_PIO_PER(n)			(*(volatile uint32_t *)(0x400E0E00U + 0x200U * n))
 /** PIO Controller n Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PDR(n)			(*(uint32_t *)(0x400E0E04U + 0x200U * n))
+#define REG_PIO_PDR(n)			(*(volatile uint32_t *)(0x400E0E04U + 0x200U * n))
 /** PIO Controller n Status Register */
-#define REG_PIO_PSR(n)			(*(uint32_t *)(0x400E0E08U + 0x200U * n))
+#define REG_PIO_PSR(n)			(*(volatile uint32_t *)(0x400E0E08U + 0x200U * n))
 /** PIO Controller n Output Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_OER(n)			(*(uint32_t *)(0x400E0E10U + 0x200U * n))
+#define REG_PIO_OER(n)			(*(volatile uint32_t *)(0x400E0E10U + 0x200U * n))
 /** PIO Controller n Output Disable Register (newwds `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_ODR(n)			(*(uint32_t *)(0x400E0E14U + 0x200U * n))
+#define REG_PIO_ODR(n)			(*(volatile uint32_t *)(0x400E0E14U + 0x200U * n))
 /** PIO Controller n Output Status Register */
-#define REG_PIO_OSR(n)			(*(uint32_t *)(0x400E0E18U + 0x200U * n))
+#define REG_PIO_OSR(n)			(*(volatile uint32_t *)(0x400E0E18U + 0x200U * n))
 /** PIO Controller n Input Filter Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_IFER(n)			(*(uint32_t *)(0x400E0E20U + 0x200U * n))
+#define REG_PIO_IFER(n)			(*(volatile uint32_t *)(0x400E0E20U + 0x200U * n))
 /** PIO Controller A Input Filter Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_IFDR(n)			(*(uint32_t *)(0x400E0E24U + 0x200U * n))
+#define REG_PIO_IFDR(n)			(*(volatile uint32_t *)(0x400E0E24U + 0x200U * n))
 /** PIO Controller n Input Filter Status Register */
-#define REG_PIO_IFSR(n)			(*(uint32_t *)(0x400E0E28U + 0x200U * n))
+#define REG_PIO_IFSR(n)			(*(volatile uint32_t *)(0x400E0E28U + 0x200U * n))
 /** PIO Controller n Set Output Data Register */
-#define REG_PIO_SODR(n)			(*(uint32_t *)(0x400E0E30U + 0x200U * n))
+#define REG_PIO_SODR(n)			(*(volatile uint32_t *)(0x400E0E30U + 0x200U * n))
 /** PIO Controller n Clear Output Data Register */
-#define REG_PIO_CODR(n)			(*(uint32_t *)(0x400E0E34U + 0x200U * n))
+#define REG_PIO_CODR(n)			(*(volatile uint32_t *)(0x400E0E34U + 0x200U * n))
 /** PIO Controller n Output Data Status Register */
-#define REG_PIO_ODSR(n)			(*(uint32_t *)(0x400E0E38U + 0x200U * n))
+#define REG_PIO_ODSR(n)			(*(volatile uint32_t *)(0x400E0E38U + 0x200U * n))
 /** PIO Controller n Pin Data Status Register */
-#define REG_PIO_PDSR(n)			(*(uint32_t *)(0x400E0E3CU + 0x200U * n))
+#define REG_PIO_PDSR(n)			(*(volatile uint32_t *)(0x400E0E3CU + 0x200U * n))
 /** PIO Controller n Interrupt Enable Register */
-#define REG_PIO_IER(n)			(*(uint32_t *)(0x400E0E40U + 0x200U * n))
+#define REG_PIO_IER(n)			(*(volatile uint32_t *)(0x400E0E40U + 0x200U * n))
 /** PIO Controller n Interrupt Disable Register */
-#define REG_PIO_IDR(n)			(*(uint32_t *)(0x400E0E44U + 0x200U * n))
+#define REG_PIO_IDR(n)			(*(volatile uint32_t *)(0x400E0E44U + 0x200U * n))
 /** PIO Controller n Interrupt Mask Register */
-#define REG_PIO_IMR(n)			(*(uint32_t *)(0x400E0E48U + 0x200U * n))
+#define REG_PIO_IMR(n)			(*(volatile uint32_t *)(0x400E0E48U + 0x200U * n))
 /** PIO Controller n Interrupt Status Register */
-#define REG_PIO_ISR(n)			(*(uint32_t *)(0x400E0E4CU + 0x200U * n))
+#define REG_PIO_ISR(n)			(*(volatile uint32_t *)(0x400E0E4CU + 0x200U * n))
 /** PIO Controller n Multi-driver Enable Register */
-#define REG_PIO_MDER(n)			(*(uint32_t *)(0x400E0E50U + 0x200U * n))
+#define REG_PIO_MDER(n)			(*(volatile uint32_t *)(0x400E0E50U + 0x200U * n))
 /** PIO Controller n Multi-dtiver Disable Register */
-#define REG_PIO_MDDR(n)			(*(uint32_t *)(0x400E0E54U + 0x200U * n))
+#define REG_PIO_MDDR(n)			(*(volatile uint32_t *)(0x400E0E54U + 0x200U * n))
 /** PIO Controller n Multi-driver Status Register */
-#define REG_PIO_MDSR(n)			(*(uint32_t *)(0x400E0E58U + 0x200U * n))
+#define REG_PIO_MDSR(n)			(*(volatile uint32_t *)(0x400E0E58U + 0x200U * n))
 /** PIO Controller n Pull Up Disable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PUDR(n)			(*(uint32_t *)(0x400E0E60U + 0x200U * n))
+#define REG_PIO_PUDR(n)			(*(volatile uint32_t *)(0x400E0E60U + 0x200U * n))
 /** PIO Controller n Pull Up Enable Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_PUER(n)			(*(uint32_t *)(0x400E0E64U + 0x200U * n))
+#define REG_PIO_PUER(n)			(*(volatile uint32_t *)(0x400E0E64U + 0x200U * n))
 /** PIO Controller n Pull Up Status Register */
-#define REG_PIO_PUSR(n)			(*(uint32_t *)(0x400E0E68U + 0x200U * n))
+#define REG_PIO_PUSR(n)			(*(volatile uint32_t *)(0x400E0E68U + 0x200U * n))
 /** PIO Controller n Peripheral AB Select Register (requires `REG_PIO_WPMR` to be cleared) */
-#define REG_PIO_ABSR(n)			(*(uint32_t *)(0x400E0E70U + 0x200U * n))
+#define REG_PIO_ABSR(n)			(*(volatile uint32_t *)(0x400E0E70U + 0x200U * n))
 
 /* TODO: It's 3 am I really don't feel like doint the rest of these endless registers */
 
 /** PIO Controller n Write Protect Mode Register */
-#define REG_PIO_WPMR(n)			(*(uint32_t *)(0x400E0EE4U + 0x200U * n))
+#define REG_PIO_WPMR(n)			(*(volatile uint32_t *)(0x400E0EE4U + 0x200U * n))
 #define REG_PIO_WPMR_KEY		((uint32_t)0x50494FU << 8)
 #define REG_PIO_WPMR_WPEN_VAL(val)	((uint32_t)val | REG_PIO_WPMR_KEY)
 /** PIO Controller n Write Protect Status Register */
-#define REG_PIO_WPSR(n)			(*(uint32_t *)0x400E0EE8U + 0x200U * n)
+#define REG_PIO_WPSR(n)			(*(volatile uint32_t *)0x400E0EE8U + 0x200U * n)
 #define REG_PIO_WPSR_WPVSRC_MASK	((uint32_t)0x00FFFF00U)
 #define REG_PIO_WPSR_WPVSRC_VAL(val)	((val & REG_PIO_WPSR_WPVSRC_MASK) >> 8)
 #define REG_PIO_WPSR_WPVS_MASK		((uint32_t)1)
@@ -212,7 +212,7 @@ struct reg_snapshot {
  */
 
 /** UART Control Register */
-#define REG_UART_CR			(*(uint32_t *)0x400E0800U)
+#define REG_UART_CR			(*(volatile uint32_t *)0x400E0800U)
 /** UART Control Register Reset Status Bits bitmask (for `REG_UART_CR`) */
 #define REG_UART_CR_RSTSTA_MASK		((uint32_t)1 << 8)
 /** UART Control Register Transmitter Disable bitmaask (for `REG_UART_CR`) */
@@ -229,7 +229,7 @@ struct reg_snapshot {
 #define REG_UART_CR_RSTRX_MASK		((uint32_t)1 << 2)
 
 /** UART Mode Register */
-#define REG_UART_MR			(*(uint32_t *)0x400E0804U)
+#define REG_UART_MR			(*(volatile uint32_t *)0x400E0804U)
 /** UART Mode Register Channel Mode bitmask (for `REG_UART_MR`) */
 #define REG_UART_MR_CHMODE_MASK		((uint32_t)3 << 14)
 /** Mask and shift the value of `REG_UART_MR` to get `CHMODE` */
@@ -254,7 +254,7 @@ struct reg_snapshot {
 #define REG_UART_MR_PAR_NO		((uint32_t)4 << 9)
 
 /** UART Interrupt Enable Register */
-#define REG_UART_IER			(*(uint32_t *)0x400E0808U)
+#define REG_UART_IER			(*(volatile uint32_t *)0x400E0808U)
 /** UART IER Enable RXRDY Interrupt bitmask (for `REG_UART_IER`) */
 #define REG_UART_IER_RXRDY_MASK		((uint32_t)1 << 0)
 /** UART IER Enable TXRDY Interrupt bitmask (for `REG_UART_IER`) */
@@ -277,7 +277,7 @@ struct reg_snapshot {
 #define REG_UART_IER_RXBUFF_MASK	((uint32_t)1 << 12)
 
 /** UART Interrupt Disable Register */
-#define REG_UART_IDR			(*(uint32_t *)0x400E080CU)
+#define REG_UART_IDR			(*(volatile uint32_t *)0x400E080CU)
 /** UART IDR Disable RXRDY Interrupt bitmask (for `REG_UART_IDR`) */
 #define REG_UART_IDR_RXRDY_MASK		((uint32_t)1 << 0)
 /** UART IDR Disable TXRDY Interrupt bitmask (for `REG_UART_IDR`) */
@@ -300,7 +300,7 @@ struct reg_snapshot {
 #define REG_UART_IDR_RXBUFF_MASK	((uint32_t)1 << 12)
 
 /** UART Interrupt Mask Register */
-#define REG_UART_IMR			(*(uint32_t *)0x400E0810U)
+#define REG_UART_IMR			(*(volatile uint32_t *)0x400E0810U)
 /** UART IMR Mask RXRDY Interrupt bitmask (for `REG_UART_IMR`) */
 #define REG_UART_IMR_RXRDY_MASK		((uint32_t)1 << 0)
 /** UART IMR Mask TXRDY Interrupt bitmask (for `REG_UART_IMR`) */
@@ -323,7 +323,7 @@ struct reg_snapshot {
 #define REG_UART_IMR_RXBUFF_MASK	((uint32_t)1 << 12)
 
 /** UART Status Register */
-#define REG_UART_SR			(*(uint32_t *)0x400E0814U)
+#define REG_UART_SR			(*(volatile uint32_t *)0x400E0814U)
 /** UART SR Receiver Ready bitmask (for `REG_UART_SR`) */
 #define REG_UART_SR_RXRDY_MASK		((uint32_t)1 << 0)
 /** UART SR Transmitter Ready bitmask (for `REG_UART_SR`) */
@@ -346,63 +346,63 @@ struct reg_snapshot {
 #define REG_UART_SR_RXBUFF_MASK		((uint32_t)1 << 12)
 
 /** UART Receiver Holding Register */
-#define REG_UART_RHR			(*(uint8_t *)0x400E0818U)
+#define REG_UART_RHR			(*(volatile uint8_t *)0x400E0818U)
 /** UART Receiver Holding Register */
-#define REG_UART_THR			(*(uint8_t *)0x400E081CU)
+#define REG_UART_THR			(*(volatile uint8_t *)0x400E081CU)
 
 /** UART Baud Rate Generator Register */
-#define REG_UART_BRGR			(*(uint16_t *)0x400E0820U)
+#define REG_UART_BRGR			(*(volatile volatile uint16_t *)0x400E0820U)
 
 /* UART PDC Area */
 
 /** UART PDC Receive Pointer Register */
-#define REG_UART_PDC_RPR		(*(uint32_t *)0x400E0900U)
+#define REG_UART_PDC_RPR		(*(volatile uint32_t *)0x400E0900U)
 /** UART PDC Receive Counter Register */
-#define REG_UART_PDC_RCR		(*(uint16_t *)0x400E0904U)
+#define REG_UART_PDC_RCR		(*(volatile uint16_t *)0x400E0904U)
 /** UART PDC Transmit Pointer Register */
-#define REG_UART_PDC_TPR		(*(uint32_t *)0x400E0908U)
+#define REG_UART_PDC_TPR		(*(volatile uint32_t *)0x400E0908U)
 /** UART PDC Transmit Counter Register */
-#define REG_UART_PDC_TCR		(*(uint16_t *)0x400E090CU)
+#define REG_UART_PDC_TCR		(*(volatile uint16_t *)0x400E090CU)
 /** UART PDC Receive Next Pointer Register */
-#define REG_UART_PDC_RNPR		(*(uint32_t *)0x400E0910U)
+#define REG_UART_PDC_RNPR		(*(volatile uint32_t *)0x400E0910U)
 /** UART PDC Receive Next Counter Register */
-#define REG_UART_PDC_RNCR		(*(uint32_t *)0x400E0914U)
+#define REG_UART_PDC_RNCR		(*(volatile uint32_t *)0x400E0914U)
 /** UART PDC Transmit Next Pointer Register */
-#define REG_UART_PDC_TNPR		(*(uint32_t *)0x400E0918U)
+#define REG_UART_PDC_TNPR		(*(volatile uint32_t *)0x400E0918U)
 /** UART PDC Transmit Next Counter Register */
-#define REG_UART_PDC_TNCR		(*(uint32_t *)0x400E091CU)
+#define REG_UART_PDC_TNCR		(*(volatile uint32_t *)0x400E091CU)
 
 /** UART PDC Transfer Control Register */
-#define REG_UART_PDC_PTCR		(*(uint32_t *)0x400E0920U)
+#define REG_UART_PDC_PTCR		(*(volatile uint32_t *)0x400E0920U)
 #define REG_UART_PDC_PTCR_TXTDIS_MASK	((uint32_t)1 << 9)
 #define REG_UART_PDC_PTCR_TXTEN_MASK	((uint32_t)1 << 8)
 #define REG_UART_PDC_PTCR_RXTDIS_MASK	((uint32_t)1 << 1)
 #define REG_UART_PDC_PTCR_RXTEN_MASK	((uint32_t)1 << 0)
 
 /** UART PDC Transfer Status Register */
-#define REG_UART_PDC_PTSR		(*(uint32_t *)(0x400E0800U + 0x124C))
+#define REG_UART_PDC_PTSR		(*(volatile uint32_t *)(0x400E0800U + 0x124C))
 
 /*
  * Nested Vectored Interrupt Controller
  */
 
 /** NVIC Interrupt Set-Enable Registers (2 total) */
-#define REG_NVIC_ISER(n)		(((uint32_t *)0xE000E100U)[n])
+#define REG_NVIC_ISER(n)		(((volatile uint32_t *)0xE000E100U)[n])
 /** NVIC Interrupt Clear-Enable Registers (2 total) */
-#define REG_NVIC_ICER(n)		(((uint32_t *)0xE000E180U)[n])
+#define REG_NVIC_ICER(n)		(((volatile uint32_t *)0xE000E180U)[n])
 /** NVIC Interrupt Set-Pending Registers (2 total) */
-#define REG_NVIC_ISPR(n)		(((uint32_t *)0xE000E200U)[n])
+#define REG_NVIC_ISPR(n)		(((volatile uint32_t *)0xE000E200U)[n])
 /** NVIC Interrupt Clear-Pending Registers (2 total) */
-#define REG_NVIC_ICPR(n)		(((uint32_t *)0xE000E280U)[n])
+#define REG_NVIC_ICPR(n)		(((volatile uint32_t *)0xE000E280U)[n])
 /** NVIC Interrupt Active Bit Registers (2 total) */
-#define REG_NVIC_IABR(n)		(((uint32_t *)0xE000E300U)[n])
+#define REG_NVIC_IABR(n)		(((volatile uint32_t *)0xE000E300U)[n])
 /** NVIC Interrupt Priority Registers (8 total) */
-#define REG_NVIC_IPR(n)			((uint32_t *)0xE000E400U)[n])
+#define REG_NVIC_IPR(n)			((volatile uint32_t *)0xE000E400U)[n])
 /** NVIC Software Trigger Interrupt Register */
-#define REG_NVIC_STIR			(*(uint32_t *)0xE000EF00U)
+#define REG_NVIC_STIR			(*(volatile uint32_t *)0xE000EF00U)
 
 /** System Control Block: Interrupt Control and State Register */
-#define REG_SCB_ICSR			(*(uint32_t *)0xE000ED04U)
+#define REG_SCB_ICSR			(*(volatile uint32_t *)0xE000ED04U)
 /** ICSR PendSV set-pending bit bitmask */
 #define REG_SCB_ICSR_PENDSVSET_BIT	((uint32_t)1 << 28)
 /** ICSR PendSV clear-pending bit bitmask */
@@ -433,7 +433,7 @@ struct reg_snapshot {
  */
 
 /** Application Interrupt and Reset Control Register (AIRCR) */
-#define REG_SCB_AIRCR			(*(uint32_t *)0xE000ED0CU)
+#define REG_SCB_AIRCR			(*(volatile uint32_t *)0xE000ED0CU)
 #define REG_SCB_AIRCR_VECTKEY_MASK	((uint32_t)0xFFFF << 16)
 #define REG_SCB_AIRCR_VECTKEY_VAL(x) \
 	( ((uint32_t)(x) << 16) & REG_SCB_AIRCR_VECTKEY_MASK )
@@ -449,9 +449,9 @@ struct reg_snapshot {
  */
 
 /** EEFC 0 Flash Mode Register */
-#define REG_EEFC0_FMR		(*(uint32_t *)0x400E0A00U)
+#define REG_EEFC0_FMR		(*(volatile uint32_t *)0x400E0A00U)
 /** EEFC 1 Flash Mode Register */
-#define REG_EEFC1_FMR		(*(uint32_t *)0x400E0C00U)
+#define REG_EEFC1_FMR		(*(volatile uint32_t *)0x400E0C00U)
 /** EEFC Flash Access Mode bitmask */
 #define REG_EEFC_FAM_BIT	((uint32_t)1 << 24)
 /** EEFC Flash Wait State bitmask (number of cycles for read/write = FWS + 1) */
@@ -465,14 +465,14 @@ struct reg_snapshot {
  */
 
 /** Watchdog Timer Control Register */
-#define REG_WDT_CR			(*(uint32_t *)0x400E1A50U)
+#define REG_WDT_CR			(*(volatile uint32_t *)0x400E1A50U)
 /** Watchdog Timer magic */
 #define REG_WDT_CR_KEY			((uint32_t)0xA5U << 24)
 /** Watchdog Restart bit */
 #define REG_WDT_CR_WDRSTT_BIT		((uint32_t)1)
 
 /** Watchdog Timer Mode Register */
-#define REG_WDT_MR			(*(uint32_t *)0x400E1A54U)
+#define REG_WDT_MR			(*(volatile uint32_t *)0x400E1A54U)
 /** Watchdog Idle Halt bit */
 #define REG_WDT_MR_WDIDLEHLT_BIT	((uint32_t)1 << 29)
 /** Watchdog Debug Halt bit */
@@ -495,7 +495,7 @@ struct reg_snapshot {
 #define REG_WDT_MR_WDV_VAL(x)		( ((uint32_t)(x)) & REG_WDT_MR_WDV_MASK )
 
 /** Watchdog Timer Status Register */
-#define REG_WDT_SR			(*(uint32_t *)0x400E1A58U)
+#define REG_WDT_SR			(*(volatile uint32_t *)0x400E1A58U)
 /** Watchdog Error bit */
 #define REG_WDT_SR_WDERR_BIT		((uint32_t)1 << 1)
 /** Watchdog Underflow bit */
@@ -506,7 +506,7 @@ struct reg_snapshot {
  */
 
 /** PMC System Clock Enable Register */
-#define REG_PMC_SCER			(*(uint32_t *)0x400E0600U)
+#define REG_PMC_SCER			(*(volatile uint32_t *)0x400E0600U)
 /** PMC Programmable Clock 2 Output Enable bitmask (for `REG_PMC_SCER`) */
 #define REG_PMC_SCER_PCK2_BIT		((uint32_t)1 << 10)
 /** PMC Programmable Clock 1 Output Enable bitmask (for `REG_PMC_SCER`) */
@@ -517,7 +517,7 @@ struct reg_snapshot {
 #define REG_PMC_SCER_UOTGCLK_BIT	((uint32_t)1 << 5)
 
 /** PMC System Clock Disable Register */
-#define REG_PMC_SCDR			(*(uint32_t *)0x400E0604U)
+#define REG_PMC_SCDR			(*(volatile uint32_t *)0x400E0604U)
 /** PMC Programmable Clock 2 Output Disable bitmask (for `REG_PMC_SCDR`) */
 #define REG_PMC_SCDR_PCK2_BIT		((uint32_t)1 << 10)
 /** PMC Programmable Clock 1 Output Disable bitmask (for `REG_PMC_SCDR`) */
@@ -528,7 +528,7 @@ struct reg_snapshot {
 #define REG_PMC_SCDR_UOTGCLK_BIT	((uint32_t)1 << 5)
 
 /** PMC System Clock Status Register */
-#define REG_PMC_SCSR			(*(uint32_t *)0x400E0608U)
+#define REG_PMC_SCSR			(*(volatile uint32_t *)0x400E0608U)
 /** PMC Programmable Clock 2 Output Status bitmask */
 #define REG_PMC_SCSR_PCK2_BIT		((uint32_t)1 << 10)
 /** PMC Programmable Clock 1 Output Status bitmask */
@@ -539,29 +539,29 @@ struct reg_snapshot {
 #define REG_PMC_SCSR_UOTGCLK_BIT	((uint32_t)1 << 5)
 
 /** PMC Peripheral Clock Enable Register 0 */
-#define REG_PMC_PCER0			(*(uint32_t *)0x400E0610U)
+#define REG_PMC_PCER0			(*(volatile uint32_t *)0x400E0610U)
 /** PMC Peripheral Clock x Enable bitmask (2-31) */
 #define REG_PMC_PCER0_PID(x)		((uint32_t)1 << x)
 
 /** PMC Peripheral Clock Disable Register 0 */
-#define REG_PMC_PCDR0			(*(uint32_t *)0x400E0614U)
+#define REG_PMC_PCDR0			(*(volatile uint32_t *)0x400E0614U)
 /** PMC Peripheral Clock x Disable bitmask (2-31) */
 #define REG_PMC_PCDR0_PID(x)		((uint32_t)1 << x)
 
 /** PMC Peripheral Clock Status Register 0 */
-#define REG_PMC_PCSR0			(*(const uint32_t *)0x400E0618U)
+#define REG_PMC_PCSR0			(*(const volatile uint32_t *)0x400E0618U)
 /** PMC Peripheral Clock x Status bitmask (2-31) */
 #define REG_PMC_PCSR0_PID(x)		((uint32_t)1 << x)
 
 /** PMC UTMI Clock Configuration Register */
-#define REG_PMC_CKGR_UCKR			(*(uint32_t *)0x400E061CU)
+#define REG_PMC_CKGR_UCKR			(*(volatile uint32_t *)0x400E061CU)
 /** PMC UTMI PLL Start-Up Time bitmask (shifted 20 to the left) */
 #define REG_PMC_CKGR_UCKR_UPLLCOUNT_MASK	((uint32_t)0b1111 << 20)
 /** PMC UTMI PLL Enable bitmask */
 #define REG_PMC_CKGR_UCKR_UPLLEN_MASK		((uint32_t)1 << 16)
 
 /** PMC Clock Generator Main Oscillator Register */
-#define REG_CKGR_MOR			(*(uint32_t *)0x400E0620U)
+#define REG_CKGR_MOR			(*(volatile uint32_t *)0x400E0620U)
 /** PMC Clock Failure Detector Enable bitmask */
 #define REG_CKGR_MOR_CFDEN_BIT		((uint32_t)1 << 25)
 /** PMC Main Oscillator Selection bitmask */
@@ -587,14 +587,14 @@ struct reg_snapshot {
 #define REG_CKGR_MOR_MOSCXTEN_BIT	((uint32_t)1)
 
 /** PMC Clock Generator Main Clock Frequency Register */
-#define REG_CKGR_MCFR			(*(const uint32_t *)0x400E0624U)
+#define REG_CKGR_MCFR			(*(const volatile uint32_t *)0x400E0624U)
 /** PMC Main Clock Ready bitmask */
 #define REG_CKGR_MCFR_MAINFRDY_BIT	((uint32_t)1 << 16)
 /** PMC Main Clock Frequency bitmask (16-bit, equals amount of main clocks per 16 slow clocks) */
 #define REG_CKGR_MCFR_MAINF_MASK	((uint32_t)0xFFFF)
 
 /** PMC Clock Generator PLLA Register */
-#define REG_CKGR_PLLAR			(*(uint32_t *)0x400E0628U)
+#define REG_CKGR_PLLAR			(*(volatile uint32_t *)0x400E0628U)
 /** PMC Clock Generator: Must be set to one when writing to CKGR_PLLAR bitmask */
 #define REG_CKGR_PLLAR_ONE_BIT		((uint32_t)1 << 29)
 /** PMC PLLA Multiplier bitmask (<< 16, 11 bits) */
@@ -611,7 +611,7 @@ struct reg_snapshot {
 	((uint32_t)(x) & REG_CKGR_PLLAR_DIVA_MASK)
 
 /** PMC Master Clock Register */
-#define REG_PMC_MCKR			(*(uint32_t *)0x400E0630U)
+#define REG_PMC_MCKR			(*(volatile uint32_t *)0x400E0630U)
 /** PMC Master Clock UPLL Divisor by 2 bitmask */
 #define REG_PMC_MCKR_UPLLDIV2_BIT	((uint32_t)1 << 13)
 /** PMC Master Clock PLLA Divisor by 2 bitmask */
@@ -625,14 +625,14 @@ struct reg_snapshot {
 #define REG_PMC_MCKR_CSS_VAL(x)		((uint32_t)(x) & REG_PMC_MCKR_CSS_MASK)
 
 /** PMC USB Clock Register */
-#define REG_PMC_USB			(*(uint32_t *)0x400E0638U)
+#define REG_PMC_USB			(*(volatile uint32_t *)0x400E0638U)
 /** PMC USB Divider for USB Clock bitmask (<< 8, 8 bits) */
 #define REG_PMC_USB_USBDIV_MASK		((uint32_t)0xF << 8)
 /** PMC USB Input Clock Selection bitmask */
 #define REG_PMC_USB_USBS_MASK		((uint32_t)1)
 
 /** PMC Programmable Clock Register */
-#define REG_PMC_PCKx			(*(uint32_t *)0x400E0640U)
+#define REG_PMC_PCKx			(*(volatile uint32_t *)0x400E0640U)
 /** PMC Programmable Clock Prescaler bitmask (<< 4, 3 bits) */
 #define REG_PMC_PCKx_PRES_MASK		((uint32_t)0x7 << 4)
 #define REG_PMC_PCKx_PRES_VAL(x) \
@@ -642,7 +642,7 @@ struct reg_snapshot {
 #define REG_PMC_PCKx_CSS_VAL(x)		((uint32_t)(x) & REG_PMC_PCKx_CSS_MASK)
 
 /** PMC Interrupt Enable Register */
-#define REG_PMC_IER			(*(uint32_t *)0x400E0660U)
+#define REG_PMC_IER			(*(volatile uint32_t *)0x400E0660U)
 /** PMC Clock Failure Detector Event Interrupt Enable bitmask */
 #define REG_PMC_IER_CFDEV_BIT		((uint32_t)1 << 18)
 /** PMC Main On-Chip RC Status Interrupt Enable bitmask */
@@ -665,7 +665,7 @@ struct reg_snapshot {
 #define REG_PMC_IER_MOSCXTS_BIT		((uint32_t)1)
 
 /** PMC Interrupt Disable Register */
-#define REG_PMC_IDR			(*(uint32_t *)0x400E0664U)
+#define REG_PMC_IDR			(*(volatile uint32_t *)0x400E0664U)
 /** PMC Clock Failure Detector Event Interrupt Disable bitmask */
 #define REG_PMC_IDR_CFDEV_BIT		((uint32_t)1 << 18)
 /** PMC Main On-Chip RC Status Interrupt Disable bitmask */
@@ -688,7 +688,7 @@ struct reg_snapshot {
 #define REG_PMC_IDR_MOSCXTS_BIT		((uint32_t)1)
 
 /** PMC Status Register */
-#define REG_PMC_SR			(*(const uint32_t *)0x400E0668U)
+#define REG_PMC_SR			(*(const volatile uint32_t *)0x400E0668U)
 /** PMC Clock Failure Detector Event bitmask */
 #define REG_PMC_SR_CFDEV_BIT		((uint32_t)1 << 18)
 /** PMC Main On-Chip RC Oscillator Status bitmask */
@@ -711,7 +711,7 @@ struct reg_snapshot {
 #define REG_PMC_SR_MOSCXTS_BIT		((uint32_t)1)
 
 /** PMC Interrupt Mask Register */
-#define REG_PMC_IMR			(*(const uint32_t *)0x400E066CU)
+#define REG_PMC_IMR			(*(const volatile uint32_t *)0x400E066CU)
 /** PMC Clock Failure Detector Event Interrupt Mask bitmask */
 #define REG_PMC_IMR_CFDEV_BIT		((uint32_t)1 << 18)
 /** PMC Main On-Chip RC Status Interrupt Mask bitmask */
@@ -736,12 +736,12 @@ struct reg_snapshot {
 /* TODO */
 
 /** PMC Write Protect Mode Register */
-#define REG_PMC_WPMR			(*(uint32_t *)0x400E06E4U)
+#define REG_PMC_WPMR			(*(volatile uint32_t *)0x400E06E4U)
 #define REG_PMC_WPMR_WPKEY_MAGIC	(0x504D43 << 8) /* "PMC" in ASCII */
 #define REG_PMC_WPMR_WPEN_VAL(x)	((uint32_t)(x) | REG_PMC_WPMR_WPKEY_MAGIC)
 
 /** PMC Write Protect Status Register */
-#define REG_PMC_WPSR			(*(uint32_t *)0x400E06E8U)
+#define REG_PMC_WPSR			(*(volatile uint32_t *)0x400E06E8U)
 /** PMC Write Protect Violation Status bitmask */
 #define REG_PMC_WPSR_WPVSRC_MASK	((uint32_t)0xFFFF << 8)
 /** PMC Write Protect Violation Status bitmask (<< 8, 16 bits) */
