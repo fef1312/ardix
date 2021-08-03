@@ -1,48 +1,7 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/hardware.h>
-#include <arch/interrupt.h>
-#include <arch-generic/hardware.h>
-
-#include <ardix/malloc.h>
-
 #include <stddef.h>
-#include <stdint.h>
-#include <string.h>
 #include <toolchain.h>
-
-/* from flash.ld */
-extern uint32_t _sfixed;	/* fixed area start */
-extern uint32_t _efixed;	/* fixed area end */
-extern uint32_t _etext;		/* program (.text) end */
-extern uint32_t _srelocate;	/* relocate (.data) start */
-extern uint32_t _erelocate;	/* relocate end */
-extern uint32_t _szero;		/* zero area (.bss) start */
-extern uint32_t _ezero;		/* zero area end */
-extern uint32_t _sstack;	/* stack start */
-extern uint32_t _estack;	/* stack end */
-extern uint32_t _sheap;		/* heap start */
-extern uint32_t _eheap;		/* heap end */
-
-/* implementation in init/main.c */
-extern int main(void);
-
-__naked __noreturn void handle_reset(void)
-{
-	sys_init();
-
-	memmove(&_srelocate, &_etext, (size_t)(&_erelocate) - (size_t)(&_srelocate));
-	memset(&_szero, 0, (size_t)(&_ezero) - (size_t)(&_szero));
-
-	/* There is no userspace yet, so the Kernel gets the entire heap for now */
-	malloc_init(&_sheap, (size_t)(&_eheap) - (size_t)(&_sheap));
-
-	/* start the Kernel */
-	main();
-
-	/* halt (this should never be reached) */
-	while (1);
-}
 
 /**
  * Default handler for unimplemented interrupts.
@@ -53,6 +12,7 @@ void _stub_handler(void)
 	while (1);
 }
 
+void handle_reset(void)		__weak __alias(_stub_handler);
 void handle_nmi(void)		__weak __alias(_stub_handler);
 void handle_hard_fault(void)	__weak __alias(_stub_handler);
 void handle_mm_fault(void)	__weak __alias(_stub_handler);
@@ -104,6 +64,8 @@ void irq_trng(void)	__weak __alias(_stub_handler);
 void irq_emac(void)	__weak __alias(_stub_handler);
 void irq_can0(void)	__weak __alias(_stub_handler);
 void irq_can1(void)	__weak __alias(_stub_handler);
+
+extern uint32_t _estack;
 
 __section(.vectors) const void *exception_table[] = {
 	&_estack,		/* initial SP value (stack grows down) */
@@ -172,7 +134,7 @@ __section(.vectors) const void *exception_table[] = {
 
 /*
  * This file is part of Ardix.
- * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
+ * Copyright (c) 2021 Felix Kopp <owo@fef.moe>.
  *
  * Ardix is non-violent software: you may only use, redistribute,
  * and/or modify it under the terms of the CNPLv6+ as found in

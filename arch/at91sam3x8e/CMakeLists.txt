@@ -19,14 +19,15 @@ target_sources(ardix_arch PRIVATE
 	handle_fault.c
 	handle_fault.S
 	handle_pend_sv.S
+	handle_reset.c
 	handle_svc.S
 	interrupt.c
 	mutex.S
 	sched.c
 	serial.c
-	startup.c
 	sys.c
 	syscall.S
+	vector_table.c
 	watchdog.c
 )
 

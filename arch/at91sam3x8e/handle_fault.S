@@ -1,9 +1,5 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-/*
- * See arch_handle_fault()
- */
-
 .include "asm.S"
 
 .text
@@ -14,28 +10,28 @@
 func_begin handle_hard_fault
 	push	{r4-r11,lr}
 	mov	r0,	sp
-	mov	r1,	#0xfffffff3	/* -13 */
+	mov	r1,	#-13		/* IRQNO_HARD_FAULT */
 	b	arch_handle_fault
 func_end handle_hard_fault
 
 func_begin handle_mm_fault
 	push	{r4-r11,lr}
 	mov	r0,	sp
-	mov	r1,	#0xfffffff4	/* -12 */
+	mov	r1,	#-12		/* IRQNO_MM_FAULT */
 	b	arch_handle_fault
 func_end handle_mm_fault
 
 func_begin handle_bus_fault
 	push	{r4-r11,lr}
 	mov	r0,	sp
-	mov	r1,	#0xfffffff5	/* -11 */
+	mov	r1,	#-11		/* IRQNO_BUS_FAULT */
 	b	arch_handle_fault
 func_end handle_bus_fault
 
 func_begin handle_usage_fault
 	push	{r4-r11,lr}
 	mov	r0,	sp
-	mov	r1,	#0xfffffff6	/* -10 */
+	mov	r1,	#-10		/* IRQNO_USAGE_FAULT */
 	b	arch_handle_fault
 func_end handle_usage_fault
 
