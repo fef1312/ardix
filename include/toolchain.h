@@ -11,20 +11,25 @@
  * Force a method to always be inlined by the compiler.
  * Do not use this for functions exceeding one or two lines.
  */
-#define __always_inline inline __attribute__((always_inline))
+#define __always_inline inline __attribute__(( always_inline ))
 #endif /* __always_inline */
 
 #ifndef __naked
 /** Function attribute for disabling register saving. */
-#define __naked __attribute__((naked))
+#define __naked __attribute__(( naked ))
 #endif
+
+#ifndef __noreturn
+/** Function attribute denoting the call will never return. */
+#define __noreturn __attribute__(( noreturn ))
+#endif /* __noreturn */
 
 #ifndef __weak
 /**
  * Add the `weak` attribute to a symbol.
  * This allows that identifier to be re-declared without any warnings.
  */
-#define __weak __attribute__((__weak__))
+#define __weak __attribute__(( weak ))
 #endif /* __weak */
 
 #ifndef __alias

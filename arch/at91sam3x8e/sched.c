@@ -9,10 +9,10 @@
 
 #include <string.h>
 
-void irq_sys_tick(void)
+void handle_sys_tick(void)
 {
 	/*
-	 * fire a PendSV interrupt and do the actual context switching there
+	 * fire a PendSV exception and do the actual context switching there
 	 * because it is faster that way (according to the docs, at least)
 	 */
 	if (!is_atomic_context())
@@ -68,7 +68,7 @@ void arch_sched_task_init(struct task *task, void (*entry)(void))
 
 void yield(enum task_state state)
 {
-	REG_SYSTICK_VAL = 0U; /* Reset timer */
+	REG_SYSTICK_VAL = 0U; /* Reset timer (TODO: don't do this lmao) */
 	current->state = state;
 	arch_irq_invoke(IRQNO_PEND_SV);
 }

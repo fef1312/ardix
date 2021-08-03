@@ -16,9 +16,11 @@ target_sources(ardix_arch PRIVATE
 	atom.c
 	atomic.c
 	entry.c
+	handle_fault.c
+	handle_fault.S
+	handle_pend_sv.S
+	handle_svc.S
 	interrupt.c
-	irq_pend_sv.S
-	irq_svc.S
 	mutex.S
 	sched.c
 	serial.c

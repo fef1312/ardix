@@ -6,8 +6,8 @@
 
 .extern arch_enter
 
-/* void irq_svc(void); */
-func_begin irq_svc
+/* void handle_svc(void); */
+func_begin handle_svc
 	/*
 	 * Syscalls on Cortex-M use the following parameter calling convention:
 	 *
@@ -34,7 +34,7 @@ func_begin irq_svc
 
 	bx	lr
 
-func_end irq_svc
+func_end handle_svc
 
 /*
  * This file is part of Ardix.

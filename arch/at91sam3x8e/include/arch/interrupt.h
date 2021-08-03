@@ -2,26 +2,26 @@
 
 #pragma once
 
-/** Reset interrupt handler */
-void irq_reset(void);
+/** Reset exception handler */
+void handle_reset(void);
 /** Non-maskable interrupt handler */
-void irq_nmi(void);
-/** Hard fault inerrupt handler */
-void irq_hard_fault(void);
-/** Memory management fault interrupt handler */
-void irq_mem_fault(void);
-/** Bus fault interrupt handler */
-void irq_bus_fault(void);
-/** Usage fault (illegal instruction) interrupt handler */
-void irq_usage_fault(void);
-/** SVC interrupt handler */
-void irq_svc(void);
+void handle_nmi(void);
+/** Hard fault exception handler */
+void handle_hard_fault(void);
+/** Memory management fault exception handler */
+void handle_mem_fault(void);
+/** Bus fault exception handler */
+void handle_bus_fault(void);
+/** Usage fault exception handler */
+void handle_usage_fault(void);
+/** SVC exception handler */
+void handle_svc(void);
 /** Debug handler (reserved) */
-void irq_debug_mon(void);
-/** Pending SV interrupt handler */
-void irq_pend_sv(void);
-/** SysTick interrupt handler */
-void irq_sys_tick(void);
+void handle_debug_mon(void);
+/** PendSV interrupt handler */
+void handle_pend_sv(void);
+/** SysTick exception handler */
+void handle_sys_tick(void);
 
 /** Supply Controller (0) interrupt handler */
 void irq_supc(void);
@@ -107,11 +107,14 @@ void irq_can0(void);
 void irq_can1(void);
 
 /**
- * Interrupt numbers for sam3x8e
+ * @brief IRQ numbers for sam3x8e.
+ *
+ * Like CMSIS, we treat other exceptions basically the same as IRQs.
  */
 enum irqno {
 	IRQNO_NMI		= -14,
-	IRQNO_MEM_FAULT		= -12,
+	IRQNO_HARD_FAULT	= -13,
+	IRQNO_MM_FAULT		= -12,
 	IRQNO_BUS_FAULT		= -11,
 	IRQNO_USAGE_FAULT	= -10,
 	IRQNO_SVC_CALL		= -5,

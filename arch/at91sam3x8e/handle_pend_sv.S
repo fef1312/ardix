@@ -6,8 +6,8 @@
 
 .extern sched_process_switch
 
-/* void irq_pend_sv(void); */
-func_begin irq_pend_sv
+/* void handle_pend_sv(void); */
+func_begin handle_pend_sv
 	/*
 	 * Some registers have already been saved by hardware at this point,
 	 * we only need to take care of r4-r11 and lr (the latter of which is
@@ -40,7 +40,7 @@ func_begin irq_pend_sv
 
 	bx	lr
 
-func_end irq_pend_sv
+func_end handle_pend_sv
 
 /*
  * This file is part of Ardix.
