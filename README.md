@@ -2,7 +2,8 @@
 
 This is the source tree of Ardix, a microkernel for various Arduino boards that implements some core
 concepts of the Unix philosophy.  Please note that this project is not affiliated with or endorsed
-by Arduino s.r.l. in any way.  Only ARM-based boards are supported at the moment.
+by Arduino s.r.l. in any way.  Only ARM-based boards are supported at the moment (and probably ever
+will be, because AVR MCUs just don't have enough horsepower).
 
 ## License
 
