@@ -8,11 +8,14 @@
 #include <string.h>
 #include <toolchain.h>
 
-/*
- * Stupid memory allocator implementation.
+/**
+ * @file Stupid memory allocator.
  *
  * This design is heavily inspired by (read: stolen from) Doug Lea's Malloc
- * <http://gee.cs.oswego.edu/dl/html/malloc.html>.  It basically works like this:
+ * <http://gee.cs.oswego.edu/dl/html/malloc.html>, with some features (notably binning)
+ * removed for the sake of simplicity.  Furthermore, as the MPU is not implemented yet,
+ * the allocator uses one big heap for all processes including the kernel.  We also
+ * don't have virtual memory and therefore no wilderness chunk to take care of.
  *
  * Memory is divided into individual blocks of dynamic size.  Every block has a header
  * containing its size w/out overhead; free blocks additionally have a
@@ -30,21 +33,23 @@
  * On 32-bit systems, a free block in memory followed by an allocated one might look
  * something along the lines of this:
  *
+ * ~~~{.txt}
  * -----------------------------------------------------------------------------
- * 0x20010000 | usable size in bytes (238)
- * 0x20010004 | ptr to next-smaller free block    \
- * 0x20010008 | ptr to next-bigger free block     | Usable memory area.  If this
+ * 0x20010000 | usable size in bytes (236)
+ * 0x20010004 | ptr to next smaller free block    \
+ * 0x20010008 | ptr to next bigger free block     | Usable memory area.  If this
  *      :     |                                   | was allocated, the returned
  *      :     |     <unused garbage data>         | ptr would be 0x20010004.
  *      :     |                                   /
- * 0x200100EE | usable size in bytes (238)
+ * 0x200100EC | usable size in bytes (236)
  * -----------------------------------------------------------------------------
- * 0x200100F2 | usable size in bytes (32) + 1 for the "used" bit
+ * 0x200100F0 | usable size in bytes (32) + 1 for the "used" bit
  *      :     |                                                    \
- *      :     |      <user-defined data>                           | 32 bytes
+ *      :     |      <user data>                                   | 32 bytes
  *      :     |                                                    /
- * 0x20010112 | usable size in bytes (32 + 1)
+ * 0x20010110 | usable size in bytes (32 + 1)
  * -----------------------------------------------------------------------------
+ * ~~~
  *
  * That makes the minimal allocation size `sizeof(struct list_head *)`, because we need to
  * store those pointers for the linked list when `free()`ing a block.
@@ -87,6 +92,10 @@ struct memblk {
 /** The list of free blocks, ordered by ascending size. */
 LIST_HEAD(memblk_free_list);
 
+size_t malloc_bytes_free;
+size_t malloc_bytes_used = MEMBLK_OVERHEAD;
+size_t malloc_bytes_overhead = MEMBLK_OVERHEAD;
+
 static void memblk_set_size(struct memblk *block, size_t size)
 {
 	block->size = size;
@@ -113,6 +122,7 @@ static struct memblk *memblk_split(struct memblk *blk, size_t size)
 
 	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - (size & ~1u));
 	memblk_set_size(blk, size);
+	malloc_bytes_overhead += MEMBLK_OVERHEAD;
 
 	list_for_each_entry_reverse(&blk->list, cursor, list) {
 		if (cursor->size >= newblk->size || &cursor->list == &memblk_free_list) {
@@ -127,6 +137,7 @@ static struct memblk *memblk_split(struct memblk *blk, size_t size)
 void malloc_init(void *heap, size_t size)
 {
 	struct memblk *blk = heap;
+	malloc_bytes_free = size - MEMBLK_OVERHEAD;
 
 	/*
 	 * TODO: This check will prevent accidentally calling the method twice, but should
@@ -140,7 +151,6 @@ void malloc_init(void *heap, size_t size)
 	}
 }
 
-__shared __attribute__((malloc))
 void *malloc(size_t size)
 {
 	struct memblk *blk;
@@ -183,19 +193,27 @@ void *malloc(size_t size)
 
 	list_delete(&blk->list);
 
+	malloc_bytes_free -= size + MEMBLK_OVERHEAD;
+	malloc_bytes_used += size + MEMBLK_OVERHEAD;
+
 	atomic_leave();
 
 	/* Keep the size field intact */
 	return ((void *)blk) + MEMBLK_SIZE_LENGTH;
 }
 
-__shared __attribute__((malloc))
 void *calloc(size_t nmemb, size_t size)
 {
-	void *ptr = malloc(nmemb * size);
+	size_t total = nmemb * size;
+
+	/* check for overflow as mandated by POSIX */
+	if (size != 0 && total / size != nmemb)
+		return NULL;
+
+	void *ptr = malloc(total);
 
 	if (ptr != NULL)
-		memset(ptr, 0, nmemb * size);
+		memset(ptr, 0, total);
 
 	return ptr;
 }
@@ -206,9 +224,9 @@ static void memblk_merge(struct memblk *lblk, struct memblk *hblk)
 	size_t *endsz = (void *)hblk + hblk->size + MEMBLK_SIZE_LENGTH;
 	lblk->size = lblk->size + hblk->size + MEMBLK_OVERHEAD;
 	*endsz = lblk->size;
+	malloc_bytes_overhead -= MEMBLK_OVERHEAD;
 }
 
-__shared
 void free(void *ptr)
 {
 	struct memblk *tmp;
@@ -224,6 +242,9 @@ void free(void *ptr)
 	atomic_enter();
 
 	memblk_set_size(blk, blk->size & ~1u);
+
+	malloc_bytes_free += blk->size + MEMBLK_OVERHEAD;
+	malloc_bytes_used -= blk->size + MEMBLK_OVERHEAD;
 
 	/* check if our higher/right neighbor is allocated and merge if it is not */
 	neighsz = (void *)blk + MEMBLK_OVERHEAD + blk->size;

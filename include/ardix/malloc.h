@@ -6,42 +6,40 @@
 #include <toolchain.h>
 
 /**
- * Allocate `size` bytes of memory *w/out initializing it*.
+ * @defgroup malloc Memory Management
+ *
+ * @{
+ */
+
+/**
+ * @brief Allocate `size` bytes of memory *w/out initializing it*.
  *
  * @param size The amount of bytes to allocate.
  * @return A pointer to the beginning of the memory area, or `NULL` if
  *	`size` was 0 or there is not enough free memory left.
  */
-void *malloc(size_t size);
+__shared __malloc(free, 1) void *malloc(size_t size);
 
 /**
- * Allocate an array and initialize the memory to zeroes.
+ * @brief Allocate an array and initialize the memory to zeroes.
+ * The allocated size will be at least `nmemb * size`.
+ * If the multiplication would overflow, the allocation fails.
  *
  * @param nmemb The amount of members.
  * @param size The size of an individual member.
- * @return A pointer to the zeroed-out memory, or `NULL` of `ENOMEM`.
+ * @return A pointer to the zeroed-out memory, or `NULL` if OOM.
  */
-void *calloc(size_t nmemb, size_t size);
+__shared __malloc(free, 1) void *calloc(size_t nmemb, size_t size);
 
 /**
- * Allocate at least `size` bytes of memory and initialize it to zero.
- *
- * @param size The amount of bytes to allocate.
- * @return A pointer to the beginning of the memory area, or `NULL` if
- *	`size` was 0 or there is not enough free memory left.
- */
-__always_inline void *zalloc(size_t size)
-{
-	return calloc(1, size);
-}
-
-/**
- * Free a previously allocated memory region.
+ * @brief Free a previously allocated memory region.
  * Passing `NULL` has no effect.
  *
  * @param ptr The pointer, as returned by `malloc`/`calloc`.
  */
-void free(void *ptr);
+__shared void free(void *ptr);
+
+/** @} */
 
 /** Initialize the memory allocator, this is only called by the Kernel on early bootstrap. */
 void malloc_init(void *heap, size_t size);
