@@ -153,6 +153,8 @@ void irq_uart(void)
 		/* TODO: write some proper error handling routines ffs */
 		REG_UART_CR = REG_UART_CR_RSTSTA_MASK;
 	}
+
+	__clrex();
 }
 
 /*

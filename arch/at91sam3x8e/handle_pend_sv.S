@@ -38,6 +38,8 @@ func_begin handle_pend_sv
 
 	pop	{r4-r11,lr}
 
+	clrex
+
 	bx	lr
 
 func_end handle_pend_sv

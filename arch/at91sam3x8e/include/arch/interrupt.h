@@ -2,6 +2,14 @@
 
 #pragma once
 
+#include <toolchain.h>
+
+/** @brief Make the next `STREX` fail (invoke before leaving an irq). */
+__always_inline void __clrex(void)
+{
+	__asm__ volatile( "\tclrex\n" ::: );
+}
+
 /** Reset exception handler */
 void handle_reset(void);
 /** Non-maskable interrupt handler */
