@@ -18,6 +18,8 @@ extern uint32_t _estack;
 static struct task *tasktab[CONFIG_SCHED_MAXTASK];
 struct task *current;
 
+static struct task idle_task;
+
 static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
@@ -36,27 +38,35 @@ int sched_init(void)
 	current->kent.parent = kent_root;
 	current->kent.destroy = task_destroy;
 	i = kent_init(&current->kent);
-	if (i == 0) {
-		current->sp = &_sstack;
-		current->stack_bottom = &_estack;
-		current->pid = 0;
-		current->state = TASK_READY;
-		tasktab[0] = current;
+	if (i != 0)
+		goto out;
 
-		for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
-			tasktab[i] = NULL;
+	current->sp = &_sstack;
+	current->stack_bottom = &_estack;
+	current->pid = 0;
+	current->state = TASK_READY;
+	tasktab[0] = current;
 
-		i = arch_watchdog_init();
+	for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
+		tasktab[i] = NULL;
 
-		if (i == 0)
-			i = arch_sched_hwtimer_init(CONFIG_SCHED_FREQ);
-	}
+	i = arch_watchdog_init();
+	if (i != 0)
+		goto out;
+
+	i = arch_sched_hwtimer_init(CONFIG_SCHED_FREQ);
+	if (i != 0)
+		goto out;
+
+	i = arch_idle_task_init(&idle_task);
+	if (i != 0)
+		goto out;
 
 	/*
 	 * we don't really need to deallocate resources on error because we
 	 * are going to panic anyways if the scheduler fails to initialize.
 	 */
-
+out:
 	return i;
 }
 
@@ -66,36 +76,35 @@ int sched_init(void)
  * @param task: the task
  * @returns whether `task` could be run next
  */
-static inline bool sched_task_should_run(const struct task *task)
+static inline bool can_run(const struct task *task)
 {
 	enum task_state state = task->state;
-
-	if (state == TASK_QUEUE || state == TASK_READY || state == TASK_IOWAIT)
-		return true;
-
-	return false;
+	return state == TASK_QUEUE || state == TASK_READY;
 }
 
 void *sched_process_switch(void *curr_sp)
 {
 	struct task *tmp;
+	int i;
 	pid_t nextpid = current->pid;
 	current->sp = curr_sp;
 
 	if (current->state != TASK_SLEEP && current->state != TASK_IOWAIT)
 		current->state = TASK_QUEUE;
 
-	while (1) {
+	for (i = 0; i < CONFIG_SCHED_MAXTASK; i++) {
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
 
 		tmp = tasktab[nextpid];
-		if (tmp != NULL && sched_task_should_run(tmp)) {
+		if (tmp != NULL && can_run(tmp)) {
 			current = tmp;
 			break;
 		}
-		/* TODO: Add idle thread */
 	}
+
+	if (i == CONFIG_SCHED_MAXTASK)
+		current = &idle_task;
 
 	current->state = TASK_READY;
 	return current->sp;

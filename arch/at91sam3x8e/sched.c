@@ -5,15 +5,17 @@
 #include <arch/interrupt.h>
 
 #include <ardix/atomic.h>
+#include <ardix/malloc.h>
 #include <ardix/sched.h>
 
+#include <errno.h>
 #include <string.h>
 
 void handle_sys_tick(void)
 {
 	/*
 	 * fire a PendSV exception and do the actual context switching there
-	 * because it is faster that way (according to the docs, at least)
+	 * because the docs say you're supposed to do it that way
 	 */
 	if (!is_atomic_context())
 		arch_irq_invoke(IRQNO_PEND_SV);
@@ -55,7 +57,7 @@ int arch_sched_hwtimer_init(unsigned int freq)
 	return 0;
 }
 
-void arch_sched_task_init(struct task *task, void (*entry)(void))
+void arch_task_init(struct task *task, void (*entry)(void))
 {
 	struct reg_snapshot *regs = task->stack_bottom - sizeof(*regs);
 	task->sp = regs;
@@ -71,6 +73,29 @@ void yield(enum task_state state)
 	REG_SYSTICK_VAL = 0U; /* Reset timer (TODO: don't do this lmao) */
 	current->state = state;
 	arch_irq_invoke(IRQNO_PEND_SV);
+}
+
+__naked __noreturn static void idle_task_entry(void)
+{
+	__asm__ volatile(
+"1:	b	1b	\n"
+	:::
+	);
+}
+
+int arch_idle_task_init(struct task *task)
+{
+	void *sp = malloc(sizeof(struct reg_snapshot));
+	if (sp == NULL)
+		return -ENOMEM;
+
+	task->stack_bottom = sp + sizeof(struct reg_snapshot);
+	arch_task_init(task, idle_task_entry);
+	task->lastexec = 0;
+	task->sleep_usecs = 0;
+	task->state = TASK_READY;
+	task->pid = -1;
+	return 0;
 }
 
 /*

@@ -6,7 +6,7 @@
 
 #include <toolchain.h>
 
-struct process; /* see include/ardix/sched.h */
+struct task; /* see include/ardix/sched.h */
 
 /**
  * Initialize a hardware timer for schduling.
@@ -23,7 +23,9 @@ int arch_sched_hwtimer_init(unsigned int freq);
  * @param process: The process.
  * @param entry: The process entry point.
  */
-void arch_sched_process_init(struct process *process, void (*entry)(void));
+void arch_task_init(struct task *task, void (*entry)(void));
+
+int arch_idle_task_init(struct task *task);
 
 /*
  * This file is part of Ardix.
