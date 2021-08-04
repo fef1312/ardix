@@ -4,6 +4,7 @@
 
 #include <ardix/io.h>
 #include <ardix/kent.h>
+#include <ardix/kevent.h>
 #include <ardix/sched.h>
 
 #include <stdbool.h>
@@ -27,16 +28,14 @@
  */
 int main(void)
 {
-	uint32_t count = 0;
-	unsigned int print_count = 0;
-
-	REG_PIOB_OER = 1 << 27;
-	REG_PIOB_PER = 1 << 27;
-	REG_PIOB_CODR = 1 << 27;
+	volatile uint32_t count = 0;
+	volatile unsigned int print_count = 0;
 
 	int err = kent_root_init();
 	if (err != 0)
 		return err;
+
+	kevents_init();
 
 	err = sched_init();
 	if (err != 0)
@@ -50,11 +49,17 @@ int main(void)
 	if (err != 0)
 		return err;
 
+	/* we should have a serial console now */
+
+	REG_PIOB_OER = 1 << 27;
+	REG_PIOB_PER = 1 << 27;
+	REG_PIOB_CODR = 1 << 27;
+
 	while (true) {
 		if (count++ != 1000000)
 			continue;
 
-		printf("hello, world (%u)!\n", print_count);
+		printf("hello, world (%u)\n", print_count);
 
 		print_count++;
 		if (print_count % 2)
