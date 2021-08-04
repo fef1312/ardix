@@ -31,19 +31,12 @@ static struct kevent_queue kev_queues[KEVENT_KIND_COUNT];
 
 /**
  * irqs cannot sleep or block, so we can only *try* to claim the lock on
- * an event queue when dispatching an event.  If this fails (which shouldn't
+ * an event queue when dispatching an event.  If this fails (which should
  * happen only rarely), we store the event in this (unsorted) pile and sort them
- * out before processing the event queue.  We technically need a lock for this
- * queue as well, but that's okay because we don't
+ * out before processing the event queue.
  */
 LIST_HEAD(kev_cache);
 MUTEX(kev_cache_lock);
-
-struct kevent_listener {
-	struct list_head link;	/* -> kevent_queue::list */
-	void *extra;
-	int (*cb)(struct kevent *event, void *extra);
-};
 
 void kevents_init(void)
 {
@@ -71,7 +64,13 @@ static inline void process_single_queue(struct kevent_queue *queue, struct list_
 
 			list_for_each_entry(listeners, listener, link) {
 				int cb_ret = listener->cb(event, listener->extra);
-				if (cb_ret != 0)
+
+				if (cb_ret & KEVENT_CB_LISTENER_DEL) {
+					list_delete(&listener->link);
+					free(listener);
+				}
+
+				if (cb_ret & KEVENT_CB_STOP)
 					break;
 			}
 
@@ -149,36 +148,31 @@ void kevent_dispatch(struct kevent *event)
 	}
 }
 
-int kevent_add_listener(enum kevent_kind kind, int (*cb)(struct kevent *, void *), void *extra)
+struct kevent_listener *kevent_listener_add(enum kevent_kind kind,
+					    int (*cb)(struct kevent *, void *),
+					    void *extra)
 {
 	struct kevent_listener *listener = malloc(sizeof(*listener));
-	if (listener == NULL)
-		return -ENOMEM;
 
-	listener->cb = cb;
-	listener->extra = extra;
+	if (listener != NULL) {
+		listener->cb = cb;
+		listener->extra = extra;
 
-	mutex_lock(&kev_listeners_lock);
-	list_insert(&kev_listeners[kind], &listener->link);
-	mutex_unlock(&kev_listeners_lock);
+		mutex_lock(&kev_listeners_lock);
+		list_insert(&kev_listeners[kind], &listener->link);
+		mutex_unlock(&kev_listeners_lock);
+	}
 
-	return 0;
+	return listener;
 }
 
-void kevent_remove_listener(enum kevent_kind kind, int (*cb)(struct kevent *, void *))
+void kevent_listener_del(struct kevent_listener *listener)
 {
-	struct kevent_listener *listener, *tmp;
+	mutex_lock(&kev_listeners_lock);
+	list_delete(&listener->link);
+	mutex_unlock(&kev_listeners_lock);
 
-	list_for_each_entry_safe(&kev_listeners[kind], listener, tmp, link) {
-		if (listener->cb == cb) {
-			mutex_lock(&kev_listeners_lock);
-			list_delete(&listener->link);
-			mutex_unlock(&kev_listeners_lock);
-
-			free(listener);
-			break;
-		}
-	}
+	free(listener);
 }
 
 /*

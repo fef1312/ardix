@@ -50,6 +50,14 @@ __always_inline struct device *kevent_to_device(struct kevent *event)
  */
 struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel);
 
+/**
+ * @brief Convenience wrapper for creating and immediately dispatching a device kevent.
+ *
+ * @param device Device the event refers to
+ * @param channel Which channel (in or out) the event applies to
+ */
+void device_kevent_create_and_dispatch(struct device *device, enum device_channel channel);
+
 /** Initialize the devices subsystem. */
 int devices_init(void);
 

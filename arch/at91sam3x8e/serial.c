@@ -134,11 +134,8 @@ void irq_uart(void)
 		tmp = REG_UART_RHR;
 		ringbuf_write(arch_serial_default_device.device.rx, &tmp, sizeof(tmp));
 
-		/* TODO: we need some error handling mechanism for event creation */
-		struct device_kevent *event = device_kevent_create(&serial_default_device->device,
-								   DEVICE_CHANNEL_IN);
-		if (event != NULL)
-			kevent_dispatch(&event->event);
+		device_kevent_create_and_dispatch(&serial_default_device->device,
+						  DEVICE_CHANNEL_IN);
 	}
 
 	/* REG_UART_PDC_TCR has reached zero */
@@ -153,11 +150,8 @@ void irq_uart(void)
 		if (arch_serial_default_device.tx_current == NULL)
 			REG_UART_IDR = REG_UART_IDR_ENDTX_MASK;
 
-		/* TODO: we need some error handling mechanism for event creation */
-		struct device_kevent *event = device_kevent_create(&serial_default_device->device,
-								   DEVICE_CHANNEL_OUT);
-		if (event != NULL)
-			kevent_dispatch(&event->event);
+		device_kevent_create_and_dispatch(&serial_default_device->device,
+						  DEVICE_CHANNEL_OUT);
 	}
 
 	/* check for error conditions */

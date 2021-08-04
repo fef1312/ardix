@@ -36,6 +36,31 @@ struct kevent {
 	enum kevent_kind kind;
 };
 
+/**
+ * @brief Flags for kevent callback return values.
+ */
+enum kevent_cb_flags {
+	/** @brief No particular action is taken. */
+	KEVENT_CB_NONE			= 0,
+	/** @brief Stop processing the other callbacks in the queue after the callback. */
+	KEVENT_CB_STOP			= (1 << 0),
+	/** @brief Call `kevent_listener_del()` after the callback. */
+	KEVENT_CB_LISTENER_DEL		= (1 << 1),
+};
+
+/**
+ * @brief Identifies a single kevent listener.
+ *
+ * This is returned by `kevent_listener_add()` and must be passed to
+ * `kevent_listener_del()` when the listener is no longer needed.
+ * You shouldn't modify the members yourself.
+ */
+struct kevent_listener {
+	struct list_head link;
+	int (*cb)(struct kevent *event, void *extra);
+	void *extra;
+};
+
 /** @brief Initialize the kevent subsystem. */
 void kevents_init(void);
 
@@ -55,27 +80,24 @@ void kevent_dispatch(struct kevent *event);
 /**
  * @brief Add an event listener to the end of the listener queue.
  * The callback will be invoked for every event that is dispatched and matches
- * the event kind.  If its return value is nonzero, event handler processing
- * stops after that callback.  This is useful if you know for sure that you are
- * the only one interested in the event, for example when waiting for I/O.
+ * the event kind.  The return value of this callback is a set of flags, see
+ * `enum kevent_cb_flags` for details.
  *
  * @param kind Kind of kevent to listen for
  * @param cb Callback that will be invoked for every kevent that is dispatched
  * @param extra An optional extra pointer that will be passed to the callback
- * @returns 0 on success, or a negtive error number on failure
+ * @returns The listener (pass to `kevent_listener_del()` when no longer needed)
  */
-int kevent_add_listener(enum kevent_kind kind,
-			int (*cb)(struct kevent *event, void *extra),
-			void *extra);
+struct kevent_listener *kevent_listener_add(enum kevent_kind kind,
+					    int (*cb)(struct kevent *event, void *extra),
+					    void *extra);
 
 /**
  * @brief Remove an event listener.
  *
- * @param kind Kind that was passed to `kevent_add_listener()`
- * @param cb Callback that was passed to `kevent_add_listener()`
+ * @param listener The listener returned by `kevent_listener_add()`
  */
-void kevent_remove_listener(enum kevent_kind kind,
-			    int (*cb)(struct kevent *event, void *extra));
+void kevent_listener_del(struct kevent_listener *listener);
 
 __always_inline void kevent_get(struct kevent *event)
 {

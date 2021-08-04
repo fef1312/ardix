@@ -77,6 +77,13 @@ struct device_kevent *device_kevent_create(struct device *device, enum device_ch
 	return event;
 }
 
+void device_kevent_create_and_dispatch(struct device *device, enum device_channel channel)
+{
+	struct device_kevent *event = device_kevent_create(device, channel);
+	if (event != NULL)
+		kevent_dispatch(&event->event);
+}
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
