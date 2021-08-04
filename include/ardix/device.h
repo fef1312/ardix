@@ -3,12 +3,15 @@
 #pragma once
 
 #include <ardix/kent.h>
+#include <ardix/kevent.h>
 #include <ardix/list.h>
 #include <ardix/malloc.h>
 #include <ardix/mutex.h>
 #include <ardix/types.h>
+#include <ardix/util.h>
 
 #include <stddef.h>
+#include <toolchain.h>
 
 /** Top-level abstraction for any device connected to the system. */
 struct device {
@@ -23,24 +26,48 @@ struct device {
 
 extern struct kent *devices_kent;
 
+enum device_channel {
+	DEVICE_CHANNEL_IN,
+	DEVICE_CHANNEL_OUT,
+};
+
+struct device_kevent {
+	struct kevent event;
+	enum device_channel channel;
+};
+
+__always_inline struct device *kevent_to_device(struct kevent *event)
+{
+	return container_of(event->kent.parent, struct device, kent);
+}
+
+/**
+ * @brief Create a new kevent for the specified device **without dispatching it**.
+ *
+ * @param device Device the event refers to
+ * @param channel Which channel (in or out) the event applies to
+ * @returns The created event, or `NULL` if out of memory
+ */
+struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel);
+
 /** Initialize the devices subsystem. */
 int devices_init(void);
 
 /**
- * Initialize a device and add it to the device tree.
+ * @brief Initialize a device and add it to the device tree.
  *
  * @param dev: device to initialze
  * @returns 0 on success, or a negative error code on failure
  */
 int device_init(struct device *dev);
 
-/** Increment a device's reference counter. */
+/** @brief Increment a device's reference counter. */
 __always_inline void device_get(struct device *dev)
 {
 	kent_get(&dev->kent);
 }
 
-/** Decrement a device's referece counter. */
+/** @brief Decrement a device's referece counter. */
 __always_inline void device_put(struct device *dev)
 {
 	kent_put(&dev->kent);

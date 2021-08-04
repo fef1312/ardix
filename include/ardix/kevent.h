@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <ardix/device.h>
 #include <ardix/kent.h>
 #include <ardix/list.h>
 
@@ -22,7 +21,7 @@
  */
 
 enum kevent_kind {
-	KEVENT_FS,
+	KEVENT_DEVICE,
 
 	KEVENT_KIND_COUNT,
 };

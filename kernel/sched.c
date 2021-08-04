@@ -4,6 +4,7 @@
 #include <arch-generic/watchdog.h>
 
 #include <ardix/atomic.h>
+#include <ardix/kevent.h>
 #include <ardix/malloc.h>
 #include <ardix/sched.h>
 #include <ardix/types.h>
@@ -88,6 +89,8 @@ void *sched_process_switch(void *curr_sp)
 	int i;
 	pid_t nextpid = current->pid;
 	current->sp = curr_sp;
+
+	kevents_process();
 
 	if (current->state != TASK_SLEEP && current->state != TASK_IOWAIT)
 		current->state = TASK_QUEUE;

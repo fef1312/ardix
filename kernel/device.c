@@ -50,6 +50,33 @@ int device_init(struct device *dev)
 	return kent_init(&dev->kent);
 }
 
+static void device_kevent_destroy(struct kent *kent)
+{
+	struct kevent *event = container_of(kent, struct kevent, kent);
+	struct device_kevent *device_kevent = container_of(event, struct device_kevent, event);
+	free(device_kevent);
+}
+
+struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel)
+{
+	struct device_kevent *event = malloc(sizeof(*event));
+	if (event == NULL)
+		return NULL;
+
+	event->channel = channel;
+	event->event.kind = KEVENT_DEVICE;
+
+	event->event.kent.parent = &device->kent;
+	event->event.kent.destroy = device_kevent_destroy;
+	int err = kent_init(&event->event.kent);
+	if (err) {
+		free(event);
+		event = NULL;
+	}
+
+	return event;
+}
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
