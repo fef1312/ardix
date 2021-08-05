@@ -60,9 +60,9 @@ extern uintptr_t __preinit_array_end;
  * standard C library.  They are executed after the preinit array, so memory
  * allocation is already available.
  */
-extern uint32_t __init_array_start;
+extern uintptr_t __init_array_start;
 /** @brief End of init array. */
-extern uint32_t __init_array_end;
+extern uintptr_t __init_array_end;
 
 /*
  * This file is part of Ardix.

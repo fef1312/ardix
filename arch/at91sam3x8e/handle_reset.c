@@ -22,11 +22,11 @@ __naked __noreturn void handle_reset(void)
 	memmove(&_srelocate, &_etext, (size_t)(&_erelocate) - (size_t)(&_srelocate));
 	memset(&_szero, 0, (size_t)(&_ezero) - (size_t)(&_szero));
 
-	for (uint32_t *fn = &__preinit_array_start; fn != &__preinit_array_end; fn++)
-		( (void (*)(void))fn )();
+	for (uintptr_t *fn = &__preinit_array_start; fn != &__preinit_array_end; fn++)
+		( (void (*)(void))*fn )();
 
-	for (uint32_t *fn = &__init_array_start; fn != &__init_array_end; fn++)
-		( (void (*)(void))fn )();
+	for (uintptr_t *fn = &__init_array_start; fn != &__init_array_end; fn++)
+		( (void (*)(void))*fn )();
 
 	/* start the Kernel */
 	main();
