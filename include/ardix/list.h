@@ -3,6 +3,8 @@
 #pragma once
 
 #include <ardix/util.h>
+
+#include <stddef.h>
 #include <toolchain.h>
 
 struct list_head {
@@ -49,9 +51,9 @@ __always_inline void list_init(struct list_head *head)
 	     cursor != (head);			\
 	     cursor = (cursor)->prev)
 
-#define list_for_each_safe(head, cursor, tmp)		\
-	for (cursor = (head)->next, tmp = cursor;	\
-	     tmp != (head);				\
+#define list_for_each_safe(head, cursor, tmp)			\
+	for (cursor = (head)->next, tmp = (cursor)->next;	\
+	     tmp != (head);					\
 	     tmp = (tmp)->next, cursor = tmp)
 
 #define list_for_each_entry(head, cursor, member)				\
@@ -67,7 +69,7 @@ __always_inline void list_init(struct list_head *head)
 #define list_for_each_entry_safe(head, cursor, tmp, member)			\
 	for (cursor = list_first_entry(head, typeof(*(cursor)), member),	\
 		 tmp = list_next_entry(cursor, member);				\
-	     &(tmp)->member != (head);						\
+	     (tmp)->member.prev != (head);					\
 	     cursor = tmp, tmp = list_next_entry(tmp, member))
 
 void list_insert(struct list_head *head, struct list_head *new);
