@@ -13,6 +13,7 @@
 
 volatile unsigned long int tick = 0;
 unsigned int systick_reload;
+unsigned int tick_freq;
 
 void handle_sys_tick(void)
 {
@@ -46,6 +47,7 @@ static inline void sched_nvic_set_prio_group(uint32_t prio_group)
 
 int arch_sched_hwtimer_init(unsigned int freq)
 {
+	tick_freq = freq;
 	systick_reload = sys_core_clock / freq;
 	if (systick_reload > REG_SYSTICK_LOAD_RELOAD_MASK)
 		return 1;
@@ -81,19 +83,17 @@ void yield(enum task_state state)
 
 __naked __noreturn static void idle_task_entry(void)
 {
-	__asm__ volatile(
-"1:	b	1b	\n"
-	:::
-	);
+	while (1);
 }
 
 int arch_idle_task_init(struct task *task)
 {
-	void *sp = malloc(sizeof(struct reg_snapshot));
-	if (sp == NULL)
+	void *stack = malloc(CONFIG_STACK_SIZE);
+	if (stack == NULL)
 		return -ENOMEM;
 
-	task->stack_bottom = sp + sizeof(struct reg_snapshot);
+	task->stack_bottom = stack + CONFIG_STACK_SIZE - 4;
+	task->sp = task->stack_bottom - sizeof(struct reg_snapshot);
 	arch_task_init(task, idle_task_entry);
 	task->sleep = 0;
 	task->last_tick = 0;
@@ -104,7 +104,7 @@ int arch_idle_task_init(struct task *task)
 
 unsigned long int ms_to_ticks(unsigned long int ms)
 {
-	return (unsigned long int)systick_reload * ms / sys_core_clock;
+	return ( ms * (unsigned long int)tick_freq ) / 1000lu /* 1 s = 1000 ms */;
 }
 
 /*

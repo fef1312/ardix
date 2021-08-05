@@ -22,7 +22,7 @@ static struct list_head kev_listeners[KEVENT_KIND_COUNT];
 static MUTEX(kev_listeners_lock);
 
 struct kevent_queue {
-	struct list_head list;	/* -> kevent_listener::link */
+	struct list_head list;	/* -> kevent::link */
 	struct mutex lock;
 };
 
@@ -50,7 +50,7 @@ void kevents_init(void)
 /* called from scheduler context only */
 static inline void process_single_queue(struct kevent_queue *queue, struct list_head *listeners)
 {
-	struct kevent *event, *tmp;
+	struct kevent *event, *tmp_event;
 
 	/*
 	 * This method is only invoked from scheduler context which has higher
@@ -59,10 +59,10 @@ static inline void process_single_queue(struct kevent_queue *queue, struct list_
 	 * to just abort and try again during the next system tick.
 	 */
 	if (mutex_trylock(&queue->lock) == 0) {
-		list_for_each_entry_safe(&queue->list, event, tmp, link) {
-			struct kevent_listener *listener;
+		list_for_each_entry_safe(&queue->list, event, tmp_event, link) {
+			struct kevent_listener *listener, *tmp_listener;
 
-			list_for_each_entry(listeners, listener, link) {
+			list_for_each_entry_safe(listeners, listener, tmp_listener, link) {
 				int cb_ret = listener->cb(event, listener->extra);
 
 				if (cb_ret & KEVENT_CB_LISTENER_DEL) {
@@ -93,8 +93,8 @@ void kevents_process(void)
 	if (mutex_trylock(&kev_cache_lock) == 0) {
 		struct kevent *cursor, *tmp;
 		list_for_each_entry_safe(&kev_cache, cursor, tmp, link) {
-			list_insert(&kev_queues[cursor->kind].list, &cursor->link);
 			list_delete(&cursor->link);
+			list_insert(&kev_queues[cursor->kind], &cursor->link);
 		}
 
 		mutex_unlock(&kev_cache_lock);

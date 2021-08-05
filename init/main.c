@@ -28,7 +28,6 @@
  */
 int main(void)
 {
-	volatile uint32_t count = 0;
 	volatile unsigned int print_count = 0;
 
 	int err = kent_root_init();
@@ -56,18 +55,15 @@ int main(void)
 	REG_PIOB_CODR = 1 << 27;
 
 	while (true) {
-		if (count++ != 1000000)
-			continue;
-
 		printf("hello, world (%u)\n", print_count);
+
+		msleep(1000);
 
 		print_count++;
 		if (print_count % 2)
 			REG_PIOB_CODR = 1 << 27;
 		else
 			REG_PIOB_SODR = 1 << 27;
-
-		count = 0;
 	}
 }
 

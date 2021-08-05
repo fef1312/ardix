@@ -73,8 +73,6 @@ out:
 	return i;
 }
 
-#include <arch/debug.h>
-
 /**
  * @brief Determine whether the specified task is a candidate for execution.
  *
@@ -85,7 +83,7 @@ static inline bool can_run(const struct task *task)
 {
 	switch (task->state) {
 	case TASK_SLEEP:
-		return tick - task->last_tick > task->sleep;
+		return tick - task->last_tick >= task->sleep;
 	case TASK_QUEUE:
 	case TASK_READY:
 		return true;
@@ -101,18 +99,20 @@ void *sched_switch(void *curr_sp)
 {
 	struct task *tmp;
 	int i;
+	/*
+	 * this is -1 if the idle task was running which would normally be a problem
+	 * because it is used as an index in tasktab, but the for loop always
+	 * increments it by 1 before doing actuall array accesses so it's okay here
+	 */
 	pid_t nextpid = current->pid;
 	current->sp = curr_sp;
 
-	//__breakpoint;
-
 	kevents_process();
 
-	if (current->state != TASK_SLEEP && current->state != TASK_IOWAIT)
+	if (current->state == TASK_READY)
 		current->state = TASK_QUEUE;
 
 	for (i = 0; i < CONFIG_SCHED_MAXTASK; i++) {
-		//__breakpoint;
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
 
@@ -128,7 +128,6 @@ void *sched_switch(void *curr_sp)
 
 	current->state = TASK_READY;
 	current->last_tick = tick;
-	//__breakpoint;
 	return current->sp;
 }
 
@@ -164,10 +163,8 @@ err_alloc:
 
 void msleep(unsigned long int ms)
 {
-	//__breakpoint;
 	current->sleep = ms_to_ticks(ms);
 	yield(TASK_SLEEP);
-	//__breakpoint;
 }
 
 /*
