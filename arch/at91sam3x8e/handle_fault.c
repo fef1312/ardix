@@ -60,7 +60,7 @@ static void reg_to_str(char *dest, uint32_t val)
 		if (digit < 0x0a)
 			digit += '0';
 		else
-			digit += 'a';
+			digit += 'a' - 0x0a;
 
 		*dest++ = digit;
 	}
