@@ -14,7 +14,7 @@ enum file_type {
 struct file {
 	struct kent kent;
 	int fd;
-	loff_t pos;
+	off_t pos;
 	struct mutex lock;
 	struct device *device;
 	enum file_type type;
