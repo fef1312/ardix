@@ -2,6 +2,7 @@
 
 #include <arch/hardware.h>
 #include <arch/interrupt.h>
+#include <arch/linker.h>
 #include <arch-generic/hardware.h>
 
 #include <ardix/malloc.h>
@@ -10,19 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <toolchain.h>
-
-/* from flash.ld */
-extern uint32_t _sfixed;	/* fixed area start */
-extern uint32_t _efixed;	/* fixed area end */
-extern uint32_t _etext;		/* program (.text) end */
-extern uint32_t _srelocate;	/* relocate (.data) start */
-extern uint32_t _erelocate;	/* relocate end */
-extern uint32_t _szero;		/* zero area (.bss) start */
-extern uint32_t _ezero;		/* zero area end */
-extern uint32_t _sstack;	/* stack start */
-extern uint32_t _estack;	/* stack end */
-extern uint32_t _sheap;		/* heap start */
-extern uint32_t _eheap;		/* heap end */
 
 /* implementation in init/main.c */
 extern int main(void);
@@ -34,8 +22,11 @@ __naked __noreturn void handle_reset(void)
 	memmove(&_srelocate, &_etext, (size_t)(&_erelocate) - (size_t)(&_srelocate));
 	memset(&_szero, 0, (size_t)(&_ezero) - (size_t)(&_szero));
 
-	/* memory protection isn't implemented yet, heap is shared among all processes */
-	malloc_init(&_sheap, (size_t)(&_eheap) - (size_t)(&_sheap));
+	for (uint32_t *fn = &__preinit_array_start; fn != &__preinit_array_end; fn++)
+		( (void (*)(void))fn )();
+
+	for (uint32_t *fn = &__init_array_start; fn != &__init_array_end; fn++)
+		( (void (*)(void))fn )();
 
 	/* start the Kernel */
 	main();

@@ -12,6 +12,7 @@ configure_file(
 )
 
 target_sources(ardix_arch PRIVATE
+	arch_init.c
 	atom_get_put.S
 	atom.c
 	atomic.c
