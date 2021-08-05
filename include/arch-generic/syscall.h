@@ -2,8 +2,8 @@
 
 #pragma once
 
-#define ARCH_SYSCALL_READ	0
-#define ARCH_SYSCALL_WRITE	1
+#define ARCH_SYS_read		0
+#define ARCH_SYS_write		1
 
 /*
  * This file is part of Ardix.

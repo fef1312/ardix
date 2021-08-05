@@ -10,8 +10,8 @@
 #include <toolchain.h>
 
 enum syscall {
-	SYSCALL_READ		= ARCH_SYSCALL_READ,
-	SYSCALL_WRITE		= ARCH_SYSCALL_WRITE,
+	SYS_read		= ARCH_SYS_read,
+	SYS_write		= ARCH_SYS_write,
 	NSYSCALLS
 };
 

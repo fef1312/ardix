@@ -3,15 +3,18 @@
 #pragma once
 
 /**
- * Perform a syscall.
+ * @brief Perform a syscall.
  *
- * This is the first and only method called by the irq handler for system calls.
- * It is responsible for finishing the context switch, obtaining the syscall
- * number and arguments, and invoking the respective system call.
+ * This is called by the syscall exception handler.  It is responsible for
+ * finishing the context switch, obtaining the syscall number and arguments,
+ * and invoking the respective system call.  If the return value of this
+ * function is nonzero, the scheduler is invoked after the call and before
+ * returning to userspace.
  *
- * @param sp: The current stack pointer.
+ * @param sp current stack pointer
+ * @returns Whether rescheduling is required
  */
-void arch_enter(void *sp);
+int arch_enter(void *sp);
 
 /*
  * This file is part of Ardix.

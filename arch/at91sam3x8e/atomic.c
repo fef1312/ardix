@@ -3,7 +3,7 @@
 #include <ardix/atomic.h>
 #include <ardix/atom.h>
 
-static ATOM_DEFINE(atomic_context);
+static ATOM(atomic_context);
 
 void atomic_enter(void)
 {

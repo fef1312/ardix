@@ -5,7 +5,7 @@
 #include <ardix/types.h>
 #include <toolchain.h>
 
-#define ATOM_DEFINE(name) atom_t name = { .count = 0, }
+#define ATOM(name) atom_t name = { .count = 0, }
 
 void atom_init(atom_t *atom);
 
