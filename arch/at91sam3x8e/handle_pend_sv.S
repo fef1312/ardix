@@ -4,7 +4,8 @@
 
 .text
 
-.extern sched_process_switch
+/* void *sched_switch(void *curr_sp); */
+.extern sched_switch
 
 /* void handle_pend_sv(void); */
 func_begin handle_pend_sv
@@ -27,7 +28,7 @@ func_begin handle_pend_sv
 	 */
 	/* TODO: Implement banked stack pointer */
 	mov	r0,	sp
-	bl	sched_process_switch	/* sp = sched_process_switch(sp); */
+	bl	sched_switch		/* sp = sched_switch(sp); */
 	mov	sp,	r0
 
 	/*

@@ -12,11 +12,6 @@
 #warning "CONFIG_SCHED_MAXTASK is > 64, this could have a significant performance impact"
 #endif
 
-#ifndef CONFIG_STACKSZ
-/** Per-task stack size in bytes */
-#define CONFIG_STACKSZ 4096U
-#endif
-
 enum task_state {
 	/** Task is dead / doesn't exist */
 	TASK_DEAD,
@@ -24,60 +19,84 @@ enum task_state {
 	TASK_READY,
 	/** Task is waiting for its next time share. */
 	TASK_QUEUE,
-	/** Task is sleeping, `sleep_until` specifies when to wake it up. */
+	/** Task is sleeping, `task::sleep` specifies for how many ticks. */
 	TASK_SLEEP,
 	/** Task is waiting for I/O to flush buffers. */
 	TASK_IOWAIT,
 };
 
-/** Stores an entire process image. */
+/** @brief Core structure holding information about a task. */
 struct task {
 	struct kent kent;
 	/** current stack pointer (only gets updated for task switching) */
 	void *sp;
 	/** first address of the stack (highest if the stack grows downwards) */
 	void *stack_bottom;
-	/** if `state` is `TASK_SLEEP`, the last execution time */
-	unsigned long int lastexec;
-	/** if `state` is `TASK_SLEEP`, the amount of us to sleep in total */
-	unsigned long int sleep_usecs;
+	/** @brief If state is `TASK_SLEEP`, the total amount of ticks to sleep */
+	unsigned long int sleep;
+	/** @brief Last execution in ticks */
+	unsigned long int last_tick;
 
 	enum task_state state;
 	pid_t pid;
 };
 
+/** @brief Current task (access from syscall context only) */
 extern struct task *current;
 
+/** @brief Global system tick counter (may overflow) */
+extern volatile unsigned long int tick;
+
 /**
- * Initialize the scheduler subsystem.
+ * @brief If nonzero, the scheduler is invoked after the current syscall.
+ * This is checked and then cleared after every syscall.  If it has a nonzero
+ * value, `sched_switch()` is called after `arch_enter()`.
+ */
+extern int need_resched;
+
+/**
+ * @brief Initialize the scheduler subsystem.
  * This sets up a hardware interrupt timer (SysTick for Cortex-M3).
  */
 int sched_init(void);
 
 /**
- * Switch to the next task (interrupt context only).
+ * @brief Switch to the next task (scheduler context only).
  * Must be called directly from within an interrupt routine.
  * This selects a new task to be run and updates the old and new task's `state`
- * field to the appropriate value.
+ * field to the appropriate value.  Called from the scheduler exception handler.
  *
- * @param curr_sp: stack pointer of the current task
- * @returns stack pointer of the new task
+ * @param curr_sp Stack pointer of the current task
+ * @returns Stack pointer of the new task
  */
 void *sched_switch(void *curr_sp);
 
 /**
- * Create a copy of the current process image and return it.
+ * @brief Create a copy of the `current` task and return it.
+ * The new task becomes a child of the `current` task and is inserted into the
+ * process table so that it can be executed by the scheduler after its state
+ * is set to `TASK_QUEUE`.  When the task is returned, its initial state is
+ * `TASK_UNKNOWN` so that the caller has time to do any additional required
+ * setup work.
  *
- * @param task: the task to make a copy of
- * @returns the new (child) task copy, or `NULL` on failure
+ * @param task Task to make a copy of
+ * @returns The new (child) task copy, or `NULL` on failure
  */
-struct task *sched_task_clone(struct task *task);
+struct task *task_clone(struct task *task);
 
 /**
- * Request the scheduler be invoked early, resulting in the current task to
- * be suspended.
+ * @brief Sleep for an approximate amount of milliseconds.
+ * Must not be invoked from atomic or irq context.
  *
- * @param state: State the task should enter.
+ * @param ms Amount of milliseconds
+ */
+void msleep(unsigned long int ms);
+
+/**
+ * @brief Suspend the `current` task and invoke the scheduler early.
+ * May only be called from syscall context.
+ *
+ * @param state State the task should enter.
  *	Allowed values are `TASK_SLEEP` and `TASK_IOWAIT`.
  */
 void yield(enum task_state state);

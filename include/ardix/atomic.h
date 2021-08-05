@@ -15,7 +15,7 @@ void atomic_enter(void);
 void atomic_leave(void);
 
 /** Return a nonzero value if the current process is in atomic context. */
-int is_atomic_context(void);
+int is_atomic(void);
 
 /*
  * This file is part of Ardix.

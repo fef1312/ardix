@@ -4,7 +4,11 @@
 
 .text
 
+/* int arch_enter(void *sp); */
 .extern arch_enter
+
+/* void *sched_switch(void *sp); */
+.extern sched_switch
 
 /* void handle_svc(void); */
 func_begin handle_svc
@@ -28,8 +32,18 @@ func_begin handle_svc
 	push	{r4-r11,lr}
 
 	mov	r0,	sp
-	bl	arch_enter		/* arch_enter(sp); */
+	bl	arch_enter		/* int need_resched = arch_enter(sp); */
 
+	cmp	r0,	#0
+	beq	svc_out
+
+	mov	r0,	sp
+	bl	sched_switch		/* sp = sched_switch(sp); */
+	mov	sp,	r0
+
+	clrex
+
+svc_out:
 	pop	{r4-r11,lr}
 
 	bx	lr

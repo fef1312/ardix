@@ -21,6 +21,8 @@ struct task *current;
 
 static struct task idle_task;
 
+int need_resched = 0;
+
 static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
@@ -71,24 +73,38 @@ out:
 	return i;
 }
 
+#include <arch/debug.h>
+
 /**
- * Determine whether the specified task is a candidate for execution.
+ * @brief Determine whether the specified task is a candidate for execution.
  *
- * @param task: the task
+ * @param task The task
  * @returns whether `task` could be run next
  */
 static inline bool can_run(const struct task *task)
 {
-	enum task_state state = task->state;
-	return state == TASK_QUEUE || state == TASK_READY;
+	switch (task->state) {
+	case TASK_SLEEP:
+		return tick - task->last_tick > task->sleep;
+	case TASK_QUEUE:
+	case TASK_READY:
+		return true;
+	case TASK_DEAD:
+	case TASK_IOWAIT:
+		return false;
+	}
+
+	return false; /* this shouldn't be reached */
 }
 
-void *sched_process_switch(void *curr_sp)
+void *sched_switch(void *curr_sp)
 {
 	struct task *tmp;
 	int i;
 	pid_t nextpid = current->pid;
 	current->sp = curr_sp;
+
+	//__breakpoint;
 
 	kevents_process();
 
@@ -96,6 +112,7 @@ void *sched_process_switch(void *curr_sp)
 		current->state = TASK_QUEUE;
 
 	for (i = 0; i < CONFIG_SCHED_MAXTASK; i++) {
+		//__breakpoint;
 		nextpid++;
 		nextpid %= CONFIG_SCHED_MAXTASK;
 
@@ -110,6 +127,8 @@ void *sched_process_switch(void *curr_sp)
 		current = &idle_task;
 
 	current->state = TASK_READY;
+	current->last_tick = tick;
+	//__breakpoint;
 	return current->sp;
 }
 
@@ -141,6 +160,14 @@ err_maxtask:
 	free(child);
 err_alloc:
 	return NULL;
+}
+
+void msleep(unsigned long int ms)
+{
+	//__breakpoint;
+	current->sleep = ms_to_ticks(ms);
+	yield(TASK_SLEEP);
+	//__breakpoint;
 }
 
 /*

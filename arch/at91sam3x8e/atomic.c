@@ -15,7 +15,7 @@ void atomic_leave(void)
 	atom_put(&atomic_context);
 }
 
-int is_atomic_context(void)
+int is_atomic(void)
 {
 	return atom_count(&atomic_context);
 }

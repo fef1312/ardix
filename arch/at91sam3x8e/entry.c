@@ -3,8 +3,9 @@
 #include <arch-generic/entry.h>
 #include <arch/hardware.h>
 
-#include <ardix/syscall.h>
 #include <ardix/types.h>
+#include <ardix/sched.h>
+#include <ardix/syscall.h>
 
 #include <errno.h>
 #include <stddef.h>
@@ -16,7 +17,7 @@
 extern uint16_t __syscall_return_point;
 #endif
 
-void arch_enter(void *sp)
+int arch_enter(void *sp)
 {
 	struct reg_snapshot *regs = sp;
 	enum syscall sc_num = arch_syscall_num(regs);
@@ -39,13 +40,13 @@ void arch_enter(void *sp)
 
 	if (sc_num > NSYSCALLS) {
 		arch_syscall_set_rval(regs, -ENOSYS);
-		return;
+		return 0;
 	}
 
 	handler = sys_table[sc_num];
 	if (handler == NULL) {
 		arch_syscall_set_rval(regs, -ENOSYS);
-		return;
+		return 0;
 	}
 
 	/* TODO: not every syscall uses the max amount of parameters (duh) */
@@ -53,6 +54,9 @@ void arch_enter(void *sp)
 			 arch_syscall_arg4(regs), arch_syscall_arg5(regs), arch_syscall_arg6(regs));
 
 	arch_syscall_set_rval(regs, sc_ret);
+	int ret = need_resched;
+	need_resched = 0;
+	return ret;
 }
 
 /*

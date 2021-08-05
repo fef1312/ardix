@@ -27,6 +27,14 @@ void arch_task_init(struct task *task, void (*entry)(void));
 
 int arch_idle_task_init(struct task *task);
 
+/**
+ * @brief Convert milliseconds to system ticks, rounding to zero.
+ *
+ * @param ms Amount of milliseconds
+ * @returns Equivalent time in system ticks
+ */
+unsigned long int ms_to_ticks(unsigned long ms);
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.

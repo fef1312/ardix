@@ -11,13 +11,18 @@
 #include <errno.h>
 #include <string.h>
 
+volatile unsigned long int tick = 0;
+unsigned int systick_reload;
+
 void handle_sys_tick(void)
 {
+	tick++;
+
 	/*
 	 * fire a PendSV exception and do the actual context switching there
 	 * because the docs say you're supposed to do it that way
 	 */
-	if (!is_atomic_context())
+	if (!is_atomic())
 		arch_irq_invoke(IRQNO_PEND_SV);
 }
 
@@ -41,14 +46,14 @@ static inline void sched_nvic_set_prio_group(uint32_t prio_group)
 
 int arch_sched_hwtimer_init(unsigned int freq)
 {
-	uint32_t ticks = sys_core_clock / freq;
-	if (ticks > REG_SYSTICK_LOAD_RELOAD_MASK)
+	systick_reload = sys_core_clock / freq;
+	if (systick_reload > REG_SYSTICK_LOAD_RELOAD_MASK)
 		return 1;
 
 	/* Ensure SysTick and PendSV are preemptive */
 	sched_nvic_set_prio_group(0b011);
 
-	REG_SYSTICK_LOAD = (ticks & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
+	REG_SYSTICK_LOAD = (systick_reload & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
 	REG_SYSTICK_VAL = 0U;
 	REG_SYSTICK_CTRL = REG_SYSTICK_CTRL_CLKSOURCE_BIT /* MCK */
 			 | REG_SYSTICK_CTRL_TICKINT_BIT /* trigger exception */
@@ -70,7 +75,6 @@ void arch_task_init(struct task *task, void (*entry)(void))
 
 void yield(enum task_state state)
 {
-	REG_SYSTICK_VAL = 0U; /* Reset timer (TODO: don't do this lmao) */
 	current->state = state;
 	arch_irq_invoke(IRQNO_PEND_SV);
 }
@@ -91,11 +95,16 @@ int arch_idle_task_init(struct task *task)
 
 	task->stack_bottom = sp + sizeof(struct reg_snapshot);
 	arch_task_init(task, idle_task_entry);
-	task->lastexec = 0;
-	task->sleep_usecs = 0;
+	task->sleep = 0;
+	task->last_tick = 0;
 	task->state = TASK_READY;
 	task->pid = -1;
 	return 0;
+}
+
+unsigned long int ms_to_ticks(unsigned long int ms)
+{
+	return (unsigned long int)systick_reload * ms / sys_core_clock;
 }
 
 /*

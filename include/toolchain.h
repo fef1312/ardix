@@ -53,6 +53,10 @@
 /** Function attribute for hinting this function has malloc-like behavior. */
 #define __malloc(deallocator, argn) __attribute__(( malloc ))
 
+#define __preinit_call(fn) __section(.preinit_array) void (*fn##_ptr)(void) = fn
+
+#define __init_call(fn) __section(.init_array) void (*fn##_ptr)(void) = fn
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
