@@ -33,34 +33,32 @@ int arch_serial_init(struct serial_device *dev)
 		return -1;
 
 	/* enable peripheral clock for UART (which has peripheral id 8) */
-	REG_PMC_PCER0 |= REG_PMC_PCER0_PID(8);
+	PMC->PMC_PCER0 |= PMC_PCER0_PID8;
 
 	/* ensure the PIO controller is turned off on the serial pins */
-	REG_PIO_PDR(PIOA) = (1 << 8) | (1 << 9);
+	PIOA->PIO_PDR = PIO_PDR_P8 | PIO_PDR_P9;
 
 	/* configure peripheral DMA controller */
-	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTEN_MASK;
+	UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTEN;
 
 	/* reset & disable rx and tx */
-	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_RSTRX_MASK
-		    | REG_UART_CR_TXDIS_MASK | REG_UART_CR_RSTTX_MASK;
+	UART->UART_CR = UART_CR_RXDIS | UART_CR_RSTRX
+		      | UART_CR_TXDIS | UART_CR_RSTTX;
 
 	/* no parity, normal mode */
-	REG_UART_MR = REG_UART_MR_PAR_NO | REG_UART_MR_CHMODE_NORMAL;
+	UART->UART_MR = UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL;
 
 	/* From Atmel Datasheet: baud rate = MCK / (REG_UART_BRGR * 16) */
-	REG_UART_BRGR = (uint16_t)(( sys_core_clock / (uint32_t)dev->baud ) >> 4);
+	UART->UART_BRGR = UART_BRGR_CD(( SystemCoreClock / (uint32_t)dev->baud ) >> 4);
 
 	/* choose the events we want an interrupt on */
-	REG_UART_IDR = 0xFFFFFFFF; /* make sure all interrupts are disabled first */
-	REG_UART_IER = REG_UART_IER_RXRDY_MASK
-		     | REG_UART_IER_OVRE_MASK
-		     | REG_UART_IER_FRAME_MASK;
+	UART->UART_IDR = 0xffffffff; /* make sure all interrupts are disabled first */
+	UART->UART_IER = UART_IER_RXRDY | UART_IER_OVRE | UART_IER_FRAME;
 
-	arch_irq_enable(IRQNO_UART);
+	NVIC_EnableIRQ(UART_IRQn);
 
 	/* enable receiver and transmitter */
-	REG_UART_CR = REG_UART_CR_RXEN_MASK | REG_UART_CR_TXEN_MASK;
+	UART->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
 
 	return 0;
 }
@@ -71,12 +69,12 @@ void arch_serial_exit(struct serial_device *dev)
 		return;
 
 	/* disable receiver and transmitter */
-	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_TXDIS_MASK;
+	UART->UART_CR = UART_CR_RXDIS | UART_CR_TXDIS;
 
-	arch_irq_disable(IRQNO_UART);
+	NVIC_DisableIRQ(UART_IRQn);
 
 	/* disable peripheral clock for UART (PID is taken from Atmel Datasheet, Section 9.1 */
-	REG_PMC_PCDR0 = REG_PMC_PCDR0_PID(8);
+	PMC->PMC_PCDR0 = PMC_PCDR0_PID8;
 
 	dev->id = -1;
 }
@@ -111,14 +109,14 @@ ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf)
 
 	if (arch_dev->tx_current == NULL) {
 		arch_dev->tx_current = buf;
-		REG_UART_PDC_TPR = (uint32_t)buf->data;
-		REG_UART_PDC_TCR = len;
+		UART->UART_TPR = (uint32_t)buf->data;
+		UART->UART_TCR = len;
 		/* we weren't transmitting, so the interrupt was masked */
-		REG_UART_IER = REG_UART_IER_ENDTX_MASK;
+		UART->UART_IER = UART_IER_ENDTX;
 	} else {
 		arch_dev->tx_next = buf;
-		REG_UART_PDC_TNPR = (uint32_t)buf->data;
-		REG_UART_PDC_TNCR = len;
+		UART->UART_TNPR = (uint32_t)buf->data;
+		UART->UART_TNCR = len;
 	}
 
 	return (ssize_t)len;
@@ -127,11 +125,11 @@ ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf)
 void irq_uart(void)
 {
 	uint8_t tmp;
-	uint32_t state = REG_UART_SR;
+	uint32_t state = UART->UART_SR;
 
 	/* RX has received a byte, store it into the ring buffer */
-	if (state & REG_UART_SR_RXRDY_MASK) {
-		tmp = REG_UART_RHR;
+	if (state & UART_SR_RXRDY) {
+		tmp = (uint8_t)UART->UART_RHR;
 		ringbuf_write(arch_serial_default_device.device.rx, &tmp, sizeof(tmp));
 
 		device_kevent_create_and_dispatch(&serial_default_device->device,
@@ -139,7 +137,7 @@ void irq_uart(void)
 	}
 
 	/* REG_UART_PDC_TCR has reached zero */
-	if (state & REG_UART_SR_ENDTX_MASK) {
+	if (state & UART_SR_ENDTX) {
 		if (arch_serial_default_device.tx_current != NULL)
 			dmabuf_put(arch_serial_default_device.tx_current);
 
@@ -148,16 +146,16 @@ void irq_uart(void)
 		arch_serial_default_device.tx_next = NULL;
 
 		if (arch_serial_default_device.tx_current == NULL)
-			REG_UART_IDR = REG_UART_IDR_ENDTX_MASK;
+			UART->UART_IDR = UART_IDR_ENDTX;
 
 		device_kevent_create_and_dispatch(&serial_default_device->device,
 						  DEVICE_CHANNEL_OUT);
 	}
 
 	/* check for error conditions */
-	if ((state & REG_UART_SR_OVRE_MASK) || (state & REG_UART_SR_FRAME_MASK)) {
+	if ((state & UART_SR_OVRE) || (state & UART_SR_FRAME)) {
 		/* TODO: write some proper error handling routines ffs */
-		REG_UART_CR = REG_UART_CR_RSTSTA_MASK;
+		UART->UART_CR = UART_CR_RSTSTA;
 	}
 
 	__clrex();

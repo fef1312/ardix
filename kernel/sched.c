@@ -57,7 +57,7 @@ int sched_init(void)
 	if (i != 0)
 		goto out;
 
-	i = arch_sched_hwtimer_init(CONFIG_SCHED_FREQ);
+	i = arch_sched_init(CONFIG_SCHED_FREQ);
 	if (i != 0)
 		goto out;
 

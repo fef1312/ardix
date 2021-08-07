@@ -6,7 +6,7 @@
 int arch_watchdog_init(void)
 {
 	/* we don't use the watchdog at all for now */
-	REG_WDT_MR = REG_WDT_MR_WDDIS_BIT;
+	WDT->WDT_MR = WDT_MR_WDDIS;
 
 	return 0;
 }

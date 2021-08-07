@@ -10,22 +10,22 @@
 /** Setup UART to manual byte-by-byte control */
 static inline void uart_emergency_setup(void)
 {
-	REG_UART_PDC_PTCR = REG_UART_PDC_PTCR_RXTDIS_MASK | REG_UART_PDC_PTCR_TXTDIS_MASK;
+	UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
 
-	REG_UART_CR = REG_UART_CR_RXDIS_MASK | REG_UART_CR_RSTRX_MASK
-		    | REG_UART_CR_TXDIS_MASK | REG_UART_CR_RSTTX_MASK;
+	UART->UART_CR = UART_CR_RXDIS | UART_CR_RSTRX
+		      | UART_CR_TXDIS | UART_CR_RSTTX;
 
-	REG_UART_IDR = 0xffffffff;
+	UART->UART_IDR = 0xffffffff;
 
-	REG_UART_CR = REG_UART_CR_RXEN_MASK | REG_UART_CR_TXEN_MASK;
+	UART->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
 }
 
 static void uart_write_sync(const char *s)
 {
 	char c;
 	while ((c = *s++) != '\0') {
-		mom_are_we_there_yet(REG_UART_SR & REG_UART_SR_TXRDY_MASK);
-		REG_UART_THR = c;
+		mom_are_we_there_yet(UART->UART_SR & UART_SR_TXRDY);
+		UART->UART_THR = c;
 	}
 }
 

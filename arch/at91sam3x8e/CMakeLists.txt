@@ -4,7 +4,13 @@ add_library(ardix_arch STATIC)
 target_link_libraries(ardix INTERFACE ardix_arch)
 
 target_compile_options(ardix_arch PRIVATE ${ARDIX_COMPILE_OPTIONS})
-target_include_directories(ardix_arch PRIVATE ${ARDIX_INCLUDE_DIRS})
+target_include_directories(ardix_arch PRIVATE
+	${ARDIX_INCLUDE_DIRS}
+	${CMAKE_CURRENT_SOURCE_DIR}/../../contrib/arduino-cmsis/CMSIS-Atmel/CMSIS/Device/ATMEL/sam3xa/include
+	${CMAKE_CURRENT_SOURCE_DIR}/../../contrib/cmsis/CMSIS/Core/Include
+)
+
+target_compile_definitions(ardix_arch PRIVATE ARDIX_ARCH)
 
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/config.ld.in
@@ -22,7 +28,6 @@ target_sources(ardix_arch PRIVATE
 	handle_pend_sv.S
 	handle_reset.c
 	handle_svc.S
-	interrupt.c
 	mutex.S
 	sched.c
 	serial.c

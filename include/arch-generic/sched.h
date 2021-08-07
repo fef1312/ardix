@@ -13,7 +13,7 @@ struct task; /* see include/ardix/sched.h */
  *
  * @param freq: The timer frequency in Hertz.
  */
-int arch_sched_hwtimer_init(unsigned int freq);
+int arch_sched_init(unsigned int freq);
 
 /**
  * Initialize a new process.

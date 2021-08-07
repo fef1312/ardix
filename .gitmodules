@@ -1,0 +1,6 @@
+[submodule "contrib/arduino-cmsis"]
+	path = contrib/arduino-cmsis
+	url = https://github.com/arduino/ArduinoModule-CMSIS-Atmel.git
+[submodule "contrib/cmsis"]
+	path = contrib/cmsis
+	url = https://github.com/ARM-software/CMSIS_5.git
