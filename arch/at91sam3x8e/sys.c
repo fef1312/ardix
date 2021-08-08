@@ -28,7 +28,7 @@
  * So, since we trust the clock to be configured correctly before this global
  * variable is accessed anywhere, we initialize it to the 84 MHz clock.
  */
-uint32_t SystemCoreClock = 84000000UL;
+volatile uint32_t SystemCoreClock = 84000000UL;
 
 void sys_init(void)
 {
