@@ -9,9 +9,9 @@
 #include <stddef.h>
 #include <toolchain.h>
 
-ssize_t sys_write(int fd, __user const void *buf, size_t len)
+long sys_write(int fd, __user const void *buf, size_t len)
 {
-	ssize_t ret;
+	long ret = 0;
 	void *copy;
 
 	struct file *f = file_get(fd);

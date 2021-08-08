@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <arch-generic/sched.h>
+
 #include <ardix/kent.h>
 #include <ardix/list.h>
 #include <ardix/types.h>
@@ -27,11 +29,14 @@ enum task_state {
 
 /** @brief Core structure holding information about a task. */
 struct task {
+	struct tcb tcb;
+
 	struct kent kent;
-	/** current stack pointer (only gets updated for task switching) */
-	void *sp;
-	/** first address of the stack (highest if the stack grows downwards) */
-	void *stack_bottom;
+	/**
+	 * @brief Points to the bottom of the stack.
+	 * In a full-descending stack, this is one word after the highest stack address.
+	 */
+	void *bottom;
 	/** @brief If state is `TASK_SLEEP`, the total amount of ticks to sleep */
 	unsigned long int sleep;
 	/** @brief Last execution in ticks */
@@ -42,17 +47,10 @@ struct task {
 };
 
 /** @brief Current task (access from syscall context only) */
-extern struct task *current;
+extern struct task *volatile current;
 
 /** @brief Global system tick counter (may overflow) */
 extern volatile unsigned long int tick;
-
-/**
- * @brief If nonzero, the scheduler is invoked after the current syscall.
- * This is checked and then cleared after every syscall.  If it has a nonzero
- * value, `sched_switch()` is called after `arch_enter()`.
- */
-extern int need_resched;
 
 /**
  * @brief Initialize the scheduler subsystem.
@@ -61,15 +59,12 @@ extern int need_resched;
 int sched_init(void);
 
 /**
- * @brief Switch to the next task (scheduler context only).
- * Must be called directly from within an interrupt routine.
- * This selects a new task to be run and updates the old and new task's `state`
- * field to the appropriate value.  Called from the scheduler exception handler.
- *
- * @param curr_sp Stack pointer of the current task
- * @returns Stack pointer of the new task
+ * @brief Main scheduler routine.
+ * This will iterate over the process table and choose a new task to be run,
+ * which `current` is then updated to.  If the old task was in state
+ * `TASK_READY`, it is set to `TASK_QUEUE`.
  */
-void *sched_switch(void *curr_sp);
+void schedule(void);
 
 /**
  * @brief Create a copy of the `current` task and return it.
@@ -93,11 +88,13 @@ struct task *task_clone(struct task *task);
 void msleep(unsigned long int ms);
 
 /**
- * @brief Suspend the `current` task and invoke the scheduler early.
- * May only be called from syscall context.
+ * @brief Invoke the scheduler early and switch tasks if required.
+ * May only be called from syscall context.  Attention: If `state`
+ * is `TASK_QUEUE`, this call is not guaranteed to suspend the
+ * current task at all.
  *
- * @param state State the task should enter.
- *	Allowed values are `TASK_SLEEP` and `TASK_IOWAIT`.
+ * @param state State the current task should enter.
+ *	Allowed values are `TASK_QUEUE`, `TASK_SLEEP` and `TASK_IOWAIT`.
  */
 void yield(enum task_state state);
 

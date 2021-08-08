@@ -7,19 +7,6 @@
 
 #include <toolchain.h>
 
-/** Setup UART to manual byte-by-byte control */
-static inline void uart_emergency_setup(void)
-{
-	UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
-
-	UART->UART_CR = UART_CR_RXDIS | UART_CR_RSTRX
-		      | UART_CR_TXDIS | UART_CR_RSTTX;
-
-	UART->UART_IDR = 0xffffffff;
-
-	UART->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
-}
-
 static void uart_write_sync(const char *s)
 {
 	char c;
@@ -29,10 +16,28 @@ static void uart_write_sync(const char *s)
 	}
 }
 
+/** Setup UART to manual byte-by-byte control */
+static inline void uart_emergency_setup(void)
+{
+	UART->UART_IDR = 0xffffffff;
+
+	mom_are_we_there_yet(UART->UART_SR & UART_SR_TXRDY);
+	UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
+
+	UART->UART_CR = UART_CR_RXDIS | UART_CR_RSTRX
+		      | UART_CR_TXDIS | UART_CR_RSTTX;
+
+	UART->UART_CR = UART_CR_TXEN;
+
+	UART->UART_THR = '\0';
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch"
 static inline void print_err_msg(enum irqno irqno)
 {
+	uart_write_sync("\n\n########## SERIOUS BRUH MOMENT! ##########\n");
+
 	switch (irqno) {
 	case IRQNO_HARD_FAULT:
 		uart_write_sync("Hard");
@@ -48,11 +53,11 @@ static inline void print_err_msg(enum irqno irqno)
 		break;
 	}
 
-	uart_write_sync(" Fault encountered, system halted.\n\n");
+	uart_write_sync(" Fault encountered, cannot continue\nRegister dump:\n");
 }
 #pragma GCC diagnostic pop /* -Wswitch */
 
-static void reg_to_str(char *dest, uint32_t val)
+static void reg_to_str(char *dest, word_t val)
 {
 	for (int i = 28; i >= 0; i -= 4) {
 		uint8_t digit = (val >> i) & 0x0f;
@@ -66,91 +71,56 @@ static void reg_to_str(char *dest, uint32_t val)
 	}
 }
 
-static void print_regs(struct reg_snapshot *regs)
+static void print_reg(const char *name, word_t val)
 {
-	static char reg_line[] = "r0  = 0x????????\n";
-	char *reg_val = &reg_line[8]; /* first question mark */
+	/* static saves stack space, which might be limited */
+	static char line[] = "???? = 0x????????\n";
+	char c;
+	char *name_pos = line;
+	while ((c = *name++) != '\0')
+		*name_pos++ = c;
+	while (name_pos < &line[4])
+		*name_pos++ = ' ';
+	reg_to_str(&line[9], val);
+	uart_write_sync(line);
+}
 
-	reg_to_str(reg_val, regs->hw.r0);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '1';
-	reg_to_str(reg_val, regs->hw.r1);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '2';
-	reg_to_str(reg_val, regs->hw.r2);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '3';
-	reg_to_str(reg_val, regs->hw.r3);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '4';
-	reg_to_str(reg_val, regs->sw.r4);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '5';
-	reg_to_str(reg_val, regs->sw.r5);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '6';
-	reg_to_str(reg_val, regs->sw.r6);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '7';
-	reg_to_str(reg_val, regs->sw.r7);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '8';
-	reg_to_str(reg_val, regs->sw.r8);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '9';
-	reg_to_str(reg_val, regs->sw.r9);
-	uart_write_sync(reg_line);
-
-	reg_line[1] = '1';
-	reg_line[2] = '0';
-	reg_to_str(reg_val, regs->sw.r10);
-	uart_write_sync(reg_line);
-
-	reg_line[2] = '1';
-	reg_to_str(reg_val, regs->sw.r11);
-	uart_write_sync(reg_line);
-
-	reg_line[2] = '2';
-	reg_to_str(reg_val, regs->hw.r12);
-	uart_write_sync(reg_line);
-
-	reg_line[0] = 's';
-	reg_line[1] = 'p';
-	reg_line[2] = ' ';
-	reg_to_str(reg_val, (uint32_t)(regs + 1)); /* where SP was before reg save */
-	uart_write_sync(reg_line);
-
-	reg_line[0] = 'l';
-	reg_line[1] = 'r';
-	reg_to_str(reg_val, (uint32_t)regs->hw.lr);
-	uart_write_sync(reg_line);
-
-	reg_line[0] = 'p';
-	reg_line[1] = 'c';
-	reg_to_str(reg_val, (uint32_t)regs->hw.pc);
-	uart_write_sync(reg_line);
+static void print_regs(struct exc_context *context)
+{
+	print_reg("R0", context->sp->r0);
+	print_reg("R1", context->sp->r1);
+	print_reg("R2", context->sp->r2);
+	print_reg("R3", context->sp->r3);
+	print_reg("R4", context->r4);
+	print_reg("R5", context->r5);
+	print_reg("R6", context->r6);
+	print_reg("R7", context->r7);
+	print_reg("R8", context->r8);
+	print_reg("R9", context->r9);
+	print_reg("R10", context->r10);
+	print_reg("R11", context->r11);
+	print_reg("R12", context->sp->r12);
+	print_reg("SP", *(word_t *)&context->sp);
+	print_reg("LR", *(word_t *)&context->sp->lr);
+	print_reg("PC", *(word_t *)&context->sp->pc);
+	print_reg("xPSR", context->sp->psr);
 }
 
 #include <arch/debug.h>
 
-__naked __noreturn void arch_handle_fault(struct reg_snapshot *regs, enum irqno irqno)
+__naked __noreturn void handle_fault(struct exc_context *context, enum irqno irqno)
 {
 	uart_emergency_setup();
-	print_err_msg(irqno);
-	print_regs(regs);
 
-	/* give developers a chance to inspect the system */
+	print_err_msg(irqno);
+	print_regs(context);
+
+	if (SCB->HFSR & SCB_HFSR_FORCED_Msk)
+		print_reg("CFSR", SCB->CFSR);
+
+	uart_write_sync("\nSystem halted, goodbye\n\n");
+
 	__breakpoint;
-	/* but never leave this function */
 	while (1);
 }
 

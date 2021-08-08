@@ -5,16 +5,16 @@
 #include <toolchain.h>
 
 #define sys_table_entry(number, func) \
-	[number] (int (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
+	[number] (long (*)(sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t, sysarg_t))(func)
 
 __rodata
-int (*const sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
-				  sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
+long (*const sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+				   sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
 	sys_table_entry(SYS_read,		sys_read),
 	sys_table_entry(SYS_write,		sys_write),
 };
 
-int sys_stub(void)
+long sys_stub(void)
 {
 	return -ENOSYS;
 }

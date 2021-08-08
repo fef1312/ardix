@@ -1,6 +1,5 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch-generic/entry.h>
 #include <arch/hardware.h>
 
 #include <ardix/types.h>
@@ -17,13 +16,12 @@
 extern uint16_t __syscall_return_point;
 #endif
 
-int arch_enter(void *sp)
+void arch_enter(struct exc_context *context)
 {
-	struct reg_snapshot *regs = sp;
-	enum syscall sc_num = arch_syscall_num(regs);
-	int (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
-		       sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
-	int sc_ret;
+	enum syscall number = sc_num(context);
+	long (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
+			sysarg_t arg4, sysarg_t arg5, sysarg_t arg6);
+	long sc_ret;
 
 #	ifdef CONFIG_CHECK_SYSCALL_SOURCE
 	/*
@@ -32,31 +30,28 @@ int arch_enter(void *sp)
 	 * the instructions are always 2-byte aligned.  Additionally, the PC
 	 * points to the instruction *after* the SVC, not SVC itself.
 	 */
-	if (((uintptr_t)regs->hw.pc & 0xfffffffe) != (uintptr_t)&__syscall_return_point) {
-		arch_syscall_set_rval(regs, -EACCES);
+	if (((uintptr_t)regs->sp->pc & 0xfffffffe) != (uintptr_t)&__syscall_return_point) {
+		sc_set_rval(regs, -EACCES);
 		return;
 	}
 #	endif
 
-	if (sc_num > NSYSCALLS) {
-		arch_syscall_set_rval(regs, -ENOSYS);
-		return 0;
+	if (number > NSYSCALLS) {
+		sc_set_rval(context, -ENOSYS);
+		return;
 	}
 
-	handler = sys_table[sc_num];
+	handler = sys_table[number];
 	if (handler == NULL) {
-		arch_syscall_set_rval(regs, -ENOSYS);
-		return 0;
+		sc_set_rval(context, -ENOSYS);
+		return;
 	}
 
 	/* TODO: not every syscall uses the max amount of parameters (duh) */
-	sc_ret = handler(arch_syscall_arg1(regs), arch_syscall_arg2(regs), arch_syscall_arg3(regs),
-			 arch_syscall_arg4(regs), arch_syscall_arg5(regs), arch_syscall_arg6(regs));
+	sc_ret = handler(sc_arg1(context), sc_arg2(context), sc_arg3(context),
+			 sc_arg4(context), sc_arg5(context), sc_arg6(context));
 
-	arch_syscall_set_rval(regs, sc_ret);
-	int ret = need_resched;
-	need_resched = 0;
-	return ret;
+	sc_set_rval(context, sc_ret);
 }
 
 /*

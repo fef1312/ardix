@@ -4,19 +4,13 @@
 
 .text
 
-/* void schedule(void); */
-.extern schedule
-
-/* void handle_pend_sv(void); */
-func_begin handle_pend_sv
-
-	prepare_entry
-	bl	schedule
-	prepare_leave
-
+/* void _leave(void); */
+func_begin _leave
+	pop	{r4-r12,lr}
+	cpsie	i
+	msr	psp,	r12
 	bx	lr
-
-func_end handle_pend_sv
+func_end _leave
 
 /*
  * This file is part of Ardix.

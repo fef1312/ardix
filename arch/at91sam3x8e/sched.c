@@ -1,19 +1,24 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <arch-generic/do_switch.h>
 #include <arch-generic/sched.h>
 #include <arch/hardware.h>
 #include <arch/interrupt.h>
+#include <arch/linker.h>
 
 #include <ardix/atomic.h>
+#include <ardix/kevent.h>
 #include <ardix/malloc.h>
 #include <ardix/sched.h>
+#include <ardix/serial.h>
 
 #include <errno.h>
 #include <string.h>
 
 volatile unsigned long int tick = 0;
-unsigned int systick_reload;
-unsigned int tick_freq;
+
+static unsigned int systick_reload;
+static unsigned int tick_freq;
 
 void handle_sys_tick(void)
 {
@@ -24,61 +29,42 @@ void handle_sys_tick(void)
 	 * because the docs say you're supposed to do it that way
 	 */
 	if (!is_atomic())
-		arch_irq_invoke(IRQNO_PEND_SV);
+		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
 }
 
-/**
- * Set the NVIC priority grouping field in `AIRCR`.
- * Only values from 0..7 are allowed, see the SAM3X documentation.
- *
- * @param prio_group: The new priority grouping value.
- */
-static inline void sched_nvic_set_prio_group(uint32_t prio_group)
-{
-	uint32_t reg_val = REG_SCB_AIRCR;
-
-	reg_val &= ~(REG_SCB_AIRCR_VECTKEY_MASK | REG_SCB_AIRCR_PRIGROUP_MASK);
-	reg_val = reg_val
-		| REG_SCB_AIRCR_VECTKEY_VAL(REG_SCB_AIRCR_VECTKEY_MAGIC)
-		| REG_SCB_AIRCR_PRIGROUP_VAL(prio_group);
-
-	REG_SCB_AIRCR = reg_val;
-}
-
-int arch_sched_hwtimer_init(unsigned int freq)
+int arch_sched_init(unsigned int freq)
 {
 	tick_freq = freq;
-	systick_reload = sys_core_clock / freq;
-	if (systick_reload > REG_SYSTICK_LOAD_RELOAD_MASK)
+	systick_reload = SystemCoreClock / freq;
+	if ((systick_reload & SysTick_LOAD_RELOAD_Msk) != systick_reload)
 		return 1;
 
-	/* Ensure SysTick and PendSV are preemptive */
-	sched_nvic_set_prio_group(0b011);
+	/* no subgrouping */
+	NVIC_SetPriorityGrouping(0b011);
 
-	REG_SYSTICK_LOAD = (systick_reload & REG_SYSTICK_LOAD_RELOAD_MASK) - 1;
-	REG_SYSTICK_VAL = 0U;
-	REG_SYSTICK_CTRL = REG_SYSTICK_CTRL_CLKSOURCE_BIT /* MCK */
-			 | REG_SYSTICK_CTRL_TICKINT_BIT /* trigger exception */
-			 | REG_SYSTICK_CTRL_ENABLE_BIT; /* enable SysTick */
+	SysTick_Config(systick_reload);
 
 	return 0;
 }
 
 void arch_task_init(struct task *task, void (*entry)(void))
 {
-	struct reg_snapshot *regs = task->stack_bottom - sizeof(*regs);
-	task->sp = regs;
+	struct hw_context *hw_context = task->bottom - sizeof(*hw_context);
+	struct exc_context *exc_context = (void *)hw_context - sizeof(*exc_context);
 
-	memset(regs, 0, sizeof(*regs));
-	regs->hw.pc = entry;
-	regs->hw.psr = 0x01000000;
-	regs->sw.lr = (void *)0xfffffff9;
-}
+	memset(hw_context, 0, task->bottom - (void *)hw_context);
 
-void yield(enum task_state state)
-{
-	current->state = state;
-	arch_irq_invoke(IRQNO_PEND_SV);
+	exc_context->sp = hw_context;
+	exc_context->lr = (void *)0xfffffff9; /* return to thread mode, use MSP */
+
+	hw_context->pc = entry;
+	hw_context->psr = 0x01000000; /* Thumb state bit set, unprivileged */
+	hw_context->lr = (void *)0xffffffff;
+	task->tcb.hw_context = hw_context;
+
+	memset(&task->tcb.context, 0, sizeof(task->tcb.context));
+	task->tcb.context.pc = _leave;
+	task->tcb.context.sp = exc_context;
 }
 
 __naked __noreturn static void idle_task_entry(void)
@@ -92,8 +78,7 @@ int arch_idle_task_init(struct task *task)
 	if (stack == NULL)
 		return -ENOMEM;
 
-	task->stack_bottom = stack + CONFIG_STACK_SIZE - 4;
-	task->sp = task->stack_bottom - sizeof(struct reg_snapshot);
+	task->bottom = stack + CONFIG_STACK_SIZE; /* full-descending stack */
 	arch_task_init(task, idle_task_entry);
 	task->sleep = 0;
 	task->last_tick = 0;

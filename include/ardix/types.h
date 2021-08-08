@@ -23,9 +23,6 @@ typedef struct {
 
 #include <arch/hardware.h>
 
-/* Syscall argument */
-typedef word_t	sysarg_t;
-
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.

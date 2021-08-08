@@ -2,6 +2,8 @@
 
 #include <ardix/list.h>
 
+#include <config.h>
+
 void list_insert(struct list_head *head, struct list_head *new)
 {
 	new->next = head->next;
@@ -24,6 +26,11 @@ void list_delete(struct list_head *head)
 {
 	head->next->prev = head->prev;
 	head->prev->next = head->next;
+
+#	ifdef DEBUG
+		head->next = NULL;
+		head->prev = NULL;
+#	endif
 }
 
 /*

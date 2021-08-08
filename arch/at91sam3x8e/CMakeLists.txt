@@ -22,12 +22,14 @@ target_sources(ardix_arch PRIVATE
 	atom_get_put.S
 	atom.c
 	atomic.c
+	do_switch.S
 	entry.c
 	handle_fault.c
 	handle_fault.S
 	handle_pend_sv.S
 	handle_reset.c
 	handle_svc.S
+	leave.S
 	mutex.S
 	sched.c
 	serial.c

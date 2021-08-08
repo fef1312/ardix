@@ -3,17 +3,20 @@
 #pragma once
 
 #include <stdint.h>
+#include <toolchain.h>
 
 typedef uint32_t word_t;
+typedef uint32_t sysarg_t;
 
 /** Current system frequency in Hertz. */
 extern volatile uint32_t SystemCoreClock;
 
 /**
- * All registers that are automatically saved by hardware routines when entering
- * an IRQ, in the correct order.
+ * @brief Hardware context save upon entering kernel space.
+ * This is stored on the stack of the thread that ran before exception entry,
+ * i.e. PSP if user space and MSP if kernel space.
  */
-struct reg_hw_snapshot {
+struct hw_context {
 	word_t r0;
 	word_t r1;
 	word_t r2;
@@ -24,11 +27,12 @@ struct reg_hw_snapshot {
 	word_t psr;
 };
 
-struct reg_snapshot {
-	word_t r0;
-	word_t r1;
-	word_t r2;
-	word_t r3;
+/**
+ * @brief Software context save from an exception handler upon entering kernel space.
+ * This is always stored on the main stack.
+ * The `prepare_entry` macro in `arch/include/asm.S` creates this snapshot.
+ */
+struct exc_context {
 	word_t r4;
 	word_t r5;
 	word_t r6;
@@ -37,34 +41,92 @@ struct reg_snapshot {
 	word_t r9;
 	word_t r10;
 	word_t r11;
-
 	/*
-	 * ATTENTION: the following registers might actually be stored on the
-	 *            other stack; don't access them unless you know exactly
-	 *            what you're doing
+	 * Old stack pointer used before exception entry.
+	 * Bit 2 in lr defines which stack was used.
 	 */
-
-	word_t _r12;
-	void *_lr;	/* alias r14 */
-	void *_pc;	/* alias r15 */
-	word_t _psr;
+	struct hw_context *sp;
+	void *lr;
 };
 
-#define arch_syscall_num(reg_snap) ((reg_snap)->r7)
-#define arch_syscall_arg1(reg_snap) ((reg_snap)->r0)
-#define arch_syscall_arg2(reg_snap) ((reg_snap)->r1)
-#define arch_syscall_arg3(reg_snap) ((reg_snap)->r2)
-#define arch_syscall_arg4(reg_snap) ((reg_snap)->r3)
-#define arch_syscall_arg5(reg_snap) ((reg_snap)->r4)
-#define arch_syscall_arg6(reg_snap) ((reg_snap)->r5)
+/**
+ * @brief Used for in-kernel context switching.
+ * This is where `do_switch()` stores the register values.
+ */
+struct context {
+	word_t r4;
+	word_t r5;
+	word_t r6;
+	word_t r7;
+	word_t r8;
+	word_t r9;
+	word_t r10;
+	word_t r11;
+	void *sp;
+	void *pc;
+};
 
-#define arch_syscall_set_rval(reg_snap, val) ((reg_snap)->r0 = (word_t)(val));
+/**
+ * @brief Task Control Block.
+ * This is a low level structure used by `do_switch()` to do the actual context
+ * switching,
+ */
+struct tcb {
+	struct context context;
+	struct hw_context *hw_context;
+};
+
+__always_inline sysarg_t sc_num(const struct exc_context *ctx)
+{
+	return ctx->r7;
+}
+
+__always_inline sysarg_t sc_arg1(const struct exc_context *ctx)
+{
+	return ctx->sp->r0;
+}
+
+__always_inline sysarg_t sc_arg2(const struct exc_context *ctx)
+{
+	return ctx->sp->r1;
+}
+
+__always_inline sysarg_t sc_arg3(const struct exc_context *ctx)
+{
+	return ctx->sp->r2;
+}
+
+__always_inline sysarg_t sc_arg4(const struct exc_context *ctx)
+{
+	return ctx->sp->r3;
+}
+
+__always_inline sysarg_t sc_arg5(const struct exc_context *ctx)
+{
+	return ctx->r4;
+}
+
+__always_inline sysarg_t sc_arg6(const struct exc_context *ctx)
+{
+	return ctx->r5;
+}
+
+__always_inline void sc_set_rval(struct exc_context *ctx, long rval)
+{
+	/* raw cast */
+	*(long *)&ctx->sp->r0 = rval;
+}
 
 #ifdef ARDIX_ARCH
 #	define __SAM3X8E__
 #	define DONT_USE_CMSIS_INIT
 #	define __PROGRAM_START
+
 #	include <sam3x8e.h>
+
+#	undef __PROGRAM_START
+#	undef DONT_USE_CMSIS_INIT
+#	undef __SAM3X8E__
 #endif /* ARDIX_ARCH */
 
 /*

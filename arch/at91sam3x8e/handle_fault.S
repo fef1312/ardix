@@ -4,35 +4,35 @@
 
 .text
 
-/* __naked __noreturn void arch_handle_fault(struct reg_snapshot *regs, int irqnum); */
-.extern arch_handle_fault
+/* __naked __noreturn void handle_fault(struct exc_context *context, int irqnum); */
+.extern handle_fault
 
 func_begin handle_hard_fault
-	push	{r4-r11,lr}
+	prepare_entry
 	mov	r0,	sp
 	mov	r1,	#-13		/* IRQNO_HARD_FAULT */
-	b	arch_handle_fault
+	b	handle_fault
 func_end handle_hard_fault
 
 func_begin handle_mm_fault
-	push	{r4-r11,lr}
+	prepare_entry
 	mov	r0,	sp
 	mov	r1,	#-12		/* IRQNO_MM_FAULT */
-	b	arch_handle_fault
+	b	handle_fault
 func_end handle_mm_fault
 
 func_begin handle_bus_fault
-	push	{r4-r11,lr}
+	prepare_entry
 	mov	r0,	sp
 	mov	r1,	#-11		/* IRQNO_BUS_FAULT */
-	b	arch_handle_fault
+	b	handle_fault
 func_end handle_bus_fault
 
 func_begin handle_usage_fault
-	push	{r4-r11,lr}
+	prepare_entry
 	mov	r0,	sp
 	mov	r1,	#-10		/* IRQNO_USAGE_FAULT */
-	b	arch_handle_fault
+	b	handle_fault
 func_end handle_usage_fault
 
 /*

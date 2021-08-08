@@ -5,9 +5,9 @@
 #include <config.h>
 
 #ifdef DEBUG
-#define __breakpoint __asm__ volatile("\tbkpt\n" ::: )
+#	define __breakpoint __asm__ volatile("bkpt")
 #else
-#define __breakpoint
+#	define __breakpoint
 #endif
 
 /*

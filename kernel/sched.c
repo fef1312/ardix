@@ -1,5 +1,6 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <arch-generic/do_switch.h>
 #include <arch-generic/sched.h>
 #include <arch-generic/watchdog.h>
 
@@ -17,11 +18,9 @@ extern uint32_t _sstack;
 extern uint32_t _estack;
 
 static struct task *tasktab[CONFIG_SCHED_MAXTASK];
-struct task *current;
+struct task *volatile current;
 
 static struct task idle_task;
-
-int need_resched = 0;
 
 static void task_destroy(struct kent *kent)
 {
@@ -32,37 +31,39 @@ static void task_destroy(struct kent *kent)
 
 int sched_init(void)
 {
-	int i;
+	int err;
 
-	current = malloc(sizeof(*current));
-	if (current == NULL)
+	struct task *ktask = malloc(sizeof(*ktask));
+	if (ktask == NULL)
 		return -ENOMEM;
 
-	current->kent.parent = kent_root;
-	current->kent.destroy = task_destroy;
-	i = kent_init(&current->kent);
-	if (i != 0)
+	ktask->kent.parent = kent_root;
+	ktask->kent.destroy = task_destroy;
+	err = kent_init(&ktask->kent);
+	if (err != 0)
 		goto out;
 
-	current->sp = &_sstack;
-	current->stack_bottom = &_estack;
-	current->pid = 0;
-	current->state = TASK_READY;
-	tasktab[0] = current;
+	memset(&ktask->tcb, 0, sizeof(ktask->tcb));
+	ktask->bottom = &_estack;
+	ktask->pid = 0;
+	ktask->state = TASK_READY;
 
-	for (i = 1; i < CONFIG_SCHED_MAXTASK; i++)
+	tasktab[0] = ktask;
+	current = ktask;
+
+	for (unsigned int i = 1; i < ARRAY_SIZE(tasktab); i++)
 		tasktab[i] = NULL;
 
-	i = arch_watchdog_init();
-	if (i != 0)
+	err = arch_watchdog_init();
+	if (err != 0)
 		goto out;
 
-	i = arch_sched_init(CONFIG_SCHED_FREQ);
-	if (i != 0)
+	err = arch_sched_init(CONFIG_SCHED_FREQ);
+	if (err != 0)
 		goto out;
 
-	i = arch_idle_task_init(&idle_task);
-	if (i != 0)
+	err = arch_idle_task_init(&idle_task);
+	if (err != 0)
 		goto out;
 
 	/*
@@ -70,7 +71,7 @@ int sched_init(void)
 	 * are going to panic anyways if the scheduler fails to initialize.
 	 */
 out:
-	return i;
+	return err;
 }
 
 /**
@@ -95,40 +96,52 @@ static inline bool can_run(const struct task *task)
 	return false; /* this shouldn't be reached */
 }
 
-void *sched_switch(void *curr_sp)
+void schedule(void)
 {
-	struct task *tmp;
-	int i;
-	/*
-	 * this is -1 if the idle task was running which would normally be a problem
-	 * because it is used as an index in tasktab, but the for loop always
-	 * increments it by 1 before doing actuall array accesses so it's okay here
-	 */
-	pid_t nextpid = current->pid;
-	current->sp = curr_sp;
+	atomic_enter();
+
+	struct task *old = current;
+	pid_t nextpid = old->pid;
+
+	struct task *new = NULL;
 
 	kevents_process();
 
-	if (current->state == TASK_READY)
-		current->state = TASK_QUEUE;
-
-	for (i = 0; i < CONFIG_SCHED_MAXTASK; i++) {
+	if (old->state == TASK_READY)
+		old->state = TASK_QUEUE;
+	for (unsigned int i = 0; i < ARRAY_SIZE(tasktab); i++) {
+		/*
+		 * increment nextpid before accessing the task table
+		 * because it is -1 if the idle task was running
+		 */
 		nextpid++;
-		nextpid %= CONFIG_SCHED_MAXTASK;
+		nextpid %= ARRAY_SIZE(tasktab);
 
-		tmp = tasktab[nextpid];
+		struct task *tmp = tasktab[nextpid];
 		if (tmp != NULL && can_run(tmp)) {
-			current = tmp;
+			new = tmp;
 			break;
 		}
 	}
 
-	if (i == CONFIG_SCHED_MAXTASK)
-		current = &idle_task;
+	if (new == NULL)
+		new = &idle_task;
 
-	current->state = TASK_READY;
-	current->last_tick = tick;
-	return current->sp;
+	new->state = TASK_READY;
+	new->last_tick = tick;
+	current = new;
+
+	atomic_leave();
+
+	if (old != new)
+		do_switch(old, new);
+}
+
+void yield(enum task_state state)
+{
+	struct task *task = current;
+	task->state = state;
+	schedule();
 }
 
 struct task *sched_fork(struct task *parent)
