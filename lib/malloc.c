@@ -1,34 +1,56 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
+#include <arch/debug.h>
+
 #include <ardix/atomic.h>
 #include <ardix/list.h>
 #include <ardix/malloc.h>
+#include <ardix/mutex.h>
 #include <ardix/types.h>
 
 #include <string.h>
 #include <toolchain.h>
+#include <config.h>
 
 /**
  * @file Stupid memory allocator.
  *
- * This design is heavily inspired by (read: stolen from) Doug Lea's Malloc
- * <http://gee.cs.oswego.edu/dl/html/malloc.html>, with some features (notably binning)
- * removed for the sake of simplicity.  Furthermore, as the MPU is not implemented yet,
- * the allocator uses one big heap for all processes including the kernel.  We also
- * don't have virtual memory and therefore no wilderness chunk to take care of.
+ * This implementation is originally based on Doug Lea's design
+ * <http://gee.cs.oswego.edu/dl/html/malloc.html>, with some features (notably
+ * binning) removed for the sake of simplicity.  Furthermore, as the MPU is not
+ * implemented yet, the allocator uses only two heaps: one for all regular
+ * processes including the kernel, and one for timing critical situations where
+ * we can't sleep (mainly irqs).  Additionally, there is no wilderness chunk to
+ * take care of because we don't support virtual memory.
  *
- * Memory is divided into individual blocks of dynamic size.  Every block has a header
- * containing its size w/out overhead; free blocks additionally have a
- * `struct list_head` after that in order to keep track of where the free blocks are.
- * This list is ordered by size ascendingly, so we can directly take the first
- * sufficiently-sized block when iterating over the list in `malloc()`.
+ * Memory is divided into individual blocks of dynamic size.  Every block has a
+ * header containing its size w/out overhead; free blocks additionally have a
+ * `struct list_head` after that in order to keep track of where the free blocks
+ * are.  This list is ordered by size ascendingly, so we can directly take the
+ * first sufficiently sized block when iterating over the list in `malloc()`.
+ *
  * Additionally, the effective block size is copied to the very end of the block
- * (directly after the last usable address) in order to detect two contiguous free
- * blocks when `free()`ing.  How?  By (ab)using the LSB of the at-least-4-byte-aligned
- * size value as a flag for whether the block is currently in use.  `free()` can then
- * just check the size values of the neighboring blocks by doing a simple pointer
- * calculation, and merge the two blocks into a big one if possible.  This minimizes
- * fragmentation with only slight overhead.
+ * (directly after the last usable address) in order to be able to find a
+ * block's immediate neighbors by simple pointer arithmetic.  For this to work,
+ * the allocator relies on the fact that blocks are always aligned to at least
+ * one longword.  With that in mind, we know that the two LSBs of the size are
+ * always zero (longwords must be at least 4 bytes as per the C standard) and
+ * thus can be (ab)used for flags.  The size at the beginning of the block will
+ * be referred to as the lower size, and the copy at the end of the block is the
+ * upper size.
+ *
+ * Bit 0 flags the block as either free or allocated.  If two contiguous blocks
+ * become free, they are merged back together into one large block.  This flag
+ * is always the same at both the upper and lower size.
+ *
+ * Bit 1 is a marker for the start and end of the heap.  The lowest block, i.e.
+ * the one with the lowest physical memory address, has this flag set in its
+ * lower size field, but not in the upper one.  Likewise, the highest block,
+ * i.e. the one with the highest physical memory address, has this flag set in
+ * its upper size field, but not in the lower one.  All other blocks always set
+ * this flag to zero in both size fields.  In other words, this flag is set in
+ * the block's upper/lower size field if if does *not* have an upper/lower
+ * neighbor respectively.
  *
  * On 32-bit systems, a free block in memory followed by an allocated one might look
  * something along the lines of this:
@@ -55,151 +77,191 @@
  * store those pointers for the linked list when `free()`ing a block.
  */
 
+#if __SIZEOF_SIZE_T__ < 4
+#error "size_t must be at least 4 bytes"
+#endif
+
 /**
  * Memory block header.
  * This sits at the beginning of every memory block (duh).
  */
 struct memblk {
-	/**
-	 * The block's effectively usable size, i.e. the total block size minus
-	 * `2 * MEMBLK_SIZE_LENGTH`.
-	 *
-	 * This size will also be written to the very end of the block, just after
-	 * the last usable address.  Additionally, since blocks are always aligned
-	 * to at least 4 bytes anyways, we can use the LSB of this size as a flag
-	 * for whether the block is currently allocated (1) or not (0).  This is
-	 * going to make it much easier to detect two free neighboring blocks when
-	 * `free()`ing one.
-	 */
-	size_t size;
+	union {
+		/**
+		 * @brief The usable size, i.e. the total block size minus `MEMBLK_OVERHEAD`.
+		 *
+		 * This size will also be written to the very end of the block, just after
+		 * the last usable address.  Additionally, since blocks are always aligned
+		 * to at least 4 bytes anyways, we can use the LSB of this size as a flag
+		 * for whether the block is currently allocated (1) or not (0).  This is
+		 * going to make it much easier to detect two free neighboring blocks when
+		 * `free()`ing one.
+		 */
+		size_t size;
+		/** @brief Used to get the previous block's size by accessing index -1 */
+		size_t prevsz[0];
+	};
 
-	/** If the block is allocated, this will be overwritten */
-	struct list_head list;
+	union {
+		/** @brief If the block is allocated, this will be overwritten */
+		struct list_head list;
 
-	/* ... void ... */
-
-	/* Here, at the end of this block, would be a copy of `size`. */
+		/** @brief Used as the return value for `malloc()` */
+		uint8_t data[0];
+		/** @brief Used to get the copy of the size field at the end of the block */
+		size_t endsz[0];
+	};
 };
 
-/** The length of the `size` member in `struct memblk`. */
-#define MEMBLK_SIZE_LENGTH SIZEOF_MEMBER(struct memblk, size)
-/** Total overhead per allocated block in bytes (2 * size_t). */
-#define MEMBLK_OVERHEAD (2 * MEMBLK_SIZE_LENGTH)
+#define OVERHEAD (2 * SIZEOF_MEMBER(struct memblk, size))
+#define MIN_SIZE SIZEOF_MEMBER(struct memblk, list)
 
-/** Minimum effective allocation size (and all sizes must be a multiple of this one). */
-#define MIN_BLKSZ (sizeof(struct memblk) - MEMBLK_OVERHEAD)
+static LIST_HEAD(generic_heap);
+static MUTEX(generic_heap_lock);
+static void *generic_heap_start;
+static void *generic_heap_end;
 
-/** The list of free blocks, ordered by ascending size. */
-LIST_HEAD(memblk_free_list);
+static LIST_HEAD(atomic_heap);
+static void *atomic_heap_start;
+static void *atomic_heap_end;
 
-size_t malloc_bytes_free;
-size_t malloc_bytes_used = MEMBLK_OVERHEAD;
-size_t malloc_bytes_overhead = MEMBLK_OVERHEAD;
+/* forward declaration of utility functions used throughout the file */
 
-static void memblk_set_size(struct memblk *block, size_t size)
-{
-	block->size = size;
-	void *endptr = block;
-	endptr += MEMBLK_SIZE_LENGTH;
-	endptr += size & ~1u; /* discard the allocated bit */
-	*(size_t *)endptr = size;
-}
-
-/**
- * Split a single free memory block up into two individual blocks such that the block
- * passed to this function will contain `size` bytes and the newly-created block has
- * the rest minus overhead.  The new block is inserted into the list of free blocks;
- * however, the original block will *not* be re-sorted.
- *
- * @param blk The block to split up.
- * @param size The new (at least by `MEMBLK_OFFSET + n` bytes smaller) size of the block.
- * @return The newly created block.
- */
-static struct memblk *memblk_split(struct memblk *blk, size_t size)
-{
-	struct memblk *cursor;
-	struct memblk *newblk = (void *)blk + MEMBLK_OVERHEAD + (size & ~1u);
-
-	memblk_set_size(newblk, blk->size - MEMBLK_OVERHEAD - (size & ~1u));
-	memblk_set_size(blk, size);
-	malloc_bytes_overhead += MEMBLK_OVERHEAD;
-
-	list_for_each_entry_reverse(&blk->list, cursor, list) {
-		if (cursor->size >= newblk->size || &cursor->list == &memblk_free_list) {
-			list_insert(&cursor->list, &newblk->list);
-			break;
-		}
-	}
-
-	return newblk;
-}
+/** @brief Get the usable block size in bytes, without flags or overhead. */
+static size_t blk_get_size(struct memblk *blk);
+/** @brief Set the usable block size without overhead and without affecting flags. */
+static void blk_set_size(struct memblk *blk, size_t size);
+/** @brief Flag a block as allocated. */
+static void blk_set_alloc(struct memblk *blk);
+/** @brief Remove the allocated flag from a block. */
+static void blk_clear_alloc(struct memblk *blk);
+/** @brief Return nonzero if the block is allocated. */
+static int blk_is_alloc(struct memblk *blk);
+/** @brief Set the border flag at the start of a block. */
+static void blk_set_border_start(struct memblk *blk);
+/** @brief Remove the border flag from the start of a block. */
+static void blk_clear_border_start(struct memblk *blk);
+/** @brief Return nonzero if a block has the border flag set at the start. */
+static int blk_is_border_start(struct memblk *blk);
+/** @brief Set the border flag at the end of a block. */
+static void blk_set_border_end(struct memblk *blk);
+/** @brief Remove the border flag from the end of a block. */
+static void blk_clear_border_end(struct memblk *blk);
+/** @brief Return nonzero if a block has the border flag set at the end. */
+static int blk_is_border_end(struct memblk *blk);
+/** @brief Get a block's immediate lower neighbor, or NULL if it doesn't have one. */
+static struct memblk *blk_prev(struct memblk *blk);
+/** @brief Get a block's immediate higher neighbor, or NULL if it doesn't have one. */
+static struct memblk *blk_next(struct memblk *blk);
+/** @brief Merge two contiguous free blocks into one, resort the list, and return the block. */
+static struct memblk *blk_merge(struct list_head *heap, struct memblk *bottom, struct memblk *top);
+/** @brief Attempt to merge both the lower and higher neighbors of a free block. */
+static struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk);
+/** @brief Cut a slice from a free block and return the slice. */
+static struct memblk *blk_slice(struct list_head *heap, struct memblk *bottom, size_t bottom_size);
 
 void malloc_init(void *heap, size_t size)
 {
-	struct memblk *blk = heap;
-	malloc_bytes_free = size - MEMBLK_OVERHEAD;
+#	ifdef DEBUG
+		if (heap == NULL) {
+			__breakpoint;
+		}
+		if (size == 0) {
+			__breakpoint;
+		}
+		if (size - OVERHEAD - MIN_SIZE < CONFIG_IOMEM_SIZE) {
+			__breakpoint;
+		}
+		if (!list_is_empty(&generic_heap)) {
+			__breakpoint;
+		}
+		if (!list_is_empty(&atomic_heap)) {
+			__breakpoint;
+		}
+#	endif
 
-	/*
-	 * TODO: This check will prevent accidentally calling the method twice, but should
-	 *       ideally cause an error of some sort if it fails.  Once we have proper error
-	 *       dispatching/handling routines, we should do that here.
-	 */
-	if (list_is_empty(&memblk_free_list)) {
-		memset(heap, 0, size);
-		memblk_set_size(blk, size - MEMBLK_OVERHEAD);
-		list_insert(&memblk_free_list, &blk->list);
-	}
+	memset(heap, 0, size);
+
+	generic_heap_start = heap;
+	generic_heap_end = heap + size - CONFIG_IOMEM_SIZE - OVERHEAD;
+
+	atomic_heap_start = heap + size - CONFIG_IOMEM_SIZE;
+	atomic_heap_end = atomic_heap_start + CONFIG_IOMEM_SIZE;
+
+	struct memblk *generic_block = heap;
+	blk_set_size(generic_block, size - CONFIG_IOMEM_SIZE - OVERHEAD);
+	blk_clear_alloc(generic_block);
+	blk_set_border_start(generic_block);
+	blk_set_border_end(generic_block);
+	list_insert(&generic_heap, &generic_block->list);
+
+	struct memblk *atomic_block = heap + size - CONFIG_IOMEM_SIZE;
+	blk_set_size(atomic_block, CONFIG_IOMEM_SIZE - OVERHEAD);
+	blk_clear_alloc(atomic_block);
+	blk_set_border_start(atomic_block);
+	blk_set_border_end(atomic_block);
+	list_insert(&atomic_heap, &atomic_block->list);
 }
 
 void *malloc(size_t size)
 {
-	struct memblk *blk;
-	size_t remaining_blksz;
+	if (size == 0)
+		return NULL; /* as per POSIX */
 
-	if (list_is_empty(&memblk_free_list))
+	/*
+	 * Round up towards the next whole allocation unit.  GCC is smart enough
+	 * to replace the division/multiplication pair with a bitfield clear
+	 * instruction (MIN_SIZE is always a power of two), so this is okay.
+	 */
+	size = (size / MIN_SIZE) * MIN_SIZE + MIN_SIZE;
+
+	mutex_lock(&generic_heap_lock);
+
+	struct memblk *cursor;
+	list_for_each_entry(&generic_heap, cursor, list) {
+		if (blk_get_size(cursor) >= size)
+			break;
+	}
+
+	void *ptr = NULL;
+
+	if (blk_get_size(cursor) >= size) {
+		cursor = blk_slice(&generic_heap, cursor, size);
+		blk_set_alloc(cursor);
+		ptr = cursor->data;
+	}
+
+	mutex_unlock(&generic_heap_lock);
+
+	return ptr;
+}
+
+void *atomic_malloc(size_t size)
+{
+	if (size == 0)
 		return NULL;
 
-	if (size == 0)
-		return NULL; /* as per POSIX.1-2008 */
-
-	/* round up to the next multiple of `MIN_BLKSZ` */
-	size = (size / MIN_BLKSZ) * MIN_BLKSZ;
-	size += MIN_BLKSZ;
+	size = (size / MIN_SIZE) * MIN_SIZE + MIN_SIZE;
 
 	atomic_enter();
 
-	list_for_each_entry(&memblk_free_list, blk, list) {
-		/* blocks are sorted by size */
-		if (blk->size >= size)
+	struct memblk *cursor;
+	list_for_each_entry(&atomic_heap, cursor, list) {
+		if (blk_get_size(cursor) >= size)
 			break;
 	}
-	if (blk->size < size) {
-		atomic_leave();
-		return NULL; /* TODO: set errno to ENOMEM once we have it */
+
+	void *ptr = NULL;
+
+	if (blk_get_size(cursor) >= size) {
+		cursor = blk_slice(&atomic_heap, cursor, size);
+		blk_set_alloc(cursor);
+		ptr = cursor->data;
 	}
-
-	/*
-	 * If we've made it to here, we have found a sufficiently big block,
-	 * meaning we can't possibly fail anymore.  Since that block is likely
-	 * larger than the requested size, we are going to check if it is
-	 * possible to create a new, smaller block right at the end of the
-	 * allocated area.  If it isn't, we just hand out the entire block.
-	 */
-	remaining_blksz = blk->size - size;
-	if (remaining_blksz >= MIN_BLKSZ + MEMBLK_OVERHEAD)
-		memblk_split(blk, size | 0x1u /* allocated bit */);
-	else
-		memblk_set_size(blk, blk->size | 0x1u /* allocated bit */);
-
-	list_delete(&blk->list);
-
-	malloc_bytes_free -= size + MEMBLK_OVERHEAD;
-	malloc_bytes_used += size + MEMBLK_OVERHEAD;
 
 	atomic_leave();
 
-	/* Keep the size field intact */
-	return ((void *)blk) + MEMBLK_SIZE_LENGTH;
+	return ptr;
 }
 
 void *calloc(size_t nmemb, size_t size)
@@ -218,58 +280,202 @@ void *calloc(size_t nmemb, size_t size)
 	return ptr;
 }
 
-/** Merge two neighboring free blocks to one big block */
-static void memblk_merge(struct memblk *lblk, struct memblk *hblk)
-{
-	size_t *endsz = (void *)hblk + hblk->size + MEMBLK_SIZE_LENGTH;
-	lblk->size = lblk->size + hblk->size + MEMBLK_OVERHEAD;
-	*endsz = lblk->size;
-	malloc_bytes_overhead -= MEMBLK_OVERHEAD;
-}
-
 void free(void *ptr)
 {
-	struct memblk *tmp;
-	struct memblk *blk = ptr - MEMBLK_SIZE_LENGTH;
-	size_t *neighsz;
+	struct memblk *blk = ptr - offsetof(struct memblk, data);
+	struct list_head *heap;
 
 	if (ptr == NULL)
 		return; /* as per POSIX.1-2008 */
 
-	if ((blk->size & 0x1u) == 0)
-		return; /* TODO: Raise exception on double-free */
-
-	atomic_enter();
-
-	memblk_set_size(blk, blk->size & ~1u);
-
-	malloc_bytes_free += blk->size + MEMBLK_OVERHEAD;
-	malloc_bytes_used -= blk->size + MEMBLK_OVERHEAD;
-
-	/* check if our higher/right neighbor is allocated and merge if it is not */
-	neighsz = (void *)blk + MEMBLK_OVERHEAD + blk->size;
-	if ((*neighsz & 0x1u) == 0) {
-		tmp = container_of(neighsz, struct memblk, size);
-		memblk_merge(blk, tmp);
-		list_delete(&tmp->list);
+	if (ptr >= generic_heap_start && ptr <= generic_heap_end) {
+		heap = &generic_heap;
+		mutex_lock(&generic_heap_lock);
+	} else if (ptr >= atomic_heap_start && ptr <= atomic_heap_end) {
+		heap = &atomic_heap;
+		atomic_enter();
+	} else {
+		__breakpoint;
+		return;
 	}
 
-	/* same thing for the lower/left block */
-	neighsz = (void *)blk - MEMBLK_SIZE_LENGTH;
-	if ((*neighsz & 0x1u) == 0) {
-		tmp = (void *)neighsz - *neighsz - MEMBLK_SIZE_LENGTH;
-		memblk_merge(tmp, blk);
-		list_delete(&tmp->list);
-		blk = tmp; /* discard the higher (now partial) block */
+	if (!blk_is_alloc(blk)) {
+		__breakpoint; /* probably double free */
 	}
 
-	list_for_each_entry(&memblk_free_list, tmp, list) {
-		if (tmp->size >= blk->size)
+	blk_clear_alloc(blk);
+	blk_try_merge(heap, blk);
+
+	if (heap == &generic_heap)
+		mutex_unlock(&generic_heap_lock);
+	else
+		atomic_leave();
+}
+
+/* ========================================================================== */
+
+/*
+ * The rest of this file is just the utility functions that make our life a
+ * little easier.  Nothing too spectacular going on here, everything should be
+ * obvious from reading the huge comment at the top.
+ */
+
+#define ALLOC_FLAG	((size_t)1 << 0)
+#define BORDER_FLAG	((size_t)1 << 1)
+#define SIZE_MSK	( ~(ALLOC_FLAG | BORDER_FLAG) )
+
+static inline struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk)
+{
+	struct memblk *neigh = blk_prev(blk);
+	if (neigh != NULL)
+		blk = blk_merge(heap, neigh, blk);
+
+	neigh = blk_next(blk);
+	if (neigh != NULL)
+		blk = blk_merge(heap, blk, neigh);
+
+	return blk;
+}
+
+static inline struct memblk *blk_merge(struct list_head *heap,
+				       struct memblk *bottom,
+				       struct memblk *top)
+{
+	size_t bottom_size = blk_get_size(bottom);
+	size_t top_size = blk_get_size(top);
+	size_t total_size = bottom_size + top_size;
+
+	list_delete(&top->list);
+	list_delete(&bottom->list);
+	blk_set_size(bottom, total_size);
+
+	struct memblk *cursor;
+	list_for_each_entry(heap, cursor, list) {
+		if (blk_get_size(cursor) <= bottom->size)
 			break;
 	}
-	list_insert_before(&tmp->list, &blk->list);
+	list_insert_before(&cursor->list, &bottom->list);
 
-	atomic_leave();
+	return bottom;
+}
+
+static inline struct memblk *blk_slice(struct list_head *heap,
+				       struct memblk *bottom,
+				       size_t bottom_size)
+{
+	list_delete(&bottom->list);
+
+	size_t top_size = blk_get_size(bottom) - bottom_size - OVERHEAD;
+	if (top_size < MIN_SIZE)
+		return bottom; /* hand out the entire block */
+
+	size_t bottom_words = bottom_size / sizeof(bottom->size);
+	struct memblk *top = (void *)&bottom->endsz[bottom_words + 1];
+	blk_set_size(top, top_size);
+	blk_clear_alloc(top);
+	blk_clear_border_start(top);
+
+	blk_set_size(bottom, bottom_size);
+	blk_clear_border_end(bottom);
+
+	struct memblk *cursor;
+	list_for_each_entry(heap, cursor, list) {
+		if (blk_get_size(cursor) <= top_size)
+			break;
+	}
+	list_insert_before(&cursor->list, &top->list);
+
+	return bottom;
+}
+
+static inline size_t blk_get_size(struct memblk *blk)
+{
+	return (blk->size & SIZE_MSK) - OVERHEAD;
+}
+
+static inline void blk_set_size(struct memblk *blk, size_t size)
+{
+	size &= SIZE_MSK;
+	size += OVERHEAD;
+
+	/* sizeof(size_t) is a power of 2 so this division will become a bitshift */
+	size_t words = size / sizeof(blk->size);
+
+	blk->size &= SIZE_MSK;
+	blk->size |= size;
+
+	blk->endsz[words] &= SIZE_MSK;
+	blk->endsz[words] |= size;
+}
+
+static inline void blk_set_alloc(struct memblk *blk)
+{
+	size_t words = blk->size / sizeof(blk->size);
+
+	blk->size |= ALLOC_FLAG;
+	blk->endsz[words] |= ALLOC_FLAG;
+}
+
+static inline void blk_clear_alloc(struct memblk *blk)
+{
+	size_t words = blk->size / sizeof(blk->size);
+
+	blk->size &= ~ALLOC_FLAG;
+	blk->endsz[words] &= ~ALLOC_FLAG;
+}
+
+static inline int blk_is_alloc(struct memblk *blk)
+{
+	return blk->size & ALLOC_FLAG;
+}
+
+static inline void blk_set_border_start(struct memblk *blk)
+{
+	blk->size |= BORDER_FLAG;
+}
+
+static inline void blk_clear_border_start(struct memblk *blk)
+{
+	blk->size &= ~BORDER_FLAG;
+}
+
+static inline int blk_is_border_start(struct memblk *blk)
+{
+	return blk->size & BORDER_FLAG;
+}
+
+static inline void blk_set_border_end(struct memblk *blk)
+{
+	size_t words = blk->size / sizeof(blk->size);
+	blk->endsz[words] |= BORDER_FLAG;
+}
+
+static inline void blk_clear_border_end(struct memblk *blk)
+{
+	size_t words = blk->size / sizeof(blk->size);
+	blk->endsz[words] &= ~BORDER_FLAG;
+}
+
+static inline int blk_is_border_end(struct memblk *blk)
+{
+	size_t words = blk->size / sizeof(blk->size);
+	return blk->endsz[words] & BORDER_FLAG;
+}
+
+static inline struct memblk *blk_prev(struct memblk *blk)
+{
+	if (blk_is_border_start(blk))
+		return NULL;
+	return (void *)blk - blk->prevsz[-1];
+}
+
+static inline struct memblk *blk_next(struct memblk *blk)
+{
+	if (blk_is_border_end(blk))
+		return NULL;
+
+	size_t words = blk->size / sizeof(blk->size);
+	return (void *)blk->endsz[words + 1];
 }
 
 /*

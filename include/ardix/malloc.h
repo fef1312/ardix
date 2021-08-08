@@ -14,11 +14,27 @@
 /**
  * @brief Allocate `size` bytes of memory *w/out initializing it*.
  *
+ * This method may block if an allocation is already taking place.
+ * Use `atomic_malloc()` if you are in kernel space and in atomic context.
+ *
  * @param size The amount of bytes to allocate.
  * @return A pointer to the beginning of the memory area, or `NULL` if
  *	`size` was 0 or there is not enough free memory left.
  */
 __shared __malloc(free, 1) void *malloc(size_t size);
+
+/**
+ * @brief Allocate `size` bytes of memory *w/out initializing it*.
+ *
+ * Unlike `malloc()`, this method is guaranteed not to sleep.  It does this by
+ * using a completely separate, smaller heap.  Only use this if you already are
+ * in atomic context, like when in an irq.
+ *
+ * @param size Amount of bytes to allocate
+ * @return A pointer to the beginning of the memory area, or `NULL` if
+ *	`size` was 0 or there is not enough free memory left.
+ */
+__malloc(free, 1) void *atomic_malloc(size_t size);
 
 /**
  * @brief Allocate an array and initialize the memory to zeroes.
@@ -41,7 +57,7 @@ __shared void free(void *ptr);
 
 /** @} */
 
-/** Initialize the memory allocator, this is only called by the Kernel on early bootstrap. */
+/** Initialize the memory allocator, this is only called by the bootloader on early bootstrap. */
 void malloc_init(void *heap, size_t size);
 
 /*

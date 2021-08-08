@@ -12,6 +12,8 @@ set(CONFIG_NFILE 16 CACHE STRING "Maximum number of open files")
 
 set(CONFIG_STACK_SIZE 2048 CACHE STRING "Stack size in bytes")
 
+set(CONFIG_IOMEM_SIZE 8192 CACHE STRING "I/O memory size in bytes")
+
 set(CONFIG_SCHED_MAXTASK 8 CACHE STRING "Maximum number of running tasks")
 
 set(CONFIG_SCHED_FREQ 1000 CACHE STRING "Task switch frequency in Hz")
