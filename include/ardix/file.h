@@ -3,6 +3,7 @@
 #pragma once
 
 #include <ardix/kent.h>
+#include <ardix/kevent.h>
 #include <ardix/mutex.h>
 #include <ardix/types.h>
 
@@ -27,6 +28,33 @@ void file_put(struct file *file);
 
 ssize_t file_write(struct file *file, const void *buf, size_t len);
 ssize_t file_read(void *buf, struct file *file, size_t len);
+
+enum file_kevent_flags {
+	FILE_KEVENT_READ		= (1 << 0),
+	FILE_KEVENT_WRITE		= (1 << 1),
+	FILE_KEVENT_CLOSE		= (1 << 2),
+	FILE_KEVENT_EOF			= (1 << 3),
+	FILE_KEVENT_UNLOCK		= (1 << 4),
+};
+
+struct file_kevent {
+	struct kevent kevent;
+	enum file_kevent_flags flags;
+};
+
+__always_inline struct file *kevent_to_file(struct kevent *event)
+{
+	return container_of(event->kent.parent, struct file, kent);
+}
+
+__always_inline struct file_kevent *kevent_to_file_kevent(struct kevent *event)
+{
+	return container_of(event, struct file_kevent, kevent);
+}
+
+struct file_kevent *file_kevent_create(struct file *f, enum file_kevent_flags flags);
+
+void file_kevent_create_and_dispatch(struct file *f, enum file_kevent_flags flags);
 
 /*
  * This file is part of Ardix.

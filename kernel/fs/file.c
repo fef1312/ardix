@@ -3,6 +3,7 @@
 #include <ardix/device.h>
 #include <ardix/file.h>
 #include <ardix/malloc.h>
+#include <ardix/sched.h>
 
 #include <config.h>
 #include <errno.h>
@@ -76,40 +77,211 @@ struct file *file_get(int fd)
 
 	return f;
 }
+#include <arch/debug.h>
 
 void file_put(struct file *f)
 {
 	kent_put(&f->kent);
 }
 
+struct io_file_kevent_extra {
+	struct file *file;
+	struct task *task;
+	enum file_kevent_flags flags;
+};
+
+struct io_device_kevent_extra {
+	struct file *file;
+	struct task *task;
+	enum device_channel channel;
+};
+
+static int io_device_kevent_listener(struct kevent *event, void *_extra)
+{
+	struct io_device_kevent_extra *extra = _extra;
+
+	struct device *device = kevent_to_device(event);
+	if (device != extra->file->device)
+		return KEVENT_CB_NONE;
+
+	struct device_kevent *device_kevent = kevent_to_device_kevent(event);
+	if (device_kevent->channel != extra->channel)
+		return KEVENT_CB_NONE;
+
+	extra->task->state = TASK_QUEUE;
+	free(extra);
+	file_put(extra->file);
+	kent_put(&extra->task->kent);
+	return KEVENT_CB_LISTENER_DEL | KEVENT_CB_STOP;
+}
+
+static int io_file_kevent_listener(struct kevent *event, void *_extra)
+{
+	struct io_file_kevent_extra *extra = _extra;
+
+	struct file *file = kevent_to_file(event);
+	if (file != extra->file)
+		return KEVENT_CB_NONE;
+
+	struct file_kevent *file_kevent = kevent_to_file_kevent(event);
+	if ((file_kevent->flags & extra->flags) == 0)
+		return KEVENT_CB_NONE;
+
+	extra->task->state = TASK_QUEUE;
+	free(extra);
+	file_put(extra->file);
+	kent_put(&extra->task->kent);
+	return KEVENT_CB_LISTENER_DEL | KEVENT_CB_STOP;
+}
+
+static int iowait_file(struct file *file, enum file_kevent_flags flags)
+{
+	file_get(file->fd);
+	kent_get(&current->kent);
+
+	struct io_file_kevent_extra *extra = malloc(sizeof(*extra));
+	if (extra == NULL)
+		return -ENOMEM;
+
+	extra->file = file;
+	extra->task = current;
+	extra->flags = flags;
+
+	kevent_listener_add(KEVENT_FILE, io_file_kevent_listener, extra);
+	yield(TASK_IOWAIT);
+	return 0;
+}
+
+static int iowait_device(struct file *file, enum device_channel channel)
+{
+	file_get(file->fd);
+	kent_get(&current->kent);
+
+	struct io_device_kevent_extra *extra = malloc(sizeof(*extra));
+	if (extra == NULL)
+		return -ENOMEM;
+
+	extra->file = file;
+	extra->task = current;
+	extra->channel = channel;
+
+	kevent_listener_add(KEVENT_DEVICE, io_device_kevent_listener, extra);
+	yield(TASK_IOWAIT);
+	return 0;
+}
+
 ssize_t file_read(void *buf, struct file *file, size_t len)
 {
-	ssize_t ret = mutex_trylock(&file->lock);
+	if (len == 0)
+		return 0;
 
-	if (ret == 0) {
-		ret = file->device->read(buf, file->device, len, file->pos);
-		if (file->type == FILE_TYPE_REGULAR && ret > 0)
-			file->pos += ret;
+	ssize_t ret = 0;
 
-		mutex_unlock(&file->lock);
+	while (mutex_trylock(&file->lock) != 0) {
+		ret = iowait_file(file, FILE_KEVENT_UNLOCK);
+		if (ret != 0)
+			return ret;
 	}
+
+	while (ret < (ssize_t)len) {
+		ssize_t tmp = file->device->read(buf, file->device, len, file->pos);
+		if (tmp < 0) {
+			if (tmp == -EBUSY) {
+				tmp = iowait_device(file, DEVICE_CHANNEL_IN);
+			} else {
+				ret = tmp;
+				break;
+			}
+		}
+
+		if (file->type == FILE_TYPE_REGULAR)
+			file->pos += tmp;
+
+		ret += tmp;
+		buf += tmp;
+	}
+
+	mutex_unlock(&file->lock);
+	file_kevent_create_and_dispatch(file, FILE_KEVENT_READ | FILE_KEVENT_UNLOCK);
 
 	return ret;
 }
 
 ssize_t file_write(struct file *file, const void *buf, size_t len)
 {
-	ssize_t ret = mutex_trylock(&file->lock);
+	if (len == 0)
+		return 0;
 
-	if (ret == 0) {
-		ret = file->device->write(file->device, buf, len, file->pos);
-		if (file->type == FILE_TYPE_REGULAR && ret > 0)
-			file->pos += ret;
+	ssize_t ret = 0;
 
-		mutex_unlock(&file->lock);
+	while (mutex_trylock(&file->lock) != 0) {
+		ret = iowait_file(file, FILE_KEVENT_UNLOCK);
+		if (ret != 0)
+			return ret;
 	}
 
+	while (ret < (ssize_t)len) {
+		ssize_t tmp = file->device->write(file->device, buf, len, file->pos);
+		if (tmp < 0) {
+			if (tmp == -EBUSY) {
+				__breakpoint;
+				tmp = iowait_device(file, DEVICE_CHANNEL_OUT);
+				if (tmp < 0) {
+					ret = tmp;
+					break;
+				}
+				__breakpoint;
+			} else {
+				ret = tmp;
+				break;
+			}
+		}
+
+		if (file->type == FILE_TYPE_REGULAR)
+			file->pos += tmp;
+
+		ret += tmp;
+		buf += tmp;
+	}
+
+	mutex_unlock(&file->lock);
+	file_kevent_create_and_dispatch(file, FILE_KEVENT_WRITE | FILE_KEVENT_UNLOCK);
+
 	return ret;
+}
+
+static void file_kevent_destroy(struct kent *kent)
+{
+	struct kevent *kevent = container_of(kent, struct kevent, kent);
+	struct file_kevent *file_kevent = container_of(kevent, struct file_kevent, kevent);
+	free(file_kevent);
+}
+
+struct file_kevent *file_kevent_create(struct file *f, enum file_kevent_flags flags)
+{
+	struct file_kevent *event = malloc(sizeof(*event));
+	if (event == NULL)
+		return NULL;
+
+	event->flags = flags;
+	event->kevent.kind = KEVENT_FILE;
+
+	event->kevent.kent.parent = &f->kent;
+	event->kevent.kent.destroy = file_kevent_destroy;
+	int err = kent_init(&event->kevent.kent);
+	if (err != 0) {
+		free(event);
+		event = NULL;
+	}
+
+	return event;
+}
+
+void file_kevent_create_and_dispatch(struct file *f, enum file_kevent_flags flags)
+{
+	struct file_kevent *event = file_kevent_create(f, flags);
+	if (event != NULL)
+		kevent_dispatch(&event->kevent);
 }
 
 /*

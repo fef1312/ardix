@@ -32,9 +32,14 @@ enum device_channel {
 };
 
 struct device_kevent {
-	struct kevent event;
+	struct kevent kevent;
 	enum device_channel channel;
 };
+
+__always_inline struct device_kevent *kevent_to_device_kevent(struct kevent *event)
+{
+	return container_of(event, struct device_kevent, kevent);
+}
 
 __always_inline struct device *kevent_to_device(struct kevent *event)
 {

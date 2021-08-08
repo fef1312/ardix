@@ -53,10 +53,9 @@ static inline void process_single_queue(struct kevent_queue *queue, struct list_
 	struct kevent *event, *tmp_event;
 
 	/*
-	 * This method is only invoked from scheduler context which has higher
-	 * exception priority than all irqs, so if claiming the lock on this
-	 * list fails it means we interrupted the irq.  The current strategy is
-	 * to just abort and try again during the next system tick.
+	 * This method runs from scheduler context which has lower exception
+	 * priority than irqs, so in theory this should never fail.  Still, we
+	 * only use trylock just in case.
 	 */
 	if (mutex_trylock(&queue->lock) == 0) {
 		list_for_each_entry_safe(&queue->list, event, tmp_event, link) {
@@ -86,15 +85,14 @@ static inline void process_single_queue(struct kevent_queue *queue, struct list_
 void kevents_process(void)
 {
 	/*
-	 * if this fails it means the scheduling interrupt happened while
-	 * processing an irq, just ignore the cache and try again next time
-	 * if that is the case
+	 * Same thing as for process_single_queue: This should never fail
+	 * because scheduling interrupts have the lowest exception priority.
 	 */
 	if (mutex_trylock(&kev_cache_lock) == 0) {
 		struct kevent *cursor, *tmp;
 		list_for_each_entry_safe(&kev_cache, cursor, tmp, link) {
 			list_delete(&cursor->link);
-			list_insert(&kev_queues[cursor->kind], &cursor->link);
+			list_insert(&kev_queues[cursor->kind].list, &cursor->link);
 		}
 
 		mutex_unlock(&kev_cache_lock);
@@ -114,36 +112,24 @@ void kevent_dispatch(struct kevent *event)
 		mutex_unlock(&queue->lock);
 	} else {
 		/*
-		 * We shouldn't ever be able to get here because irqs don't interrupt
-		 * each other and if we get interrupted by the scheduler it doesn't
-		 * matter because kevents_process() always releases its lock before
-		 * returning again.  If it still happens for whatever stupid reason,
-		 * we insert the event in a temporary unsorted cache that is then
-		 * ordered by the scheduler.
+		 * If we got to here it means we preempted the scheduler.
+		 * We just toss the event into a temporary pile and let the
+		 * scheduler sort out the mess when it calls kevents_process()
+		 * the next time.
 		 */
 		if (mutex_trylock(&kev_cache_lock) == 0) {
 			list_insert(&kev_cache, &event->link);
 			mutex_unlock(&kev_cache_lock);
 		} else {
 			/*
-			 * If we ever make it to here, something *extremely* stupid
-			 * has happened: we couldn't get the lock on the queue (which
-			 * shouldn't ever happen in the first place), *and* the cache
-			 * is locked as well.  We will have to assume we got suspended
-			 * at some point in these if branches, and just try getting
-			 * the lock on the original queue again.  If that fails as
-			 * well, we just give up and discard the event all together.
-			 *
-			 * TODO: This solution is of course far from ideal and has to
-			 *       be refactored at some point before the first stable
-			 *       release.  We'll just deal with that later(TM).
+			 * If we ever make it to here, something of unfathomable stupidity has
+			 * happened because there are only two contexts from which we are supposed
+			 * to be accessing the event queue--irq and scheduler.  That means we always
+			 * have either the main queue or the temporary cache available to us, and
+			 * if not, we forgot to release a lock during yet another sleep deprived
+			 * episode of late night coding.  Time to make us pay for what we did then.
 			 */
-			if (mutex_trylock(&queue->lock) == 0) {
-				list_insert(&queue->list, &event->link);
-				mutex_unlock(&queue->lock);
-			} else {
-				kevent_put(event);
-			}
+
 		}
 	}
 }

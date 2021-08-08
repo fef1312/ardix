@@ -21,7 +21,10 @@
  */
 
 enum kevent_kind {
+	/** @brief Device state has changed */
 	KEVENT_DEVICE,
+	/** @brief File has changed */
+	KEVENT_FILE,
 
 	KEVENT_KIND_COUNT,
 };
