@@ -120,12 +120,14 @@ static LIST_HEAD(generic_heap);
 static MUTEX(generic_heap_lock);
 static void *generic_heap_start;
 static void *generic_heap_end;
+size_t generic_heap_free;
+size_t generic_heap_overhead = OVERHEAD;
 
 static LIST_HEAD(atomic_heap);
 static void *atomic_heap_start;
 static void *atomic_heap_end;
-
-/* forward declaration of utility functions used throughout the file */
+size_t atomic_heap_free;
+size_t atomic_heap_overhead = OVERHEAD;
 
 /** @brief Get the usable block size in bytes, without flags or overhead. */
 static size_t blk_get_size(struct memblk *blk);
@@ -162,24 +164,6 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *bottom, s
 
 void malloc_init(void *heap, size_t size)
 {
-#	ifdef DEBUG
-		if (heap == NULL) {
-			__breakpoint;
-		}
-		if (size == 0) {
-			__breakpoint;
-		}
-		if (size - OVERHEAD - MIN_SIZE < CONFIG_IOMEM_SIZE) {
-			__breakpoint;
-		}
-		if (!list_is_empty(&generic_heap)) {
-			__breakpoint;
-		}
-		if (!list_is_empty(&atomic_heap)) {
-			__breakpoint;
-		}
-#	endif
-
 	memset(heap, 0, size);
 
 	generic_heap_start = heap;
@@ -194,6 +178,7 @@ void malloc_init(void *heap, size_t size)
 	blk_set_border_start(generic_block);
 	blk_set_border_end(generic_block);
 	list_insert(&generic_heap, &generic_block->list);
+	generic_heap_free = blk_get_size(generic_block);
 
 	struct memblk *atomic_block = heap + size - CONFIG_IOMEM_SIZE;
 	blk_set_size(atomic_block, CONFIG_IOMEM_SIZE - OVERHEAD);
@@ -201,6 +186,7 @@ void malloc_init(void *heap, size_t size)
 	blk_set_border_start(atomic_block);
 	blk_set_border_end(atomic_block);
 	list_insert(&atomic_heap, &atomic_block->list);
+	atomic_heap_free = blk_get_size(atomic_block);
 }
 
 void *malloc(size_t size)
@@ -208,12 +194,18 @@ void *malloc(size_t size)
 	if (size == 0)
 		return NULL; /* as per POSIX */
 
+	if (size > generic_heap_free)
+		return NULL;
+
 	/*
 	 * Round up towards the next whole allocation unit.  GCC is smart enough
 	 * to replace the division/multiplication pair with a bitfield clear
 	 * instruction (MIN_SIZE is always a power of two), so this is okay.
 	 */
-	size = (size / MIN_SIZE) * MIN_SIZE + MIN_SIZE;
+	size_t original_size = size;
+	size = (size / MIN_SIZE) * MIN_SIZE;
+	if (size < original_size)
+		size += MIN_SIZE;
 
 	mutex_lock(&generic_heap_lock);
 
@@ -227,6 +219,7 @@ void *malloc(size_t size)
 
 	if (blk_get_size(cursor) >= size) {
 		cursor = blk_slice(&generic_heap, cursor, size);
+		generic_heap_free -= blk_get_size(cursor);
 		ptr = cursor->data;
 	}
 
@@ -240,7 +233,13 @@ void *atomic_malloc(size_t size)
 	if (size == 0)
 		return NULL;
 
-	size = (size / MIN_SIZE) * MIN_SIZE + MIN_SIZE;
+	if (size > atomic_heap_free)
+		return NULL;
+
+	size_t original_size = size;
+	size = (size / MIN_SIZE) * MIN_SIZE;
+	if (size < original_size)
+		size += MIN_SIZE;
 
 	atomic_enter();
 
@@ -254,6 +253,7 @@ void *atomic_malloc(size_t size)
 
 	if (blk_get_size(cursor) >= size) {
 		cursor = blk_slice(&atomic_heap, cursor, size);
+		atomic_heap_free -= blk_get_size(cursor);
 		ptr = cursor->data;
 	}
 
@@ -290,6 +290,7 @@ void free(void *ptr)
 			__breakpoint;
 
 		mutex_lock(&generic_heap_lock);
+		generic_heap_free += blk_get_size(blk);
 		blk_clear_alloc(blk);
 		blk_try_merge(&generic_heap, blk);
 		mutex_unlock(&generic_heap_lock);
@@ -298,6 +299,7 @@ void free(void *ptr)
 			__breakpoint;
 
 		atomic_enter();
+		atomic_heap_free += blk_get_size(blk);
 		blk_clear_alloc(blk);
 		blk_try_merge(&atomic_heap, blk);
 		atomic_leave();
@@ -318,7 +320,7 @@ void free(void *ptr)
 #define BORDER_FLAG	((size_t)1 << 1)
 #define SIZE_MSK	( ~(ALLOC_FLAG | BORDER_FLAG) )
 
-static inline struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk)
+static struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk)
 {
 	struct memblk *neighbor = blk_prev(blk);
 	if (neighbor != NULL && !blk_is_alloc(neighbor)) {
@@ -342,7 +344,7 @@ static inline struct memblk *blk_try_merge(struct list_head *heap, struct memblk
 	return blk;
 }
 
-static inline struct memblk *blk_merge(struct list_head *heap,
+static struct memblk *blk_merge(struct list_head *heap,
 				       struct memblk *bottom,
 				       struct memblk *top)
 {
@@ -351,6 +353,14 @@ static inline struct memblk *blk_merge(struct list_head *heap,
 	size_t total_size = bottom_size + top_size + OVERHEAD;
 
 	blk_set_size(bottom, total_size);
+
+	if (heap == &atomic_heap) {
+		atomic_heap_free += OVERHEAD;
+		atomic_heap_overhead -= OVERHEAD;
+	} else {
+		generic_heap_free += OVERHEAD;
+		generic_heap_overhead -= OVERHEAD;
+	}
 
 	return bottom;
 }
@@ -363,6 +373,14 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *blk, size
 	if (rest_size < MIN_SIZE) {
 		blk_set_alloc(blk);
 		return blk; /* hand out the entire block */
+	}
+
+	if (heap == &atomic_heap) {
+		atomic_heap_overhead += OVERHEAD;
+		atomic_heap_free -= OVERHEAD;
+	} else {
+		generic_heap_overhead += OVERHEAD;
+		generic_heap_free -= OVERHEAD;
 	}
 
 	size_t slice_words = slice_size / sizeof(blk->size);
@@ -459,7 +477,7 @@ static inline struct memblk *blk_prev(struct memblk *blk)
 {
 	if (blk_is_border_start(blk))
 		return NULL;
-	return (void *)blk - blk->prevsz[-1] - OVERHEAD;
+	return (void *)blk - (blk->prevsz[-1] & SIZE_MSK) - OVERHEAD;
 }
 
 static inline struct memblk *blk_next(struct memblk *blk)
