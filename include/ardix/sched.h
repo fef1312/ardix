@@ -25,6 +25,8 @@ enum task_state {
 	TASK_SLEEP,
 	/** Task is waiting for I/O to flush buffers. */
 	TASK_IOWAIT,
+	/** Task is waiting for a mutex to be unlocked. */
+	TASK_LOCKWAIT,
 };
 
 /** @brief Core structure holding information about a task. */

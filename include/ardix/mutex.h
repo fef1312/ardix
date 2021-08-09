@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <ardix/atomic.h>
+#include <ardix/list.h>
 #include <ardix/types.h>
 
 #include <errno.h>
@@ -14,22 +16,71 @@
  */
 
 /**
+ * @brief A spinning mutex.
+ * This is the most primitive type of mutex.  It is locked by looping (spinning)
+ * so long until the lock could be acquired, thus blocking the CPU from doing
+ * anything else.  For this reason, tasks that hold a spinlock must not sleep
+ * while holding such a lock.  This behavior is enforced by calling
+ * `atomic_enter()` in the `spin_lock()` function and `atomic_leave()` in
+ * `spin_unlock()`.
+ */
+typedef struct {
+	uint8_t lock;
+} spin_t;
+
+extern void _spin_lock(uint8_t *lock);
+extern void _spin_unlock(uint8_t *lock);
+extern int _spin_trylock(uint8_t *lock);
+
+__always_inline void spin_init(spin_t *spin)
+{
+	spin->lock = 0;
+}
+
+__always_inline void spin_lock(spin_t *spin)
+{
+	atomic_enter();
+	_spin_lock(&spin->lock);
+}
+
+__always_inline void spin_unlock(spin_t *spin)
+{
+	_spin_unlock(&spin->lock);
+	atomic_leave();
+}
+
+__always_inline int spin_trylock(spin_t *spin)
+{
+	if (_spin_trylock(&spin->lock) == 0)
+		return 0;
+	else
+		return -EAGAIN;
+}
+
+__always_inline bool spin_is_locked(spin_t *spin)
+{
+	return spin->lock != 0;
+}
+
+/**
  * @brief A simple mutex.
  *
- * Mutexes can be locked using the `mutex_lock()` and `mutex_unlock()` methods
- * respectively.  The former will block until the lock is acquired and thus
- * should never be used from interrupt context.  Use `mutex_trylock()` if you
- * don't want blocking.
+ * Mutexes can be locked and unlocked using the `mutex_lock()` and
+ * `mutex_unlock()` methods respectively.  The former will block until the lock
+ * is acquired and thus should never be used from interrupt context.
+ * Use `mutex_trylock()` if you don't want blocking.
  */
 struct mutex {
 	uint8_t lock;	/**< Current lock value, don't read directly */
+	spin_t wait_queue_lock;
+	struct list_head wait_queue; /**< -> mutex_wait::link */
 };
 
-/**
- * @brief Internal assembly routine for `mutex_lock()`.
- * @private
- */
-extern void _mutex_lock(uint8_t *lock);
+struct mutex_wait {
+	struct list_head link;
+	struct task *task;
+};
+
 /**
  * @brief Internal assembly routine for `mutex_trylock()`.
  * @private
@@ -49,28 +100,23 @@ extern void _mutex_unlock(uint8_t *lock);
 __always_inline void mutex_init(struct mutex *mutex)
 {
 	mutex->lock = 0;
+	list_init(&mutex->wait_queue);
 }
 
 /**
  * @brief Acquire an exclusive lock on a mutex.
- * This call will block until the lock was acquired and therefore cannot fail.
+ * This call may sleep if the lock cannot be acquired instantly.
  *
  * @param mutex Mutex to lock
  */
-__always_inline void mutex_lock(struct mutex *mutex)
-{
-	_mutex_lock(&mutex->lock);
-}
+void mutex_lock(struct mutex *mutex);
 
 /**
  * @brief Release an exclusive lock on a mutex.
  *
  * @param mutex Mutex to unlock
  */
-__always_inline void mutex_unlock(struct mutex *mutex)
-{
-	_mutex_unlock(&mutex->lock);
-}
+void mutex_unlock(struct mutex *mutex);
 
 /**
  * @brief Attempt to acquire an exclusive lock on a mutex.
@@ -91,11 +137,11 @@ __always_inline int mutex_trylock(struct mutex *mutex)
  * @brief Determine whether a mutex is locked.
  *
  * @param mutex Mutex to get the lock value of
- * @returns Nonzero if the mutex is locked, zero otherwise
+ * @returns true if the mutex is locked
  */
-__always_inline int mutex_is_locked(struct mutex *mutex)
+__always_inline bool mutex_is_locked(struct mutex *mutex)
 {
-	return mutex->lock;
+	return mutex->lock != 0;
 }
 
 /**

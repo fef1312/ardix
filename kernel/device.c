@@ -59,7 +59,7 @@ static void device_kevent_destroy(struct kent *kent)
 
 struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel)
 {
-	struct device_kevent *event = malloc(sizeof(*event));
+	struct device_kevent *event = atomic_malloc(sizeof(*event));
 	if (event == NULL)
 		return NULL;
 

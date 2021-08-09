@@ -14,6 +14,7 @@ target_sources(ardix_kernel PRIVATE
 	io.c
 	kent.c
 	kevent.c
+	mutex.c
 	ringbuf.c
 	sched.c
 	serial.c

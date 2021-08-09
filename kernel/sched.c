@@ -90,6 +90,7 @@ static inline bool can_run(const struct task *task)
 		return true;
 	case TASK_DEAD:
 	case TASK_IOWAIT:
+	case TASK_LOCKWAIT:
 		return false;
 	}
 

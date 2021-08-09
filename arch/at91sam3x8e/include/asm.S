@@ -19,7 +19,8 @@
 	 * Hardware automatically saves r0-r3, r12, pc, lr, and psr onto the
 	 * stack that was used before exception entry.  Bit 2 in lr is 1 if the
 	 * psp was used, and 0 if msp was used.  We store the appropriate stack
-	 * pointer into r12 and push it onto the stack
+	 * pointer into r12 and push it onto the stack along with the remaining
+	 * registers.
 	 */
 	tst	lr,	#(1 << 2)
 	ite	ne

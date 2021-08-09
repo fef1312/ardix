@@ -2,10 +2,10 @@
 
 .include "asm.S"
 
-.section .text.shared
+.text
 
-/* void _mutex_lock(uint8_t *lock); */
-func_begin _mutex_lock
+/* void _spin_lock(uint8_t *lock); */
+func_begin _spin_lock
 
 	mov		r1,	#1		/* uint8_t newval = 1; */
 
@@ -21,10 +21,12 @@ func_begin _mutex_lock
 	dmb
 	bx		lr
 
-func_end _mutex_lock
+func_end _spin_lock
 
 /* int _mutex_trylock(uint8_t *lock); */
 func_begin _mutex_trylock
+/* int _spin_trylock(uint8_t *lock); */
+func_begin _spin_trylock
 
 	mov		r1,	#1		/* uint8_t newval = 1; */
 	/* move lock to r2 to make room in r0 for the return value */
@@ -40,16 +42,20 @@ func_begin _mutex_trylock
 
 	bx		lr			/* return tmp; */
 
+func_end _spin_trylock
 func_end _mutex_trylock
 
 /* void _mutex_unlock(uint8_t *lock); */
 func_begin _mutex_unlock
+/* void _spin_unlock(uint8_t *lock); */
+func_begin _spin_unlock
 
 	mov	r1,	#0
 	strb	r1,	[r0]
 	dmb
 	bx	lr
 
+func_end _spin_unlock
 func_end _mutex_unlock
 
 /*

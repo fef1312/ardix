@@ -85,9 +85,7 @@ ssize_t serial_read(void *dest, struct serial_device *dev, size_t len)
 {
 	ssize_t ret;
 
-	atomic_enter();
 	ret = (ssize_t)ringbuf_read(dest, dev->rx, len);
-	atomic_leave();
 
 	return ret;
 }
@@ -96,9 +94,7 @@ ssize_t serial_write(struct serial_device *dev, const void *data, size_t len)
 {
 	ssize_t ret;
 
-	atomic_enter();
 	ret = arch_serial_write(dev, data, len);
-	atomic_leave();
 
 	return ret;
 }

@@ -7,10 +7,6 @@
 #include <ardix/serial.h>
 #include <ardix/util.h>
 
-#ifndef CONFIG_ARCH_SERIAL_BUFSZ
-#define CONFIG_ARCH_SERIAL_BUFSZ 32
-#endif /* CONFIG_ARCH_SERIAL_BUFSZ */
-
 /** Architecture-specific extension of `struct serial_device` */
 struct arch_serial_device {
 	/** should always match REG_UART_PDC_TPR */
