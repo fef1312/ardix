@@ -69,7 +69,11 @@ void arch_task_init(struct task *task, void (*entry)(void))
 	task->tcb.context.pc = _leave;
 }
 
-extern void _idle(void);
+__naked __noreturn void _idle(void)
+{
+	/* TODO: put the CPU to sleep */
+	while (1);
+}
 
 int arch_idle_task_init(struct task *task)
 {
