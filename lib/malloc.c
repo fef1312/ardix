@@ -359,9 +359,6 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *blk, size
 {
 	list_delete(&blk->list);
 
-	assert((slice_size & SIZE_MSK) == slice_size);
-	assert(slice_size > 0);
-
 	size_t rest_size = blk_get_size(blk) - slice_size - OVERHEAD;
 	if (rest_size < MIN_SIZE) {
 		blk_set_alloc(blk);
@@ -395,10 +392,7 @@ static inline size_t blk_get_size(struct memblk *blk)
 
 static void blk_set_size(struct memblk *blk, size_t size)
 {
-	assert((size & SIZE_MSK) == size);
-
 	/* don't affect flags */
-
 	blk->size &= ~SIZE_MSK;
 	blk->size |= size;
 
