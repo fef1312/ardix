@@ -180,6 +180,13 @@ void msleep(unsigned long int ms)
 	yield(TASK_SLEEP);
 }
 
+long sys_sleep(unsigned long int millis)
+{
+	msleep(millis);
+	/* TODO: return actual milliseconds */
+	return 0;
+}
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.

@@ -6,6 +6,7 @@
 
 __shared ssize_t read(int fildes, void *buf, size_t nbyte);
 __shared ssize_t write(int fildes, const void *buf, size_t nbyte);
+__shared ssize_t sleep(unsigned long int millis);
 
 /*
  * This file is part of Ardix.

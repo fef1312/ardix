@@ -12,6 +12,7 @@
 enum syscall {
 	SYS_read		= ARCH_SYS_read,
 	SYS_write		= ARCH_SYS_write,
+	SYS_sleep		= ARCH_SYS_sleep,
 	NSYSCALLS
 };
 
@@ -27,6 +28,7 @@ long sys_stub(void);
 
 long sys_read(int fd, void *buf, size_t len);
 long sys_write(int fd, const void *buf, size_t len);
+long sys_sleep(unsigned long millis);
 
 /*
  * This file is part of Ardix.

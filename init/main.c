@@ -57,7 +57,7 @@ int main(void)
 	while (true) {
 		printf("hello, world (%u)\n", print_count);
 
-		msleep(1000);
+		sleep(1000);
 
 		print_count++;
 		if (print_count % 2)

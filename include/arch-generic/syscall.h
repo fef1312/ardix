@@ -4,6 +4,7 @@
 
 #define ARCH_SYS_read		0
 #define ARCH_SYS_write		1
+#define ARCH_SYS_sleep		2
 
 /*
  * This file is part of Ardix.

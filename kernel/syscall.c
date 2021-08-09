@@ -12,6 +12,7 @@ long (*const sys_table[NSYSCALLS])(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
 				   sysarg_t arg4, sysarg_t arg5, sysarg_t arg6) = {
 	sys_table_entry(SYS_read,		sys_read),
 	sys_table_entry(SYS_write,		sys_write),
+	sys_table_entry(SYS_sleep,		sys_sleep),
 };
 
 long sys_stub(void)

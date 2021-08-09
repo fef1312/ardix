@@ -14,6 +14,11 @@ ssize_t write(int fildes, const void *buf, size_t nbyte)
 	return syscall(SYS_write, (sysarg_t)fildes, (sysarg_t)buf, (sysarg_t)nbyte);
 }
 
+ssize_t sleep(unsigned long int millis)
+{
+	return syscall(SYS_sleep, (sysarg_t)millis);
+}
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.
