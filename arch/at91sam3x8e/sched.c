@@ -44,33 +44,32 @@ int arch_sched_init(unsigned int freq)
 
 	SysTick_Config(systick_reload);
 
+	/* give PendSV the lowest priority so it doesn't interrupt irq handlers */
+	__set_BASEPRI(0);
+	NVIC_SetPriority(PendSV_IRQn, 0xf);
+
 	return 0;
 }
 
 void arch_task_init(struct task *task, void (*entry)(void))
 {
+	/* TODO: Use separate stacks for kernel and program */
 	struct hw_context *hw_context = task->bottom - sizeof(*hw_context);
 	struct exc_context *exc_context = (void *)hw_context - sizeof(*exc_context);
 
 	memset(hw_context, 0, task->bottom - (void *)hw_context);
+	hw_context->pc = entry;
+	hw_context->psr = 0x01000000; /* Thumb = 1, unprivileged */
 
 	exc_context->sp = hw_context;
-	exc_context->lr = (void *)0xfffffff9; /* return to thread mode, use MSP */
+	exc_context->lr = (void *)0xfffffff9; /* leave exception, use MSP */
 
-	hw_context->pc = entry;
-	hw_context->psr = 0x01000000; /* Thumb state bit set, unprivileged */
-	hw_context->lr = (void *)0xffffffff;
-	task->tcb.hw_context = hw_context;
-
-	memset(&task->tcb.context, 0, sizeof(task->tcb.context));
-	task->tcb.context.pc = _leave;
+	memset(&task->tcb, 0, sizeof(task->tcb));
 	task->tcb.context.sp = exc_context;
+	task->tcb.context.pc = _leave;
 }
 
-__naked __noreturn static void idle_task_entry(void)
-{
-	while (1);
-}
+extern void _idle(void);
 
 int arch_idle_task_init(struct task *task)
 {
@@ -79,7 +78,7 @@ int arch_idle_task_init(struct task *task)
 		return -ENOMEM;
 
 	task->bottom = stack + CONFIG_STACK_SIZE; /* full-descending stack */
-	arch_task_init(task, idle_task_entry);
+	arch_task_init(task, _idle);
 	task->sleep = 0;
 	task->last_tick = 0;
 	task->state = TASK_READY;

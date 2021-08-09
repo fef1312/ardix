@@ -7,8 +7,15 @@
 /* void _leave(void); */
 func_begin _leave
 	pop	{r4-r12,lr}
+
 	cpsie	i
-	msr	psp,	r12
+
+	/* same as for _do_switch: check which stack pointer the task will use */
+	tst	lr,	#(1 << 2)
+	ite	eq
+	moveq	sp,	r12
+	msrne	psp,	r12
+
 	bx	lr
 func_end _leave
 
