@@ -3,14 +3,14 @@
 cmake_minimum_required(VERSION 3.14.0)
 
 include(options.cmake)
-include(arch/${ARCH}/toolchain.cmake)
+include(arch/${ARCH}/config/toolchain.cmake)
 
 project(ardix VERSION 0.1.0 LANGUAGES C ASM)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_EXTENSIONS OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
 find_package(Git QUIET)

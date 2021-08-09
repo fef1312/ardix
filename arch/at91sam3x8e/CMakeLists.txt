@@ -13,7 +13,7 @@ target_include_directories(ardix_arch PRIVATE
 target_compile_definitions(ardix_arch PRIVATE ARDIX_ARCH)
 
 configure_file(
-	${CMAKE_CURRENT_SOURCE_DIR}/config.ld.in
+	${CMAKE_CURRENT_SOURCE_DIR}/config/config.ld.in
 	${CMAKE_BINARY_DIR}/config.ld # see toolchain.cmake
 )
 
