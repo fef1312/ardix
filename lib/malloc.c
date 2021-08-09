@@ -133,6 +133,8 @@ size_t atomic_heap_overhead = OVERHEAD;
 static size_t blk_get_size(struct memblk *blk);
 /** @brief Set the usable block size without overhead and without affecting flags. */
 static void blk_set_size(struct memblk *blk, size_t size);
+/** @brief Round up towards the next multiple of `MIN_SIZE`. */
+static size_t round_alloc_size_up(size_t size);
 /** @brief Flag a block as allocated. */
 static void blk_set_alloc(struct memblk *blk);
 /** @brief Remove the allocated flag from a block. */
@@ -202,10 +204,7 @@ void *malloc(size_t size)
 	 * to replace the division/multiplication pair with a bitfield clear
 	 * instruction (MIN_SIZE is always a power of two), so this is okay.
 	 */
-	size_t original_size = size;
-	size = (size / MIN_SIZE) * MIN_SIZE;
-	if (size < original_size)
-		size += MIN_SIZE;
+	size = round_alloc_size_up(size);
 
 	mutex_lock(&generic_heap_lock);
 
@@ -236,10 +235,7 @@ void *atomic_malloc(size_t size)
 	if (size > atomic_heap_free)
 		return NULL;
 
-	size_t original_size = size;
-	size = (size / MIN_SIZE) * MIN_SIZE;
-	if (size < original_size)
-		size += MIN_SIZE;
+	size = round_alloc_size_up(size);
 
 	atomic_enter();
 
@@ -369,10 +365,16 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *blk, size
 {
 	list_delete(&blk->list);
 
+	/*
+	 * If the remaining size is less than the minimum allocation unit, we
+	 * hand out the entire block.  Additionally, we must add an underflow
+	 * check which happens if the slice size is less than OVERHEAD smaller
+	 * than the full block size.
+	 */
 	size_t rest_size = blk_get_size(blk) - slice_size - OVERHEAD;
-	if (rest_size < MIN_SIZE) {
+	if (rest_size < MIN_SIZE || rest_size > blk_get_size(blk)) {
 		blk_set_alloc(blk);
-		return blk; /* hand out the entire block */
+		return blk;
 	}
 
 	if (heap == &atomic_heap) {
@@ -401,6 +403,14 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *blk, size
 	list_insert_before(&cursor->list, &rest->list);
 
 	return blk;
+}
+
+static inline size_t round_alloc_size_up(size_t size)
+{
+	size_t rounded = (size / MIN_SIZE) * MIN_SIZE;
+	if (rounded < size)
+		rounded += MIN_SIZE;
+	return rounded;
 }
 
 static inline size_t blk_get_size(struct memblk *blk)
