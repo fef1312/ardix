@@ -227,7 +227,6 @@ void *malloc(size_t size)
 
 	if (blk_get_size(cursor) >= size) {
 		cursor = blk_slice(&generic_heap, cursor, size);
-		blk_set_alloc(cursor);
 		ptr = cursor->data;
 	}
 
@@ -255,7 +254,6 @@ void *atomic_malloc(size_t size)
 
 	if (blk_get_size(cursor) >= size) {
 		cursor = blk_slice(&atomic_heap, cursor, size);
-		blk_set_alloc(cursor);
 		ptr = cursor->data;
 	}
 
@@ -282,34 +280,30 @@ void *calloc(size_t nmemb, size_t size)
 
 void free(void *ptr)
 {
-	struct memblk *blk = ptr - offsetof(struct memblk, data);
-	struct list_head *heap;
-
 	if (ptr == NULL)
 		return; /* as per POSIX.1-2008 */
 
+	struct memblk *blk = ptr - offsetof(struct memblk, data);
+
 	if (ptr >= generic_heap_start && ptr <= generic_heap_end) {
-		heap = &generic_heap;
+		if (!blk_is_alloc(blk))
+			__breakpoint;
+
 		mutex_lock(&generic_heap_lock);
+		blk_clear_alloc(blk);
+		blk_try_merge(&generic_heap, blk);
+		mutex_unlock(&generic_heap_lock);
 	} else if (ptr >= atomic_heap_start && ptr <= atomic_heap_end) {
-		heap = &atomic_heap;
+		if (!blk_is_alloc(blk))
+			__breakpoint;
+
 		atomic_enter();
+		blk_clear_alloc(blk);
+		blk_try_merge(&atomic_heap, blk);
+		atomic_leave();
 	} else {
 		__breakpoint;
-		return;
 	}
-
-	if (!blk_is_alloc(blk)) {
-		__breakpoint; /* probably double free */
-	}
-
-	blk_clear_alloc(blk);
-	blk_try_merge(heap, blk);
-
-	if (heap == &generic_heap)
-		mutex_unlock(&generic_heap_lock);
-	else
-		atomic_leave();
 }
 
 /* ========================================================================== */
@@ -326,13 +320,24 @@ void free(void *ptr)
 
 static inline struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk)
 {
-	struct memblk *neigh = blk_prev(blk);
-	if (neigh != NULL)
-		blk = blk_merge(heap, neigh, blk);
+	struct memblk *neighbor = blk_prev(blk);
+	if (neighbor != NULL && !blk_is_alloc(neighbor)) {
+		list_delete(&neighbor->list);
+		blk = blk_merge(heap, neighbor, blk);
+	}
 
-	neigh = blk_next(blk);
-	if (neigh != NULL)
-		blk = blk_merge(heap, blk, neigh);
+	neighbor = blk_next(blk);
+	if (neighbor != NULL && !blk_is_alloc(neighbor)) {
+		list_delete(&neighbor->list);
+		blk = blk_merge(heap, blk, neighbor);
+	}
+
+	struct memblk *cursor;
+	list_for_each_entry(heap, cursor, list) {
+		if (blk_get_size(cursor) >= blk_get_size(blk))
+			break;
+	}
+	list_insert_before(&cursor->list, &blk->list);
 
 	return blk;
 }
@@ -343,68 +348,62 @@ static inline struct memblk *blk_merge(struct list_head *heap,
 {
 	size_t bottom_size = blk_get_size(bottom);
 	size_t top_size = blk_get_size(top);
-	size_t total_size = bottom_size + top_size;
+	size_t total_size = bottom_size + top_size + OVERHEAD;
 
-	list_delete(&top->list);
-	list_delete(&bottom->list);
 	blk_set_size(bottom, total_size);
-
-	struct memblk *cursor;
-	list_for_each_entry(heap, cursor, list) {
-		if (blk_get_size(cursor) <= bottom->size)
-			break;
-	}
-	list_insert_before(&cursor->list, &bottom->list);
 
 	return bottom;
 }
 
-static inline struct memblk *blk_slice(struct list_head *heap,
-				       struct memblk *bottom,
-				       size_t bottom_size)
+static struct memblk *blk_slice(struct list_head *heap, struct memblk *blk, size_t slice_size)
 {
-	list_delete(&bottom->list);
+	list_delete(&blk->list);
 
-	size_t top_size = blk_get_size(bottom) - bottom_size - OVERHEAD;
-	if (top_size < MIN_SIZE)
-		return bottom; /* hand out the entire block */
+	assert((slice_size & SIZE_MSK) == slice_size);
+	assert(slice_size > 0);
 
-	size_t bottom_words = bottom_size / sizeof(bottom->size);
-	struct memblk *top = (void *)&bottom->endsz[bottom_words + 1];
-	blk_set_size(top, top_size);
-	blk_clear_alloc(top);
-	blk_clear_border_start(top);
+	size_t rest_size = blk_get_size(blk) - slice_size - OVERHEAD;
+	if (rest_size < MIN_SIZE) {
+		blk_set_alloc(blk);
+		return blk; /* hand out the entire block */
+	}
 
-	blk_set_size(bottom, bottom_size);
-	blk_clear_border_end(bottom);
+	size_t slice_words = slice_size / sizeof(blk->size);
+	struct memblk *rest = (void *)&blk->endsz[slice_words + 1];
+	blk_set_size(rest, rest_size);
+	blk_clear_alloc(rest);
+	blk_clear_border_start(rest);
+
+	blk_set_size(blk, slice_size);
+	blk_set_alloc(blk);
+	blk_clear_border_end(blk);
 
 	struct memblk *cursor;
 	list_for_each_entry(heap, cursor, list) {
-		if (blk_get_size(cursor) <= top_size)
+		if (blk_get_size(cursor) <= rest_size)
 			break;
 	}
-	list_insert_before(&cursor->list, &top->list);
+	list_insert_before(&cursor->list, &rest->list);
 
-	return bottom;
+	return blk;
 }
 
 static inline size_t blk_get_size(struct memblk *blk)
 {
-	return (blk->size & SIZE_MSK) - OVERHEAD;
+	return blk->size & SIZE_MSK;
 }
 
-static inline void blk_set_size(struct memblk *blk, size_t size)
+static void blk_set_size(struct memblk *blk, size_t size)
 {
-	size &= SIZE_MSK;
-	size += OVERHEAD;
+	assert((size & SIZE_MSK) == size);
 
-	/* sizeof(size_t) is a power of 2 so this division will become a bitshift */
-	size_t words = size / sizeof(blk->size);
+	/* don't affect flags */
 
-	blk->size &= SIZE_MSK;
+	blk->size &= ~SIZE_MSK;
 	blk->size |= size;
 
-	blk->endsz[words] &= SIZE_MSK;
+	size_t words = size / sizeof(blk->size);
+	blk->endsz[words] &= ~SIZE_MSK;
 	blk->endsz[words] |= size;
 }
 
@@ -466,7 +465,7 @@ static inline struct memblk *blk_prev(struct memblk *blk)
 {
 	if (blk_is_border_start(blk))
 		return NULL;
-	return (void *)blk - blk->prevsz[-1];
+	return (void *)blk - blk->prevsz[-1] - OVERHEAD;
 }
 
 static inline struct memblk *blk_next(struct memblk *blk)
@@ -475,7 +474,7 @@ static inline struct memblk *blk_next(struct memblk *blk)
 		return NULL;
 
 	size_t words = blk->size / sizeof(blk->size);
-	return (void *)blk->endsz[words + 1];
+	return (void *)&blk->endsz[words + 1];
 }
 
 /*
