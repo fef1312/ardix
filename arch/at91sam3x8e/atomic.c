@@ -7,12 +7,14 @@ static ATOM(atomic_context);
 
 void atomic_enter(void)
 {
-	atom_get(&atomic_context);
+	if (atom_get(&atomic_context) == 1)
+		__asm__ volatile("cpsid i");
 }
 
 void atomic_leave(void)
 {
-	atom_put(&atomic_context);
+	if (atom_put(&atomic_context) == 0)
+		__asm__ volatile("cpsie i");
 }
 
 int is_atomic(void)
