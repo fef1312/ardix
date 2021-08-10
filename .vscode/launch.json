@@ -9,12 +9,12 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "configFiles": [
-                "${workspaceRoot}/arch/at91sam3x8e/openocd.cfg"
+                "${workspaceRoot}/arch/at91sam3x8e/config/openocd.cfg"
             ],
             "device": "AT91SAM3X8E",
             "runToMain": false,
             "gdbPath": "/usr/bin/arm-none-eabi-gdb",
-            "svdFile": "${workspaceRoot}/arch/at91sam3x8e/SAM3X8E.svd"
+            "svdFile": "${workspaceRoot}/arch/at91sam3x8e/config/SAM3X8E.svd"
         }
     ]
 }
