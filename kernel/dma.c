@@ -18,7 +18,11 @@ static void dmabuf_destroy(struct kent *kent)
 struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 {
 	int err = 0;
-	struct dmabuf *buf = malloc(sizeof(*buf) + len);
+	/*
+	 * allocation needs to be atomic because the buffer might be
+	 * free()d from within an irq handler which cannot sleep
+	 */
+	struct dmabuf *buf = atomic_malloc(sizeof(*buf) + len);
 	if (buf == NULL)
 		return NULL;
 
