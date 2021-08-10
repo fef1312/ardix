@@ -1,24 +1,16 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <arch/hardware.h>
-
 #include <ardix/io.h>
 #include <ardix/kent.h>
 #include <ardix/kevent.h>
 #include <ardix/sched.h>
 
+#include <config.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#define REG_PIOB_PER			(*(uint32_t *)0x400E1000U)
-#define REG_PIOB_PDR			(*(uint32_t *)0x400E1004U)
-#define REG_PIOB_OER			(*(uint32_t *)0x400E1010U)
-#define REG_PIOB_ODR			(*(uint32_t *)0x400E1014U)
-#define REG_PIOB_SODR			(*(uint32_t *)0x400E1030U)
-#define REG_PIOB_CODR			(*(uint32_t *)0x400E1034U)
 
 /**
  * Core init routine.
@@ -28,8 +20,6 @@
  */
 int main(void)
 {
-	volatile unsigned int print_count = 0;
-
 	int err = kent_root_init();
 	if (err != 0)
 		return err;
@@ -50,21 +40,13 @@ int main(void)
 
 	/* we should have a serial console now */
 
-	REG_PIOB_OER = 1 << 27;
-	REG_PIOB_PER = 1 << 27;
-	REG_PIOB_CODR = 1 << 27;
+	printf("Ardix version " ARDIX_VERSION_STR "\n");
+	printf("This is non-violent software, and there is NO WARRANTY.\n");
+	printf("See <https://git.fef.moe/fef/ardix> for details.\n\n");
 
-	while (true) {
-		printf("hello, world (%u)\n", print_count);
-
+	/* TODO: The next big step is to write initd and fork to it here. */
+	while (1)
 		sleep(1000);
-
-		print_count++;
-		if (print_count % 2)
-			REG_PIOB_CODR = 1 << 27;
-		else
-			REG_PIOB_SODR = 1 << 27;
-	}
 }
 
 /*
