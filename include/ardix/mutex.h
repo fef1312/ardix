@@ -97,11 +97,7 @@ extern void _mutex_unlock(uint8_t *lock);
  *
  * @param mutex Mutex to initialize
  */
-__always_inline void mutex_init(struct mutex *mutex)
-{
-	mutex->lock = 0;
-	list_init(&mutex->wait_queue);
-}
+void mutex_init(struct mutex *mutex);
 
 /**
  * @brief Acquire an exclusive lock on a mutex.

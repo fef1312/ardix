@@ -10,6 +10,13 @@
 #include <errno.h>
 #include <stddef.h>
 
+void mutex_init(struct mutex *mutex)
+{
+	mutex->lock = 0;
+	spin_init(&mutex->wait_queue_lock);
+	list_init(&mutex->wait_queue);
+}
+
 void mutex_lock(struct mutex *mutex)
 {
 	if (mutex_trylock(mutex) != 0) {
