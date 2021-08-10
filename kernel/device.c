@@ -57,13 +57,13 @@ static void device_kevent_destroy(struct kent *kent)
 	free(device_kevent);
 }
 
-struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel)
+struct device_kevent *device_kevent_create(struct device *device, enum device_kevent_flags flags)
 {
 	struct device_kevent *event = atomic_malloc(sizeof(*event));
 	if (event == NULL)
 		return NULL;
 
-	event->channel = channel;
+	event->flags = flags;
 	event->kevent.kind = KEVENT_DEVICE;
 
 	event->kevent.kent.parent = &device->kent;
@@ -77,9 +77,9 @@ struct device_kevent *device_kevent_create(struct device *device, enum device_ch
 	return event;
 }
 
-void device_kevent_create_and_dispatch(struct device *device, enum device_channel channel)
+void device_kevent_create_and_dispatch(struct device *device, enum device_kevent_flags flags)
 {
-	struct device_kevent *event = device_kevent_create(device, channel);
+	struct device_kevent *event = device_kevent_create(device, flags);
 	if (event != NULL)
 		kevent_dispatch(&event->kevent);
 }

@@ -12,11 +12,12 @@ struct list_head {
 	struct list_head *prev;
 };
 
-#define LIST_HEAD(name)			\
-	struct list_head name = {	\
-		.next = &name,		\
-		.prev = &name,		\
-	}
+#define LIST_HEAD_INIT(name) {		\
+	.next = &(name),		\
+	.prev = &(name),		\
+}
+
+#define LIST_HEAD(name) struct list_head name = LIST_HEAD_INIT(name)
 
 __always_inline void list_init(struct list_head *head)
 {

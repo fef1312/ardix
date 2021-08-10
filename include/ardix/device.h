@@ -26,14 +26,16 @@ struct device {
 
 extern struct kent *devices_kent;
 
-enum device_channel {
-	DEVICE_CHANNEL_IN,
-	DEVICE_CHANNEL_OUT,
+enum device_kevent_flags {
+	DEVICE_KEVENT_TX	= (1 << 0),
+	DEVICE_KEVENT_RX	= (1 << 1),
+	DEVICE_KEVENT_ERR	= (1 << 2),
+	DEVICE_KEVENT_DMA	= (1 << 3),
 };
 
 struct device_kevent {
 	struct kevent kevent;
-	enum device_channel channel;
+	enum device_kevent_flags flags;
 };
 
 __always_inline struct device_kevent *kevent_to_device_kevent(struct kevent *event)
@@ -53,7 +55,7 @@ __always_inline struct device *kevent_to_device(struct kevent *event)
  * @param channel Which channel (in or out) the event applies to
  * @returns The created event, or `NULL` if out of memory
  */
-struct device_kevent *device_kevent_create(struct device *device, enum device_channel channel);
+struct device_kevent *device_kevent_create(struct device *device, enum device_kevent_flags flags);
 
 /**
  * @brief Convenience wrapper for creating and immediately dispatching a device kevent.
@@ -61,7 +63,7 @@ struct device_kevent *device_kevent_create(struct device *device, enum device_ch
  * @param device Device the event refers to
  * @param channel Which channel (in or out) the event applies to
  */
-void device_kevent_create_and_dispatch(struct device *device, enum device_channel channel);
+void device_kevent_create_and_dispatch(struct device *device, enum device_kevent_flags flags);
 
 /** Initialize the devices subsystem. */
 int devices_init(void);

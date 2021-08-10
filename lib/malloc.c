@@ -237,8 +237,6 @@ void *atomic_malloc(size_t size)
 
 	size = round_alloc_size_up(size);
 
-	atomic_enter();
-
 	struct memblk *cursor;
 	list_for_each_entry(&atomic_heap, cursor, list) {
 		if (blk_get_size(cursor) >= size)
@@ -252,8 +250,6 @@ void *atomic_malloc(size_t size)
 		atomic_heap_free -= blk_get_size(cursor);
 		ptr = cursor->data;
 	}
-
-	atomic_leave();
 
 	return ptr;
 }

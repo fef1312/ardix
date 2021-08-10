@@ -86,7 +86,7 @@ void file_put(struct file *f)
 struct io_device_kevent_extra {
 	struct file *file;
 	struct task *task;
-	enum device_channel channel;
+	enum device_kevent_flags flags;
 };
 
 static int io_device_kevent_listener(struct kevent *event, void *_extra)
@@ -98,7 +98,7 @@ static int io_device_kevent_listener(struct kevent *event, void *_extra)
 		return KEVENT_CB_NONE;
 
 	struct device_kevent *device_kevent = kevent_to_device_kevent(event);
-	if (device_kevent->channel != extra->channel)
+	if ((device_kevent->flags & extra->flags) == 0)
 		return KEVENT_CB_NONE;
 
 	extra->task->state = TASK_QUEUE;
@@ -108,18 +108,19 @@ static int io_device_kevent_listener(struct kevent *event, void *_extra)
 	return KEVENT_CB_LISTENER_DEL | KEVENT_CB_STOP;
 }
 
-static int iowait_device(struct file *file, enum device_channel channel)
+static int iowait_device(struct file *file, enum device_kevent_flags flags)
 {
 	file_get(file->fd);
 	kent_get(&current->kent);
 
-	struct io_device_kevent_extra *extra = malloc(sizeof(*extra));
+	/* this must be atomic because event listeners can't sleep but need to call free() */
+	struct io_device_kevent_extra *extra = atomic_malloc(sizeof(*extra));
 	if (extra == NULL)
 		return -ENOMEM;
 
 	extra->file = file;
 	extra->task = current;
-	extra->channel = channel;
+	extra->flags = flags;
 
 	kevent_listener_add(KEVENT_DEVICE, io_device_kevent_listener, extra);
 	yield(TASK_IOWAIT);
@@ -139,7 +140,7 @@ ssize_t file_read(void *buf, struct file *file, size_t len)
 		ssize_t tmp = file->device->read(buf, file->device, len, file->pos);
 		if (tmp < 0) {
 			if (tmp == -EBUSY) {
-				tmp = iowait_device(file, DEVICE_CHANNEL_IN);
+				tmp = iowait_device(file, DEVICE_KEVENT_RX);
 			} else {
 				ret = tmp;
 				break;
@@ -154,7 +155,7 @@ ssize_t file_read(void *buf, struct file *file, size_t len)
 	}
 
 	mutex_unlock(&file->lock);
-	file_kevent_create_and_dispatch(file, FILE_KEVENT_READ | FILE_KEVENT_UNLOCK);
+	file_kevent_create_and_dispatch(file, FILE_KEVENT_READ);
 
 	return ret;
 }
@@ -172,7 +173,7 @@ ssize_t file_write(struct file *file, const void *buf, size_t len)
 		ssize_t tmp = file->device->write(file->device, buf, len, file->pos);
 		if (tmp < 0) {
 			if (tmp == -EBUSY) {
-				tmp = iowait_device(file, DEVICE_CHANNEL_OUT);
+				tmp = iowait_device(file, DEVICE_KEVENT_TX);
 				if (tmp < 0) {
 					ret = tmp;
 					break;
@@ -191,7 +192,7 @@ ssize_t file_write(struct file *file, const void *buf, size_t len)
 	}
 
 	mutex_unlock(&file->lock);
-	file_kevent_create_and_dispatch(file, FILE_KEVENT_WRITE | FILE_KEVENT_UNLOCK);
+	file_kevent_create_and_dispatch(file, FILE_KEVENT_WRITE );
 
 	return ret;
 }

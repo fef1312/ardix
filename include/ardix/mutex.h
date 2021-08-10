@@ -146,7 +146,11 @@ __always_inline bool mutex_is_locked(struct mutex *mutex)
  *
  * @param name Name of the `struct mutex` that will be defined
  */
-#define MUTEX(name) struct mutex name = { .lock = 0 }
+#define MUTEX(name) struct mutex name = {		\
+	.lock = 0,					\
+	.wait_queue_lock = { .lock = 0 },		\
+	.wait_queue = LIST_HEAD_INIT(name.wait_queue)	\
+}
 
 /** @} */
 

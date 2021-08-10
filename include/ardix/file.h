@@ -34,7 +34,6 @@ enum file_kevent_flags {
 	FILE_KEVENT_WRITE		= (1 << 1),
 	FILE_KEVENT_CLOSE		= (1 << 2),
 	FILE_KEVENT_EOF			= (1 << 3),
-	FILE_KEVENT_UNLOCK		= (1 << 4),
 };
 
 struct file_kevent {

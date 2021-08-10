@@ -4,10 +4,15 @@
 
 #include <toolchain.h>
 
-/** @brief Make the next `STREX` fail (invoke before leaving an irq). */
-__always_inline void __clrex(void)
+__always_inline void __irq_enter(void)
 {
-	__asm__ volatile( "\tclrex\n" ::: );
+	__asm__ volatile("cpsid i");
+}
+
+__always_inline void __irq_leave(void)
+{
+	__asm__ volatile("clrex");
+	__asm__ volatile("cpsie i");
 }
 
 /** Reset exception handler */

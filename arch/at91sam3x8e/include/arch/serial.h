@@ -9,12 +9,11 @@
 
 /** Architecture-specific extension of `struct serial_device` */
 struct arch_serial_device {
-	/** should always match REG_UART_PDC_TPR */
-	struct dmabuf *tx_current;
-	/** should always match REG_UART_PDC_TNPR */
-	struct dmabuf *tx_next;
-
 	struct serial_device device;
+
+	/* TODO: Use two buffers per direction as supported by hardware */
+	struct dmabuf *txbuf;
+	/* TODO: Use DMA for TX as well */
 };
 
 /**

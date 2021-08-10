@@ -17,13 +17,12 @@
 #include <string.h>
 
 struct arch_serial_device arch_serial_default_device = {
-	.tx_current = NULL,
-	.tx_next = NULL,
 	.device = {
 		.rx = NULL,
 		.id = 0,
 		.baud = 0,
 	},
+	.txbuf = NULL,
 };
 struct serial_device *serial_default_device = &arch_serial_default_device.device;
 
@@ -48,7 +47,7 @@ int arch_serial_init(struct serial_device *dev)
 	/* no parity, normal mode */
 	UART->UART_MR = UART_MR_PAR_NO | UART_MR_CHMODE_NORMAL;
 
-	/* From Atmel Datasheet: baud rate = MCK / (REG_UART_BRGR * 16) */
+	/* From Atmel Datasheet: baud rate = MCK / (UART_BRGR * 16) */
 	UART->UART_BRGR = UART_BRGR_CD(( SystemCoreClock / (uint32_t)dev->baud ) >> 4);
 
 	/* choose the events we want an interrupt on */
@@ -81,49 +80,32 @@ void arch_serial_exit(struct serial_device *dev)
 
 ssize_t arch_serial_write(struct serial_device *dev, const void *buf, size_t len)
 {
-	int ret;
+	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
+
+	if (len > 0xffff)
+		return -E2BIG;
+
+	if (arch_dev->txbuf != NULL)
+		return -EBUSY;
+
 	struct dmabuf *dmabuf = dmabuf_create(&dev->device, len);
 	if (dmabuf == NULL)
 		return -ENOMEM;
 
 	memcpy(dmabuf->data, buf, len);
-	ret = serial_write_dma(dev, dmabuf);
-	dmabuf_put(dmabuf);
-	return ret;
-}
 
-ssize_t serial_write_dma(struct serial_device *dev, struct dmabuf *buf)
-{
-	uint16_t len;
-	struct arch_serial_device *arch_dev = to_arch_serial_device(dev);
-
-	if (arch_dev->tx_next != NULL)
-		return -EBUSY;
-
-	dmabuf_get(buf);
-
-	if (buf->len >= 0xffff)
-		len = 0xffff;
-	else
-		len = (uint16_t)buf->len;
-
-	if (arch_dev->tx_current == NULL) {
-		arch_dev->tx_current = buf;
-		UART->UART_TPR = (uint32_t)buf->data;
-		UART->UART_TCR = len;
-		/* we weren't transmitting, so the interrupt was masked */
-		UART->UART_IER = UART_IER_ENDTX;
-	} else {
-		arch_dev->tx_next = buf;
-		UART->UART_TNPR = (uint32_t)buf->data;
-		UART->UART_TNCR = len;
-	}
+	arch_dev->txbuf = dmabuf;
+	UART->UART_TPR = (uintptr_t)dmabuf->data;
+	UART->UART_TCR = dmabuf->len;
+	UART->UART_IER = UART_IER_TXBUFE;
 
 	return (ssize_t)len;
 }
 
 void irq_uart(void)
 {
+	__irq_enter();
+
 	uint8_t tmp;
 	uint32_t state = UART->UART_SR;
 
@@ -133,32 +115,30 @@ void irq_uart(void)
 		ringbuf_write(arch_serial_default_device.device.rx, &tmp, sizeof(tmp));
 
 		device_kevent_create_and_dispatch(&serial_default_device->device,
-						  DEVICE_CHANNEL_IN);
+						  DEVICE_KEVENT_RX);
 	}
 
-	/* REG_UART_PDC_TCR has reached zero */
-	if (state & UART_SR_ENDTX) {
-		if (arch_serial_default_device.tx_current != NULL)
-			dmabuf_put(arch_serial_default_device.tx_current);
+	/* UART_TCR has reached zero */
+	if (state & UART_SR_TXBUFE) {
+		dmabuf_put(arch_serial_default_device.txbuf);
+		arch_serial_default_device.txbuf = NULL;
 
-		/* DMA automatically does this to the actual hardware registers */
-		arch_serial_default_device.tx_current = arch_serial_default_device.tx_next;
-		arch_serial_default_device.tx_next = NULL;
-
-		if (arch_serial_default_device.tx_current == NULL)
-			UART->UART_IDR = UART_IDR_ENDTX;
+		UART->UART_IDR = UART_IDR_TXBUFE;
 
 		device_kevent_create_and_dispatch(&serial_default_device->device,
-						  DEVICE_CHANNEL_OUT);
+						  DEVICE_KEVENT_TX);
 	}
 
 	/* check for error conditions */
 	if ((state & UART_SR_OVRE) || (state & UART_SR_FRAME)) {
-		/* TODO: write some proper error handling routines ffs */
 		UART->UART_CR = UART_CR_RSTSTA;
+		device_kevent_create_and_dispatch(
+			&serial_default_device->device,
+			DEVICE_KEVENT_RX | DEVICE_KEVENT_TX | DEVICE_KEVENT_ERR
+		);
 	}
 
-	__clrex();
+	__irq_leave();
 }
 
 /*
