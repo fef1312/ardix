@@ -220,6 +220,9 @@ void *malloc(size_t size)
 		cursor = blk_slice(&generic_heap, cursor, size);
 		generic_heap_free -= blk_get_size(cursor);
 		ptr = cursor->data;
+#		ifdef DEBUG
+			memset(cursor->data, 0xaa, blk_get_size(cursor));
+#		endif
 	}
 
 	mutex_unlock(&generic_heap_lock);
@@ -249,6 +252,9 @@ void *atomic_malloc(size_t size)
 		cursor = blk_slice(&atomic_heap, cursor, size);
 		atomic_heap_free -= blk_get_size(cursor);
 		ptr = cursor->data;
+#		ifdef DEBUG
+			memset(cursor->data, 0xaa, blk_get_size(cursor));
+#		endif
 	}
 
 	return ptr;
@@ -284,7 +290,12 @@ void free(void *ptr)
 		mutex_lock(&generic_heap_lock);
 		generic_heap_free += blk_get_size(blk);
 		blk_clear_alloc(blk);
-		blk_try_merge(&generic_heap, blk);
+		blk = blk_try_merge(&generic_heap, blk);
+
+#		ifdef DEBUG
+			memset(&blk->data[MIN_SIZE], 0xaa, blk_get_size(blk) - MIN_SIZE);
+#		endif
+
 		mutex_unlock(&generic_heap_lock);
 	} else if (ptr >= atomic_heap_start && ptr <= atomic_heap_end) {
 		if (!blk_is_alloc(blk))
@@ -293,7 +304,12 @@ void free(void *ptr)
 		atomic_enter();
 		atomic_heap_free += blk_get_size(blk);
 		blk_clear_alloc(blk);
-		blk_try_merge(&atomic_heap, blk);
+		blk = blk_try_merge(&atomic_heap, blk);
+
+#		ifdef DEBUG
+			memset(&blk->data[MIN_SIZE], 0xaa, blk_get_size(blk) - MIN_SIZE);
+#		endif
+
 		atomic_leave();
 	} else {
 		__breakpoint;
