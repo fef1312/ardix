@@ -20,15 +20,12 @@ void mutex_init(struct mutex *mutex)
 void mutex_lock(struct mutex *mutex)
 {
 	if (mutex_trylock(mutex) != 0) {
-		struct mutex_wait *entry = malloc(sizeof(*entry));
-		if (entry == NULL) {
-			_spin_lock(&mutex->lock); /* fall back to spinning */
-			return;
-		}
+		struct mutex_wait entry = {
+			.task = current,
+		};
 
 		spin_lock(&mutex->wait_queue_lock);
-		entry->task = current;
-		list_insert(&mutex->wait_queue, &entry->link);
+		list_insert(&mutex->wait_queue, &entry.link);
 		spin_unlock(&mutex->wait_queue_lock);
 
 		yield(TASK_LOCKWAIT);
@@ -48,7 +45,6 @@ void mutex_unlock(struct mutex *mutex)
 
 	if (waiter != NULL) {
 		struct task *task = waiter->task;
-		free(waiter);
 		current->state = TASK_QUEUE;
 		do_switch(current, task);
 	} else {
