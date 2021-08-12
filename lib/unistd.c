@@ -19,6 +19,19 @@ ssize_t sleep(unsigned long int millis)
 	return syscall(SYS_sleep, (sysarg_t)millis);
 }
 
+pid_t exec(int (*entry)(void))
+{
+	return (pid_t)syscall(SYS_exec, (sysarg_t)entry);
+}
+
+void exit(int status)
+{
+	syscall(SYS_exit, status);
+
+	/* make gcc happy */
+	while (1);
+}
+
 /*
  * This file is part of Ardix.
  * Copyright (c) 2020, 2021 Felix Kopp <owo@fef.moe>.

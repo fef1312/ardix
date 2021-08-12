@@ -16,16 +16,16 @@ struct task; /* see include/ardix/sched.h */
 int arch_sched_init(unsigned int freq);
 
 /**
- * Initialize a new process.
- * This requires the process' `stack_base` field to be initialized as the
- * initial register values are written to the stack.
+ * @brief Initialize a new task.
  *
- * @param process: The process.
- * @param entry: The process entry point.
+ *
+ * @param task Task to initialize
+ * @param entry Task entry point
  */
-void arch_task_init(struct task *task, void (*entry)(void));
+void task_init(struct task *task, int (*entry)(void));
 
-int arch_idle_task_init(struct task *task);
+/** @brief Idle task entry point. */
+__naked int _idle(void);
 
 /**
  * @brief Convert milliseconds to system ticks, rounding to zero.

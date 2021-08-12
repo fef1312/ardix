@@ -106,8 +106,6 @@ static void print_regs(struct exc_context *context)
 	print_reg("xPSR", context->sp->psr);
 }
 
-#include <arch/debug.h>
-
 __naked __noreturn void handle_fault(struct exc_context *context, enum irqno irqno)
 {
 	uart_emergency_setup();
@@ -120,7 +118,6 @@ __naked __noreturn void handle_fault(struct exc_context *context, enum irqno irq
 
 	uart_write_sync("\nSystem halted, goodbye\n\n");
 
-	__breakpoint;
 	while (1);
 }
 

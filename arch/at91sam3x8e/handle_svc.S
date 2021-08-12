@@ -4,15 +4,15 @@
 
 .text
 
-/* void arch_enter(struct exc_context *context); */
-.extern arch_enter
+/* void enter_syscall(struct exc_context *context); */
+.extern enter_syscall
 
 /* void handle_svc(void); */
 func_begin handle_svc
 
 	prepare_entry
 	mov	r0,	sp
-	bl	arch_enter		/* arch_enter(sp); */
+	bl	enter_syscall		/* enter_syscall(sp); */
 	prepare_leave
 	bx	lr
 

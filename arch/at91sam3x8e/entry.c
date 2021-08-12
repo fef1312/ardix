@@ -16,7 +16,7 @@
 extern uint16_t __syscall_return_point;
 #endif
 
-void arch_enter(struct exc_context *context)
+void enter_syscall(struct exc_context *context)
 {
 	enum syscall number = sc_num(context);
 	long (*handler)(sysarg_t arg1, sysarg_t arg2, sysarg_t arg3,
@@ -47,11 +47,19 @@ void arch_enter(struct exc_context *context)
 		return;
 	}
 
+	current->tcb.exc_context = context;
+
 	/* TODO: not every syscall uses the max amount of parameters (duh) */
 	sc_ret = handler(sc_arg1(context), sc_arg2(context), sc_arg3(context),
 			 sc_arg4(context), sc_arg5(context), sc_arg6(context));
 
 	sc_set_rval(context, sc_ret);
+}
+
+void enter_sched(struct exc_context *context)
+{
+	current->tcb.exc_context = context;
+	schedule();
 }
 
 /*

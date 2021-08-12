@@ -38,6 +38,7 @@
 #include <ardix/kevent.h>
 #include <ardix/malloc.h>
 #include <ardix/sched.h>
+#include <ardix/task.h>
 #include <ardix/types.h>
 
 #include <errno.h>
@@ -48,6 +49,7 @@ extern uint32_t _sstack;
 extern uint32_t _estack;
 
 static struct task *tasks[CONFIG_SCHED_MAXTASK];
+static MUTEX(tasks_lock);
 struct task *volatile current;
 
 static struct task kernel_task;
@@ -56,7 +58,12 @@ static struct task idle_task;
 static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
+
+	mutex_lock(&tasks_lock);
 	tasks[task->pid] = NULL;
+	mutex_unlock(&tasks_lock);
+
+	kfree(task->stack);
 	kfree(task);
 }
 
@@ -72,8 +79,12 @@ int sched_init(void)
 
 	memset(&kernel_task.tcb, 0, sizeof(kernel_task.tcb));
 	kernel_task.bottom = &_estack;
+	kernel_task.stack = kernel_task.bottom - CONFIG_STACK_SIZE;
 	kernel_task.pid = 0;
-	kernel_task.state = TASK_READY;
+	kernel_task.state = TASK_RUNNING;
+
+	list_init(&kernel_task.pending_sigchld);
+	mutex_init(&kernel_task.pending_sigchld_lock);
 
 	tasks[0] = &kernel_task;
 	current = &kernel_task;
@@ -85,11 +96,17 @@ int sched_init(void)
 	if (err != 0)
 		goto out;
 
-	err = arch_sched_init(CONFIG_SCHED_FREQ);
-	if (err != 0)
+	idle_task.stack = kmalloc(CONFIG_STACK_SIZE);
+	if (idle_task.stack == NULL)
 		goto out;
+	idle_task.bottom = idle_task.stack + CONFIG_STACK_SIZE;
+	idle_task.pid = -1;
+	idle_task.state = TASK_QUEUE;
+	list_init(&idle_task.pending_sigchld);
+	mutex_init(&idle_task.pending_sigchld_lock);
+	task_init(&idle_task, _idle);
 
-	err = arch_idle_task_init(&idle_task);
+	err = arch_sched_init(CONFIG_SCHED_FREQ);
 	if (err != 0)
 		goto out;
 
@@ -113,11 +130,12 @@ static inline bool can_run(const struct task *task)
 	case TASK_SLEEP:
 		return tick - task->last_tick >= task->sleep;
 	case TASK_QUEUE:
-	case TASK_READY:
+	case TASK_RUNNING:
 		return true;
 	case TASK_DEAD:
 	case TASK_IOWAIT:
 	case TASK_LOCKWAIT:
+	case TASK_WAITPID:
 		return false;
 	}
 
@@ -135,7 +153,7 @@ void schedule(void)
 
 	kevents_process();
 
-	if (old->state == TASK_READY)
+	if (old->state == TASK_RUNNING)
 		old->state = TASK_QUEUE;
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(tasks); i++) {
@@ -156,7 +174,7 @@ void schedule(void)
 	if (new == NULL)
 		new = &idle_task;
 
-	new->state = TASK_READY;
+	new->state = TASK_RUNNING;
 	new->last_tick = tick;
 	current = new;
 
@@ -177,7 +195,65 @@ long sys_sleep(unsigned long int millis)
 	current->sleep = ms_to_ticks(millis);
 	yield(TASK_SLEEP);
 	/* TODO: return actual milliseconds */
+	/*
+	 * TODO: actually, use fucking hardware timers which were specifically
+	 *       invented for this exact kind of feature because (1) the tick
+	 *       resolution is often less than 1 ms and (2) ticks aren't really
+	 *       supposed to be guaranteed to happen at regular intervals and
+	 *       (3) the scheduler doesn't even check whether there is a task
+	 *       whose sleep period just expired
+	 */
 	return 0;
+}
+
+long sys_exec(int (*entry)(void))
+{
+	pid_t pid;
+	struct task *child = NULL;
+
+	mutex_lock(&tasks_lock);
+
+	for (pid = 1; pid < CONFIG_SCHED_MAXTASK; pid++) {
+		if (tasks[pid] == NULL)
+			break;
+	}
+	if (pid == CONFIG_SCHED_MAXTASK) {
+		pid = -EAGAIN;
+		goto out;
+	}
+
+	child = kmalloc(sizeof(*child));
+	if (child == NULL) {
+		pid = -ENOMEM;
+		goto out;
+	}
+
+	child->pid = pid;
+	child->stack = kmalloc(CONFIG_STACK_SIZE);
+	if (child->stack == NULL) {
+		pid = -ENOMEM;
+		goto err_stack_malloc;
+	}
+
+	child->kent.parent = &current->kent;
+	child->kent.destroy = task_destroy;
+	kent_init(&child->kent);
+
+	child->bottom = child->stack + CONFIG_STACK_SIZE;
+	task_init(child, entry);
+
+	list_init(&child->pending_sigchld);
+	mutex_init(&child->pending_sigchld_lock);
+
+	child->state = TASK_QUEUE;
+	tasks[pid] = child;
+	goto out;
+
+err_stack_malloc:
+	kfree(child);
+out:
+	mutex_unlock(&tasks_lock);
+	return pid;
 }
 
 /*

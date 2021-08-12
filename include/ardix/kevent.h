@@ -25,6 +25,8 @@ enum kevent_kind {
 	KEVENT_DEVICE,
 	/** @brief File has changed */
 	KEVENT_FILE,
+	/** @brief Task has exited */
+	KEVENT_TASK,
 
 	KEVENT_KIND_COUNT,
 };

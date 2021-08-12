@@ -1,23 +1,13 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-.include "asm.S"
+#include <ardix/syscall.h>
 
-.text
+#include <sys/wait.h>
 
-/* void enter_sched(struct exc_context *context); */
-.extern enter_sched
-
-/* void handle_pend_sv(void); */
-func_begin handle_pend_sv
-
-	prepare_entry
-	mov	r0,	sp
-	bl	enter_sched
-	prepare_leave
-
-	bx	lr
-
-func_end handle_pend_sv
+pid_t waitpid(pid_t pid, int *stat_loc, int options)
+{
+	return (pid_t)syscall(SYS_waitpid, (sysarg_t)pid, (sysarg_t)stat_loc, (sysarg_t)options);
+}
 
 /*
  * This file is part of Ardix.

@@ -14,6 +14,7 @@ target_sources(ardix_lib PRIVATE
 	stdlib.c
 	string.c
 	unistd.c
+	wait.c
 )
 
 # This file is part of Ardix.

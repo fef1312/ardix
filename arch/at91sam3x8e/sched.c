@@ -14,6 +14,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 volatile unsigned long int tick = 0;
 
@@ -51,13 +52,23 @@ int arch_sched_init(unsigned int freq)
 	return 0;
 }
 
-void arch_task_init(struct task *task, void (*entry)(void))
+void task_init(struct task *task, int (*entry)(void))
 {
+	task->bottom = task->stack + CONFIG_STACK_SIZE;
 	/* TODO: Use separate stacks for kernel and program */
 	struct hw_context *hw_context = task->bottom - sizeof(*hw_context);
 	struct exc_context *exc_context = (void *)hw_context - sizeof(*exc_context);
 
 	memset(hw_context, 0, task->bottom - (void *)hw_context);
+	/*
+	 * The return value of entry(), which is the exit code, will be stored
+	 * in r0 as per the AAPCS.  Conveniently, this happens to be the same
+	 * register that is also used for passing the first argument to a
+	 * function, so by setting the initial link register to exit() we
+	 * effectively inject a call to that function after the task's main
+	 * routine returns.
+	 */
+	hw_context->lr = exit;
 	hw_context->pc = entry;
 	hw_context->psr = 0x01000000; /* Thumb = 1, unprivileged */
 
@@ -67,27 +78,13 @@ void arch_task_init(struct task *task, void (*entry)(void))
 	memset(&task->tcb, 0, sizeof(task->tcb));
 	task->tcb.context.sp = exc_context;
 	task->tcb.context.pc = _leave;
+	task->tcb.exc_context = exc_context;
 }
 
-__naked __noreturn void _idle(void)
+__naked int _idle(void)
 {
 	/* TODO: put the CPU to sleep */
 	while (1);
-}
-
-int arch_idle_task_init(struct task *task)
-{
-	void *stack = malloc(CONFIG_STACK_SIZE);
-	if (stack == NULL)
-		return -ENOMEM;
-
-	task->bottom = stack + CONFIG_STACK_SIZE; /* full-descending stack */
-	arch_task_init(task, _idle);
-	task->sleep = 0;
-	task->last_tick = 0;
-	task->state = TASK_READY;
-	task->pid = -1;
-	return 0;
 }
 
 unsigned long int ms_to_ticks(unsigned long int ms)

@@ -15,6 +15,9 @@ enum syscall {
 	SYS_sleep		= ARCH_SYS_sleep,
 	SYS_malloc		= ARCH_SYS_malloc,
 	SYS_free		= ARCH_SYS_free,
+	SYS_exec		= ARCH_SYS_exec,
+	SYS_exit		= ARCH_SYS_exit,
+	SYS_waitpid		= ARCH_SYS_waitpid,
 	NSYSCALLS
 };
 
@@ -31,6 +34,11 @@ long sys_stub(void);
 long sys_read(int fd, void *buf, size_t len);
 long sys_write(int fd, const void *buf, size_t len);
 long sys_sleep(unsigned long millis);
+long sys_malloc(size_t size);
+void sys_free(void *ptr);
+long sys_exec(int (*entry)(void));
+void sys_exit(int code);
+long sys_waitpid(pid_t pid, int *stat_loc, int options);
 
 /*
  * This file is part of Ardix.

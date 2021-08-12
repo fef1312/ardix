@@ -21,6 +21,7 @@ target_sources(ardix_kernel PRIVATE
 	sched.c
 	serial.c
 	syscall.c
+	task.c
 	userspace.c
 )
 

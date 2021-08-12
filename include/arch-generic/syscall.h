@@ -7,6 +7,9 @@
 #define ARCH_SYS_sleep		2
 #define ARCH_SYS_malloc		3
 #define ARCH_SYS_free		4
+#define ARCH_SYS_exec		5
+#define ARCH_SYS_exit		6
+#define ARCH_SYS_waitpid	7
 
 /*
  * This file is part of Ardix.

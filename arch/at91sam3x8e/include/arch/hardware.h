@@ -69,11 +69,17 @@ struct context {
 /**
  * @brief Task Control Block.
  * This is a low level structure used by `do_switch()` to do the actual context
- * switching,
+ * switching, and embedded into `struct task`.  We do this nesting because it
+ * makes it easier to access the TCB's fields from assembly, and it also makes
+ * us less dependent on a specific architecture.
  */
 struct tcb {
 	struct context context;
-	struct hw_context *hw_context;
+	/*
+	 * Needed for exec() because the child task leaves kernel space over a
+	 * different route than the parent one.
+	 */
+	struct exc_context *exc_context;
 };
 
 __always_inline sysarg_t sc_num(const struct exc_context *ctx)

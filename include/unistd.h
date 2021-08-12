@@ -3,10 +3,21 @@
 #pragma once
 
 #include <stdint.h>
+#include <toolchain.h>
 
 __shared ssize_t read(int fildes, void *buf, size_t nbyte);
 __shared ssize_t write(int fildes, const void *buf, size_t nbyte);
 __shared ssize_t sleep(unsigned long int millis);
+/**
+ * @brief Create a new thread.
+ *
+ * Embedded systems typically don't have a MMU and thus no virtual memory,
+ * meaning it is impossible to implement a proper fork.  So, the `fork()` and
+ * `execve()` system calls have to be combined into one.
+ */
+__shared pid_t exec(int (*entry)(void));
+__shared __noreturn void exit(int status);
+__shared pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 /*
  * This file is part of Ardix.

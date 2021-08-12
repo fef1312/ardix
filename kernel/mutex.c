@@ -44,9 +44,7 @@ void mutex_unlock(struct mutex *mutex)
 	spin_unlock(&mutex->wait_queue_lock);
 
 	if (waiter != NULL) {
-		struct task *task = waiter->task;
-		current->state = TASK_QUEUE;
-		do_switch(current, task);
+		waiter->task->state = TASK_QUEUE;
 	} else {
 		_mutex_unlock(&mutex->lock);
 	}
