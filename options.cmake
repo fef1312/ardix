@@ -16,7 +16,7 @@ set(CONFIG_IOMEM_SIZE 8192 CACHE STRING "I/O memory size in bytes")
 
 set(CONFIG_SCHED_MAXTASK 8 CACHE STRING "Maximum number of running tasks")
 
-set(CONFIG_SCHED_FREQ 1000 CACHE STRING "Task switch frequency in Hz")
+set(CONFIG_SCHED_FREQ 200 CACHE STRING "Task switch frequency in Hz")
 
 set(CONFIG_SERIAL_BAUD 115200 CACHE STRING "Default serial baud rate")
 set_property(CACHE CONFIG_SERIAL_BAUD PROPERTY STRINGS
