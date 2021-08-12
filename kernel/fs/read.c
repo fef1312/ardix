@@ -18,7 +18,7 @@ long sys_read(int fd, __user void *buf, size_t len)
 	if (f == NULL)
 		return -EBADF;
 
-	copy = malloc(len);
+	copy = kmalloc(len);
 	if (copy == NULL)
 		return -ENOMEM;
 
@@ -26,7 +26,7 @@ long sys_read(int fd, __user void *buf, size_t len)
 	if (ret >= 0)
 		ret = copy_to_user(buf, copy, ret);
 
-	free(copy);
+	kfree(copy);
 	file_put(f);
 	return ret;
 }

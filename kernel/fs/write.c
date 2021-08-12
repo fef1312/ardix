@@ -18,7 +18,7 @@ long sys_write(int fd, __user const void *buf, size_t len)
 	if (f == NULL)
 		return -EBADF;
 
-	copy = malloc(len);
+	copy = kmalloc(len);
 	if (copy == NULL) {
 		file_put(f);
 		return -ENOMEM;
@@ -27,7 +27,7 @@ long sys_write(int fd, __user const void *buf, size_t len)
 	len = copy_from_user(copy, buf, len);
 	ret = file_write(f, copy, len);
 
-	free(copy);
+	kfree(copy);
 	file_put(f);
 	return ret;
 }

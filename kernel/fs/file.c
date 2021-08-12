@@ -20,7 +20,7 @@ static void file_destroy(struct kent *kent)
 	fdtab[file->fd] = NULL;
 	mutex_unlock(&fdtab_lock);
 
-	free(file);
+	kfree(file);
 }
 
 struct file *file_create(struct device *device, enum file_type type, int *err)
@@ -41,7 +41,7 @@ struct file *file_create(struct device *device, enum file_type type, int *err)
 		return NULL;
 	}
 
-	f = malloc(sizeof(*f));
+	f = kmalloc(sizeof(*f));
 	if (f == NULL) {
 		*err = -ENOMEM;
 		mutex_unlock(&fdtab_lock);
@@ -102,7 +102,7 @@ static int io_device_kevent_listener(struct kevent *event, void *_extra)
 		return KEVENT_CB_NONE;
 
 	extra->task->state = TASK_QUEUE;
-	free(extra);
+	kfree(extra);
 	file_put(extra->file);
 	kent_put(&extra->task->kent);
 	return KEVENT_CB_LISTENER_DEL | KEVENT_CB_STOP;
@@ -114,7 +114,7 @@ static int iowait_device(struct file *file, enum device_kevent_flags flags)
 	kent_get(&current->kent);
 
 	/* this must be atomic because event listeners can't sleep but need to call free() */
-	struct io_device_kevent_extra *extra = atomic_malloc(sizeof(*extra));
+	struct io_device_kevent_extra *extra = atomic_kmalloc(sizeof(*extra));
 	if (extra == NULL)
 		return -ENOMEM;
 
@@ -201,12 +201,12 @@ static void file_kevent_destroy(struct kent *kent)
 {
 	struct kevent *kevent = container_of(kent, struct kevent, kent);
 	struct file_kevent *file_kevent = container_of(kevent, struct file_kevent, kevent);
-	free(file_kevent);
+	kfree(file_kevent);
 }
 
 struct file_kevent *file_kevent_create(struct file *f, enum file_kevent_flags flags)
 {
-	struct file_kevent *event = atomic_malloc(sizeof(*event));
+	struct file_kevent *event = atomic_kmalloc(sizeof(*event));
 	if (event == NULL)
 		return NULL;
 
@@ -217,7 +217,7 @@ struct file_kevent *file_kevent_create(struct file *f, enum file_kevent_flags fl
 	event->kevent.kent.destroy = file_kevent_destroy;
 	int err = kent_init(&event->kevent.kent);
 	if (err != 0) {
-		free(event);
+		kfree(event);
 		event = NULL;
 	}
 

@@ -1,13 +1,12 @@
 /* See the end of this file for copyright, license, and warranty information. */
 
-#include <ardix/malloc.h>
-
 #include <errno.h>
 /* Using GCC's stdarg.h is recommended even with -nodefaultlibs and -fno-builtin */
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 

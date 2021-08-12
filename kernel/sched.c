@@ -57,7 +57,7 @@ static void task_destroy(struct kent *kent)
 {
 	struct task *task = container_of(kent, struct task, kent);
 	tasks[task->pid] = NULL;
-	free(task);
+	kfree(task);
 }
 
 int sched_init(void)

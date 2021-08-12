@@ -13,6 +13,8 @@ enum syscall {
 	SYS_read		= ARCH_SYS_read,
 	SYS_write		= ARCH_SYS_write,
 	SYS_sleep		= ARCH_SYS_sleep,
+	SYS_malloc		= ARCH_SYS_malloc,
+	SYS_free		= ARCH_SYS_free,
 	NSYSCALLS
 };
 

@@ -10,7 +10,7 @@
 
 struct ringbuf *ringbuf_create(size_t size)
 {
-	struct ringbuf *buf = malloc(sizeof(*buf) + size);
+	struct ringbuf *buf = kmalloc(sizeof(*buf) + size);
 	if (buf == NULL)
 		return NULL;
 
@@ -24,7 +24,7 @@ struct ringbuf *ringbuf_create(size_t size)
 
 inline void ringbuf_destroy(struct ringbuf *buf)
 {
-	free(buf);
+	kfree(buf);
 }
 
 size_t ringbuf_read(void *dest, struct ringbuf *buf, size_t len)

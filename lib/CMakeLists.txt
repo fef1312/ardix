@@ -10,8 +10,8 @@ target_sources(ardix_lib PRIVATE
 	ctype.c
 	errno.c
 	list.c
-	malloc.c
 	printf.c
+	stdlib.c
 	string.c
 	unistd.c
 )

@@ -12,7 +12,7 @@
 static void dmabuf_destroy(struct kent *kent)
 {
 	struct dmabuf *buf = kent_to_dmabuf(kent);
-	free(buf);
+	kfree(buf);
 }
 
 struct dmabuf *dmabuf_create(struct device *dev, size_t len)
@@ -22,7 +22,7 @@ struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 	 * allocation needs to be atomic because the buffer might be
 	 * free()d from within an irq handler which cannot sleep
 	 */
-	struct dmabuf *buf = atomic_malloc(sizeof(*buf) + len);
+	struct dmabuf *buf = atomic_kmalloc(sizeof(*buf) + len);
 	if (buf == NULL)
 		return NULL;
 
@@ -31,7 +31,7 @@ struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 
 	err = kent_init(&buf->kent);
 	if (err) {
-		free(buf);
+		kfree(buf);
 		return NULL;
 	}
 

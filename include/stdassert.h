@@ -2,11 +2,13 @@
 
 #pragma once
 
-#define ARCH_SYS_read		0
-#define ARCH_SYS_write		1
-#define ARCH_SYS_sleep		2
-#define ARCH_SYS_malloc		3
-#define ARCH_SYS_free		4
+#include <arch/debug.h>
+
+#ifdef NDEBUG
+#	define assert(expr)
+#else
+#	define assert(expr) if (!(expr)) { __breakpoint; }
+#endif
 
 /*
  * This file is part of Ardix.

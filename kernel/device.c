@@ -14,7 +14,7 @@ struct kent *devices_kent = NULL;
 static void devices_destroy(struct kent *kent)
 {
 	/* should never be executed because the root devices kent is immortal */
-	free(kent);
+	kfree(kent);
 }
 
 /** Initialize the devices subsystem. */
@@ -23,7 +23,7 @@ int devices_init(void)
 	if (devices_kent != NULL)
 		return -EEXIST;
 
-	devices_kent = malloc(sizeof(*devices_kent));
+	devices_kent = kmalloc(sizeof(*devices_kent));
 	if (devices_kent == NULL)
 		return -ENOMEM;
 
@@ -36,7 +36,7 @@ int devices_init(void)
 static void device_destroy(struct kent *kent)
 {
 	struct device *dev = kent_to_device(kent);
-	free(dev);
+	kfree(dev);
 }
 
 int device_init(struct device *dev)
@@ -54,12 +54,12 @@ static void device_kevent_destroy(struct kent *kent)
 {
 	struct kevent *event = container_of(kent, struct kevent, kent);
 	struct device_kevent *device_kevent = container_of(event, struct device_kevent, kevent);
-	free(device_kevent);
+	kfree(device_kevent);
 }
 
 struct device_kevent *device_kevent_create(struct device *device, enum device_kevent_flags flags)
 {
-	struct device_kevent *event = atomic_malloc(sizeof(*event));
+	struct device_kevent *event = atomic_kmalloc(sizeof(*event));
 	if (event == NULL)
 		return NULL;
 
@@ -70,7 +70,7 @@ struct device_kevent *device_kevent_create(struct device *device, enum device_ke
 	event->kevent.kent.destroy = device_kevent_destroy;
 	int err = kent_init(&event->kevent.kent);
 	if (err) {
-		free(event);
+		kfree(event);
 		event = NULL;
 	}
 

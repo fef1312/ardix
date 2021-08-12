@@ -6,7 +6,7 @@
 #include <toolchain.h>
 
 /**
- * @defgroup kmalloc Kernel Memory Management
+ * @defgroup malloc Memory Management
  *
  * @{
  */
@@ -15,26 +15,24 @@
  * @brief Allocate `size` bytes of memory *w/out initializing it*.
  *
  * This method may block if an allocation is already taking place.
- * Use `atomic_kmalloc()` if you are in kernel space and in atomic context.
+ * Use `atomickmalloc()` if you are in kernel space and in atomic context.
  *
  * @param size The amount of bytes to allocate.
  * @return A pointer to the beginning of the memory area, or `NULL` if
  *	`size` was 0 or there is not enough free memory left.
  */
-__malloc(kfree, 1) void *kmalloc(size_t size);
+__shared __malloc(free, 1) void *malloc(size_t size);
 
 /**
- * @brief Allocate `size` bytes of memory *w/out initializing it*.
+ * @brief Allocate an array and initialize the memory to zeroes.
+ * The allocated size will be at least `nmemb * size`.
+ * If the multiplication would overflow, the allocation fails.
  *
- * Unlike `kmalloc()`, this method is guaranteed not to sleep.  It does this by
- * using a completely separate, smaller heap.  Only use this if you already are
- * in atomic context, like when in an irq.
- *
- * @param size Amount of bytes to allocate
- * @return A pointer to the beginning of the memory area, or `NULL` if
- *	`size` was 0 or there is not enough free memory left.
+ * @param nmemb The amount of members.
+ * @param size The size of an individual member.
+ * @return A pointer to the zeroed-out memory, or `NULL` if OOM.
  */
-__malloc(kfree, 1) void *atomic_kmalloc(size_t size);
+__malloc(free, 1) void *calloc(size_t nmemb, size_t size);
 
 /**
  * @brief Free a previously allocated memory region.
@@ -42,10 +40,7 @@ __malloc(kfree, 1) void *atomic_kmalloc(size_t size);
  *
  * @param ptr The pointer, as returned by `malloc`/`calloc`.
  */
-void kfree(void *ptr);
-
-/** Initialize the memory allocator, this is only called by the bootloader on early bootstrap. */
-void kmalloc_init(void *heap, size_t size);
+__shared void free(void *ptr);
 
 /** @} */
 

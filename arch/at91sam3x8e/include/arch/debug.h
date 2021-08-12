@@ -3,12 +3,31 @@
 #pragma once
 
 #include <config.h>
+#include <toolchain.h>
+
+#if 1
 
 #ifdef DEBUG
 #	define __breakpoint __asm__ volatile("bkpt")
 #else
 #	define __breakpoint
+#	define NDEBUG
 #endif
+
+#else
+#define __breakpoint
+#endif
+
+__always_inline int __is_kernel(void) {
+	int psr_val;
+
+	__asm__ volatile(
+"	mrs	%0,	psr	\n"
+	: "=&r" (psr_val)
+	);
+
+	return psr_val & 0x01ff; /* bits 8-0 hold ISR_NUMBER */
+}
 
 /*
  * This file is part of Ardix.

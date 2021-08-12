@@ -66,7 +66,7 @@ static inline void process_single_queue(struct kevent_queue *queue, struct list_
 
 				if (cb_ret & KEVENT_CB_LISTENER_DEL) {
 					list_delete(&listener->link);
-					free(listener);
+					kfree(listener);
 				}
 
 				if (cb_ret & KEVENT_CB_STOP)
@@ -102,7 +102,6 @@ void kevents_process(void)
 		process_single_queue(&kev_queues[i], &kev_listeners[i]);
 }
 
-/* called from irq context only */
 void kevent_dispatch(struct kevent *event)
 {
 	struct kevent_queue *queue = &kev_queues[event->kind];
@@ -138,7 +137,7 @@ struct kevent_listener *kevent_listener_add(enum kevent_kind kind,
 					    int (*cb)(struct kevent *, void *),
 					    void *extra)
 {
-	struct kevent_listener *listener = malloc(sizeof(*listener));
+	struct kevent_listener *listener = kmalloc(sizeof(*listener));
 
 	if (listener != NULL) {
 		listener->cb = cb;
@@ -158,7 +157,7 @@ void kevent_listener_del(struct kevent_listener *listener)
 	list_delete(&listener->link);
 	mutex_unlock(&kev_listeners_lock);
 
-	free(listener);
+	kfree(listener);
 }
 
 /*

@@ -27,7 +27,7 @@
  * header containing its size w/out overhead; free blocks additionally have a
  * `struct list_head` after that in order to keep track of where the free blocks
  * are.  This list is ordered by size ascendingly, so we can directly take the
- * first sufficiently sized block when iterating over the list in `malloc()`.
+ * first sufficiently sized block when iterating over the list in kmalloc()`.
  *
  * Additionally, the effective block size is copied to the very end of the block
  * (directly after the last usable address) in order to be able to find a
@@ -106,7 +106,7 @@ struct memblk {
 		/** @brief If the block is allocated, this will be overwritten */
 		struct list_head list;
 
-		/** @brief Used as the return value for `malloc()` */
+		/** @brief Used as the return value for kmalloc()` */
 		uint8_t data[0];
 		/** @brief Used to get the copy of the size field at the end of the block */
 		size_t endsz[0];
@@ -164,7 +164,18 @@ static struct memblk *blk_try_merge(struct list_head *heap, struct memblk *blk);
 /** @brief Cut a slice from a free block and return the slice. */
 static struct memblk *blk_slice(struct list_head *heap, struct memblk *bottom, size_t bottom_size);
 
-void malloc_init(void *heap, size_t size)
+long sys_malloc(size_t size)
+{
+	void *ptr = kmalloc(size);
+	return *(long *)&ptr;
+}
+
+void sys_free(void *ptr)
+{
+	kfree(ptr);
+}
+
+void kmalloc_init(void *heap, size_t size)
 {
 	memset(heap, 0, size);
 
@@ -191,7 +202,7 @@ void malloc_init(void *heap, size_t size)
 	atomic_heap_free = blk_get_size(atomic_block);
 }
 
-void *malloc(size_t size)
+void *kmalloc(size_t size)
 {
 	if (size == 0)
 		return NULL; /* as per POSIX */
@@ -230,7 +241,7 @@ void *malloc(size_t size)
 	return ptr;
 }
 
-void *atomic_malloc(size_t size)
+void *atomic_kmalloc(size_t size)
 {
 	if (size == 0)
 		return NULL;
@@ -260,23 +271,7 @@ void *atomic_malloc(size_t size)
 	return ptr;
 }
 
-void *calloc(size_t nmemb, size_t size)
-{
-	size_t total = nmemb * size;
-
-	/* check for overflow as mandated by POSIX */
-	if (size != 0 && total / size != nmemb)
-		return NULL;
-
-	void *ptr = malloc(total);
-
-	if (ptr != NULL)
-		memset(ptr, 0, total);
-
-	return ptr;
-}
-
-void free(void *ptr)
+void kfree(void *ptr)
 {
 	if (ptr == NULL)
 		return; /* as per POSIX.1-2008 */
