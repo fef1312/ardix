@@ -11,7 +11,7 @@ extern uint32_t _eheap;
 
 void __preinit_malloc(void)
 {
-	malloc_init(&_sheap, (size_t)&_eheap - (size_t)&_sheap);
+	kmalloc_init(&_sheap, (size_t)&_eheap - (size_t)&_sheap);
 }
 __preinit_call(__preinit_malloc);
 
