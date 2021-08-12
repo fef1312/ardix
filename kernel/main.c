@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+extern int init_main(void); /* init/main.c */
+
 /**
  * Core init routine.
  *
@@ -44,9 +46,10 @@ int main(void)
 	printf("This is non-violent software, and there is NO WARRANTY.\n");
 	printf("See <https://git.fef.moe/fef/ardix> for details.\n\n");
 
-	/* TODO: The next big step is to write initd and fork to it here. */
-	while (1)
-		sleep(1000);
+	pid_t pid = exec(init_main);
+	waitpid(pid, &err, 0);
+	printf("initd exited with status %d, system halted\n", err);
+	while (1);
 }
 
 /*

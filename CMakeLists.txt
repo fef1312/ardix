@@ -71,7 +71,7 @@ configure_file(
 
 add_subdirectory(arch)
 
-#add_subdirectory(init)
+add_subdirectory(init)
 add_subdirectory(kernel)
 add_subdirectory(lib)
 
@@ -86,7 +86,7 @@ add_custom_command(
 	COMMAND ${CMAKE_LINKER}
 	ARGS ${ARDIX_LINKER_FLAGS} -o ardix.elf
 		$<TARGET_FILE:ardix_arch>
-		#$<TARGET_FILE:ardix_init>
+		$<TARGET_FILE:ardix_init>
 		$<TARGET_FILE:ardix_kernel>
 		$<TARGET_FILE:ardix_kernel_fs>
 		$<TARGET_FILE:ardix_lib>
