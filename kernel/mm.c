@@ -166,7 +166,7 @@ static struct memblk *blk_slice(struct list_head *heap, struct memblk *bottom, s
 
 long sys_malloc(size_t size)
 {
-	void *ptr = kmalloc(size);
+	void *ptr = kmalloc(size, MEM_USER);
 	return *(long *)&ptr;
 }
 
@@ -202,10 +202,28 @@ void kmalloc_init(void *heap, size_t size)
 	atomic_heap_free = blk_get_size(atomic_block);
 }
 
-void *kmalloc(size_t size)
+static void *atomic_kmalloc(size_t);
+
+/*
+ * this is still the old algorithm and all flags except atomic are ignored,
+ * so that at least the code still compiles to do some testing
+ */
+void *kmalloc(size_t size, enum memflags flags)
 {
+#	ifdef DEBUG
+		if ((flags & MEM_KERNEL) && (flags & MEM_USER))
+			__breakpoint;
+		if ((flags & (MEM_USER | MEM_KERNEL)) == 0)
+			__breakpoint;
+		if ((flags & MEM_USER) && (flags & MEM_ATOMIC))
+			__breakpoint;
+#	endif
+
 	if (size == 0)
 		return NULL; /* as per POSIX */
+
+	if (flags & MEM_ATOMIC)
+		return atomic_kmalloc(size);
 
 	if (size > generic_heap_free)
 		return NULL;
@@ -241,11 +259,8 @@ void *kmalloc(size_t size)
 	return ptr;
 }
 
-void *atomic_kmalloc(size_t size)
+static void *atomic_kmalloc(size_t size)
 {
-	if (size == 0)
-		return NULL;
-
 	if (size > atomic_heap_free)
 		return NULL;
 

@@ -96,7 +96,7 @@ int sched_init(void)
 	if (err != 0)
 		goto out;
 
-	idle_task.stack = kmalloc(CONFIG_STACK_SIZE);
+	idle_task.stack = kmalloc(CONFIG_STACK_SIZE, MEM_USER | MEM_STACK);
 	if (idle_task.stack == NULL)
 		goto out;
 	idle_task.bottom = idle_task.stack + CONFIG_STACK_SIZE;
@@ -222,14 +222,14 @@ long sys_exec(int (*entry)(void))
 		goto out;
 	}
 
-	child = kmalloc(sizeof(*child));
+	child = kmalloc(sizeof(*child), MEM_KERNEL);
 	if (child == NULL) {
 		pid = -ENOMEM;
 		goto out;
 	}
 
 	child->pid = pid;
-	child->stack = kmalloc(CONFIG_STACK_SIZE);
+	child->stack = kmalloc(CONFIG_STACK_SIZE, MEM_USER | MEM_STACK);
 	if (child->stack == NULL) {
 		pid = -ENOMEM;
 		goto err_stack_malloc;

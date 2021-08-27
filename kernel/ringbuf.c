@@ -10,7 +10,7 @@
 
 struct ringbuf *ringbuf_create(size_t size)
 {
-	struct ringbuf *buf = kmalloc(sizeof(*buf) + size);
+	struct ringbuf *buf = kmalloc(sizeof(*buf) + size, MEM_KERNEL);
 	if (buf == NULL)
 		return NULL;
 

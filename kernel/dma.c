@@ -22,7 +22,7 @@ struct dmabuf *dmabuf_create(struct device *dev, size_t len)
 	 * allocation needs to be atomic because the buffer might be
 	 * free()d from within an irq handler which cannot sleep
 	 */
-	struct dmabuf *buf = atomic_kmalloc(sizeof(*buf) + len);
+	struct dmabuf *buf = kmalloc(sizeof(*buf) + len, MEM_KERNEL | MEM_ATOMIC);
 	if (buf == NULL)
 		return NULL;
 

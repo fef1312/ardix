@@ -23,7 +23,7 @@ int devices_init(void)
 	if (devices_kent != NULL)
 		return -EEXIST;
 
-	devices_kent = kmalloc(sizeof(*devices_kent));
+	devices_kent = kmalloc(sizeof(*devices_kent), MEM_KERNEL);
 	if (devices_kent == NULL)
 		return -ENOMEM;
 
@@ -59,7 +59,7 @@ static void device_kevent_destroy(struct kent *kent)
 
 struct device_kevent *device_kevent_create(struct device *device, enum device_kevent_flags flags)
 {
-	struct device_kevent *event = atomic_kmalloc(sizeof(*event));
+	struct device_kevent *event = kmalloc(sizeof(*event), MEM_KERNEL | MEM_ATOMIC);
 	if (event == NULL)
 		return NULL;
 

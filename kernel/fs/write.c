@@ -18,7 +18,7 @@ long sys_write(int fd, __user const void *buf, size_t len)
 	if (f == NULL)
 		return -EBADF;
 
-	copy = kmalloc(len);
+	copy = kmalloc(len, MEM_KERNEL);
 	if (copy == NULL) {
 		file_put(f);
 		return -ENOMEM;

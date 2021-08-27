@@ -41,7 +41,7 @@ struct file *file_create(struct device *device, enum file_type type, int *err)
 		return NULL;
 	}
 
-	f = kmalloc(sizeof(*f));
+	f = kmalloc(sizeof(*f), MEM_KERNEL);
 	if (f == NULL) {
 		*err = -ENOMEM;
 		mutex_unlock(&fdtab_lock);
@@ -114,7 +114,7 @@ static int iowait_device(struct file *file, enum device_kevent_flags flags)
 	kent_get(&current->kent);
 
 	/* this must be atomic because event listeners can't sleep but need to call free() */
-	struct io_device_kevent_extra *extra = atomic_kmalloc(sizeof(*extra));
+	struct io_device_kevent_extra *extra = kmalloc(sizeof(*extra), MEM_KERNEL | MEM_ATOMIC);
 	if (extra == NULL)
 		return -ENOMEM;
 
@@ -206,7 +206,7 @@ static void file_kevent_destroy(struct kent *kent)
 
 struct file_kevent *file_kevent_create(struct file *f, enum file_kevent_flags flags)
 {
-	struct file_kevent *event = atomic_kmalloc(sizeof(*event));
+	struct file_kevent *event = kmalloc(sizeof(*event), MEM_KERNEL | MEM_ATOMIC);
 	if (event == NULL)
 		return NULL;
 

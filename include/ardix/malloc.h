@@ -11,6 +11,13 @@
  * @{
  */
 
+enum memflags {
+	MEM_KERNEL	= (1 << 0),
+	MEM_USER	= (1 << 1),
+	MEM_ATOMIC	= (1 << 2),
+	MEM_STACK	= (1 << 3),
+};
+
 /**
  * @brief Allocate `size` bytes of memory *w/out initializing it*.
  *
@@ -21,20 +28,7 @@
  * @return A pointer to the beginning of the memory area, or `NULL` if
  *	`size` was 0 or there is not enough free memory left.
  */
-__malloc(kfree, 1) void *kmalloc(size_t size);
-
-/**
- * @brief Allocate `size` bytes of memory *w/out initializing it*.
- *
- * Unlike `kmalloc()`, this method is guaranteed not to sleep.  It does this by
- * using a completely separate, smaller heap.  Only use this if you already are
- * in atomic context, like when in an irq.
- *
- * @param size Amount of bytes to allocate
- * @return A pointer to the beginning of the memory area, or `NULL` if
- *	`size` was 0 or there is not enough free memory left.
- */
-__malloc(kfree, 1) void *atomic_kmalloc(size_t size);
+__malloc(kfree, 1) void *kmalloc(size_t size, enum memflags flags);
 
 /**
  * @brief Free a previously allocated memory region.

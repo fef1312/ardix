@@ -18,7 +18,7 @@ long sys_read(int fd, __user void *buf, size_t len)
 	if (f == NULL)
 		return -EBADF;
 
-	copy = kmalloc(len);
+	copy = kmalloc(len, MEM_KERNEL);
 	if (copy == NULL)
 		return -ENOMEM;
 

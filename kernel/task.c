@@ -26,7 +26,7 @@ static void task_kevent_destroy(struct kent *kent)
 
 void task_kevent_create_and_dispatch(struct task *task, int status)
 {
-	struct task_kevent *event = kmalloc(sizeof(*event));
+	struct task_kevent *event = kmalloc(sizeof(*event), MEM_KERNEL);
 	if (event == NULL)
 		return; /* TODO: we're fucked here */
 
@@ -54,12 +54,12 @@ __noreturn void sys_exit(int status)
 
 	if (parent->state != TASK_WAITPID) {
 		/*
-		 * atomic_kmalloc wouldn't actually be needed here, but we use
+		 * the atomic flag wouldn't actually be needed here, but we use
 		 * it anyway because it has a separate heap which is more likely
 		 * to have an emergency reserve of memory.  A failing allocation
 		 * would *really* be inconvenient here.
 		 */
-		struct dead_child *entry = atomic_kmalloc(sizeof(*entry));
+		struct dead_child *entry = kmalloc(sizeof(*entry), MEM_KERNEL | MEM_ATOMIC);
 		if (entry == NULL) {
 			schedule(); /* TODO: we're severely fucked here */
 		}

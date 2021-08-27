@@ -137,7 +137,7 @@ struct kevent_listener *kevent_listener_add(enum kevent_kind kind,
 					    int (*cb)(struct kevent *, void *),
 					    void *extra)
 {
-	struct kevent_listener *listener = kmalloc(sizeof(*listener));
+	struct kevent_listener *listener = kmalloc(sizeof(*listener), MEM_KERNEL);
 
 	if (listener != NULL) {
 		listener->cb = cb;
